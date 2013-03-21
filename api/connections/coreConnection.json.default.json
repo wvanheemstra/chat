@@ -1,0 +1,14 @@
+{
+    "connection_config": {
+        "driver_options": {}, 
+        "dsn": {
+            "db_name": "core", 
+            "db_type": "mysql", 
+            "host": "localhost", 
+            "port": "3306"
+        }, 
+        "password": "", 
+        "username": ""
+    }, 
+    "explicit_type_conversion": true
+}
