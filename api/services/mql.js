@@ -33,6 +33,8 @@ exports.read = function(req, res) {
 		this.dbConnection = null;
 		this.args = null;
 		this.queryOrQueries = null;
+		this.query = null;
+		this.queries = null;
 		this.callStack = [];
 		this.callBackHandleRequest = null;
 		this.result = null;  // we are in need of both result and results
@@ -63,6 +65,11 @@ exports.read = function(req, res) {
 		this.typeName = null;
 		this.analyzedPropertyKey = null;
 		this.analyzedPropertyValue = null;
+		this.select = null;
+	    this.from = null;
+	    this.where = null;
+	    this.params = null;
+	    this.indexes = null;
 	}
 	/*****************************************************************************
 	* Main
@@ -1152,10 +1159,42 @@ function processMQLObject(mqlProperties, cb) {
 	});//eof getParentType
 }//eof processMQLObject
 
-function processMQLArray(metadata, mql_array, parent, cb) {
+//function processMQLArray(metadata, mql_array, parent, cb) {
+function processMQLArray(mqlProperties, cb) {	
 	console.log('>>> inside processMQLArray'); // for testing only
-	// TO DO
-	cb(null); //TEMP
+	mqlProperties.callBackProcessMQL = cb;
+	console.log('mqlProperties.callBackProcessMQL:'); // for testing only
+	console.log(mqlProperties.callBackProcessMQL); // for testing only
+	mqlProperties.mqlArray = mqlProperties.queryOrQueries[0];
+	console.log('mqlProperties.mqlArray:'); // for testing only
+	console.log(mqlProperties.mqlArray); // for testing only
+	var count = count(mqlProperties.mqlArray);							// TO DO: DOES THIS WORK???
+	console.log('count:'); // for testing only
+	console.log(count); // for testing only	
+    switch (count) {
+        case 0:
+            break;
+        case 1:
+            mqlProperties.parent['entries'] = new Array();
+            if (array_key_exists('schema', mqlProperties.parent)) {								// TO DO
+                mqlProperties.parent['entries']['schema'] = mqlProperties.parent['schema'];
+            }
+            processMQL(mqlProperties.mqlArray[0], mqlProperties.parent['entries']);				// TO DO
+            break;
+        default:
+            console.log('Expected a dictionary or a list with one element in a read (were you trying to write?)');
+			var err = new Error('Expected a dictionary or a list with one element in a read (were you trying to write?)');
+			mqlProperties.err = err;
+			exit;
+    }
+	if(mqlProperties.err){
+		console.log('>>> leaving processMQLArray with error');
+		mqlProperties.callBackProcessMQL(mqlProperties.err, mqlProperties); //TEMPORARY PLACEHOLDER TO FORCE CONTINUATION		
+	}
+	else {
+		console.log('>>> leaving processMQLArray');
+		mqlProperties.callBackProcessMQL(null, mqlProperties); //TEMPORARY PLACEHOLDER TO FORCE CONTINUATION
+	}
 }//eof processMQLArray
 
 function processMQL(mqlProperties, cb) {
@@ -1221,50 +1260,106 @@ function generateSQL(mqlProperties, cb) {
 	
 	// TO DO
 
+	console.log("mqlProperties.parent['entries']:"); // for testing only
+	console.log(mqlProperties.parent['entries']); // for testing only
+	
+	// NOTE: $mql_node = mqlProperties.parent
+    if (typeof(mqlProperties.parent['entries']) != 'undefined') {
+        //generateSQL(mqlProperties.parent['entries'], $queries, $query_index, mqlProperties.childTAlias, mqlProperties.mergeInto);
+		generateSQL(mqlProperties, function(err, mqlProperties) {
+			console.log('>>> back inside generateSQL from generateSQL (itself!)'); // for testing only			
+			
+			// TO DO			
+			
+			console.log('>>> leaving generateSQL');
+			// callback here
+		});//eof generateSQL... a call to itself!
+    }//eof if
 
 
+    if (typeof(mqlProperties.parent['query_index']) == 'undefined'){
+        mqlProperties.parent['query_index'] = mqlProperties.queryKey;//WAS $query_index TEMPORARY SET TO mqlProperties.queryKey
+		console.log("mqlProperties.parent['query_index']:"); // for testing only
+		console.log(mqlProperties.parent['query_index']); // for testing only
+    }
 
+	if(typeof(mqlProperties.queries) != 'undefined' && mqlProperties.queries != null) {
+		console.log('mqlProperties.queries:');
+		console.log(mqlProperties.queries);		
+		if(typeof(mqlProperties.queries[mqlProperties.queryKey]) != 'undefined') {
+			mqlProperties.query = mqlProperties.queries[mqlProperties.queryKey];
+			console.log('mqlProperties.query:');
+			console.log(mqlProperties.query);
+		}//eof if 
+		else {
+			mqlProperties.query = null;
+			console.log('mqlProperties.query:');
+			console.log(mqlProperties.query);
+		}//eof else
+		
+	}//eof if 
+	else {
+		mqlProperties.queries = [];
+    	mqlProperties.query = null;
+		console.log('mqlProperties.query:');
+		console.log(mqlProperties.query);
+	}//eof else
+	console.log('mqlProperties.query:'); // for testing only
+	console.log(mqlProperties.query); // for testing only
+	
+    if (!mqlProperties.query){
+        mqlProperties.query = new Array({
+			'select': [],
+			'from' : [],
+			'where' : '',
+			'order_by' : '',
+			'limit' : '',
+			'params' : [],
+			'mql_node' : mqlProperties.parent,
+			'indexes' : [],
+			'merge_into' : mqlProperties.mergeInto,
+			'results' : []
+        });
+        mqlProperties.queries[mqlProperties.queryKey] = mqlProperties.query[0];  
+		console.log('mqlProperties.queries[mqlProperties.queryKey]:'); // for testing only
+		console.log(mqlProperties.queries[mqlProperties.queryKey]); // for testing only      
+    }
 
+    mqlProperties.select = mqlProperties.query[0]['select'];
+	console.log('mqlProperties.select:'); // for testing only
+	console.log(mqlProperties.select); // for testing only
+    mqlProperties.from = mqlProperties.query[0]['from'];
+	console.log('mqlProperties.from:'); // for testing only
+	console.log(mqlProperties.from); // for testing only
+    mqlProperties.where = mqlProperties.query[0]['where'];
+	console.log('mqlProperties.where:'); // for testing only
+	console.log(mqlProperties.where); // for testing only
+    mqlProperties.params = mqlProperties.query[0]['params'];
+	console.log('mqlProperties.params:'); // for testing only
+	console.log(mqlProperties.params); // for testing only
+    mqlProperties.indexes = mqlProperties.query[0]['indexes'];
+	console.log('mqlProperties.indexes:'); // for testing only
+	console.log(mqlProperties.indexes); // for testing only
 
-
-
-
-
-
-
-
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
+	// WE ARE HERE ............************************************
 
 /*
-    if (isset($mql_node['entries'])) {
-        generateSQL($mql_node['entries'], $queries, $query_index, $child_t_alias, $merge_into);
-        return;
-    }
-    
-    if (!isset($mql_node['query_index'])){
-        $mql_node['query_index'] = $query_index;
-    }
-    
-    $query = &$queries[$query_index];
-    if (!$query){
-        $query = array(
-            'select'                =>  array()
-        ,   'from'                  =>  array()
-        ,   'where'                 =>  ''
-        ,   'order_by'              =>  ''
-        ,   'limit'                 =>  ''
-        ,   'params'                =>  array()
-        ,   'mql_node'              =>  &$mql_node
-        ,   'indexes'               =>  array()
-        ,   'merge_into'            =>  $merge_into
-        ,   'results'               =>  array()
-        );
-        $queries[$query_index] = &$query;        
-    }
-    $select = &$query['select'];
-    $from   = &$query['from'];
-    $where  = &$query['where'];
-    $params = &$query['params'];
-    $indexes = &$query['indexes'];
+
     
     $type = analyze_type($mql_node['types'][0]);
     $domain_name = $type['domain'];
@@ -1599,7 +1694,7 @@ function handleQuery(mqlProperties, cb) {
 				var result = executed_sql_queries[0]['results']; // temp
 				console.log('result:'); // for testing only	
 				console.log(result); // for testing only		
-				var return_value = array({'code': '/api/status/ok', 'result': result});
+				var return_value = new Array({'code': '/api/status/ok', 'result': result});
 				if (debug_info) {
 					var sql_statements = [];
 					for(var i=0; i<sql_queries.length; i++) {
