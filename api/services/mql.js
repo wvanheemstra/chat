@@ -5,28 +5,14 @@
 * MQL READ
 *********************************************************************************************/
 exports.read = function(req, res) {
+	/****************************************************************************
+	* Requirements
+	*****************************************************************************/
 	var sys = require("sys"),  
 	    http = require("http"),  
 	    url = require("url"),  
 	    path = require("path"),  
 	    fs = require("fs");
-	// var metadata = null;
-	// var args = null;
-	/****************************************************************************
-	* Getters and Setters
-	*****************************************************************************/
-	// function getMetadata() {
-	// 	return this.metadata;
-	// }
-	// function setMetadata(metadata) {
-	// 	this.metadata = metadata;
-	// }
-	// function getArgs() {
-	// 	return this.args;
-	// }
-	// function setArgs(args) {
-	// 	this.args = args;
-	// }
 	/****************************************************************************
 	* Properties
 	*****************************************************************************/	
@@ -34,6 +20,11 @@ exports.read = function(req, res) {
 		this.err = null;
 		this.req = null;
 		this.res = null;
+		this.tAliasID = null;
+		this.cAliasID = null;
+		this.pAliasID = null;
+		this.childTAlias = null;
+		this.mergeInto = null;
 	    this.metaDataFileName = null;
 	    this.metaData = null;
 		this.connectionFileName = null;
@@ -69,15 +60,15 @@ exports.read = function(req, res) {
 		this.isFilterProperty = null;
 		this.analyzedProperty = null;
 		this.callBackIsFilterProperty = null;
+		this.typeName = null;
+		this.analyzedPropertyKey = null;
+		this.analyzedPropertyValue = null;
 	}
 	/*****************************************************************************
 	* Main
 	******************************************************************************/
 	var mqlProperties = new mqlProperties(); // instantiate the function object holding all properties
-	
-//	console.log('req.body:'); // for testing only
-//	console.log(req.body);
-	
+
 	mqlProperties.req = req;
 	mqlProperties.res = res;
 	
@@ -160,6 +151,8 @@ exports.read = function(req, res) {
 		console.log(mqlProperties.args); // for testing only
 		console.log("mqlProperties.result: "); // for testing only
 		console.log(mqlProperties.result); // for testing only
+		console.log("mqlProperties.results: "); // for testing only
+		console.log(mqlProperties.results); // for testing only		
 		// Static for the time being, overwrites collected sql query result
 		mqlProperties.result = [
 	    	{
@@ -208,7 +201,7 @@ exports.read = function(req, res) {
 		mqlProperties.res.header('Access-Control-Allow-Credentials', true);
 		mqlProperties.res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS'); // ExtJS will sent out OPTIONS
 
-		if(is_object(mqlProperties.args)) {
+		if(isObject(mqlProperties.args)) {
 			var args = mqlProperties.args; // have to recreate args for next test
 			if(typeof(args.sql) != 'undefined'){
 				output["sql"] = args['sql'];	
@@ -319,26 +312,26 @@ function handleRequest(mqlProperties, cb){
 /*****************************************************************************
 *   Miscellaneous
 ******************************************************************************/
-function is_object (mixed_var) {
-  // see http://phpjs.org/functions/is_object/	
+function isObject (mixed_var) {
+  // see http://phpjs.org/functions/isObject/	
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
   // +   improved by: Legaev Andrey
   // +   improved by: Michael White (http://getsprink.com)
-  // *     example 1: is_object('23');
+  // *     example 1: isObject('23');
   // *     returns 1: false
-  // *     example 2: is_object({foo: 'bar'});
+  // *     example 2: isObject({foo: 'bar'});
   // *     returns 2: true
-  // *     example 3: is_object(null);
+  // *     example 3: isObject(null);
   // *     returns 3: false
   if (Object.prototype.toString.call(mixed_var) === '[object Array]') {
     return false;
   }
   return mixed_var !== null && typeof mixed_var == 'object';
-}//eof is_object
-function is_array (mixed_var) {
+}//eof isObject
+function isArray (mixed_var) {
   return typeof(mixed_var)=='object' && (mixed_var instanceof Array);
-}//eof is_array
+}//eof isArray
 function getObjectVars (mqlProperties, cb) {
 	console.log('>>> inside getObjectVars'); // for testing only
 	mqlProperties.callBackObjectVars = cb;	
@@ -463,9 +456,9 @@ function unset() {
 /*****************************************************************************
 *	Benchmarking
 ******************************************************************************/
-function callstack_push(name) {
-	console.log('>>> inside callstack_push'); // for testing only 
-	if(!is_object(callstack))
+function callStackPush(name) {
+	console.log('>>> inside callStackPush'); // for testing only 
+	if(!isObject(callstack))
 	{
 		var callstack = []; // first time creation
 	}
@@ -477,13 +470,7 @@ function callstack_push(name) {
 	console.log(callstack); // for testing only	
 }
 /*****************************************************************************
-*	General Functions
-******************************************************************************/
-
-
-
-/*****************************************************************************
-*	MQL Processing Functions
+* MQL Processing Functions
 ******************************************************************************/
 function analyze_type(type, metadata, star_property, parent_cb, cb) {
 	console.log('>>> inside analyze_type'); // for testing only
@@ -505,8 +492,8 @@ function analyze_type(type, metadata, star_property, parent_cb, cb) {
 		console.log(metadata); // for testing only	
 		console.log('object_vars:'); // for testing only
 		console.log(object_vars); // for testing only		
-		console.log('properties:'); // for testing only
-		console.log(properties); // for testing only		
+		console.log("mqlProperties.parent['properties']:"); // for testing only
+		console.log(mqlProperties.parent['properties']); // for testing only		
 		console.log('types:'); // for testing only
 		console.log(types); // for testing only		
 		console.log('star_property:'); // for testing only
@@ -539,7 +526,7 @@ function isFilterProperty(mqlProperties, cb){
 		console.log('>>> leaving isFilterProperty'); // for testing only 
         mqlProperties.callBackIsFilterProperty(null, mqlProperties);
     }
-    else if (	is_object(mqlProperties.propertyValue) && 
+    else if (	isObject(mqlProperties.propertyValue) && 
 			count(
 				get_object_vars(metadata, parent, property_value, null, function(err, metadata, parent, object_vars, types){
 					console.log('mqlProperties.objectVars:'); // for testing only
@@ -554,7 +541,7 @@ function isFilterProperty(mqlProperties, cb){
 		console.log('>>> leaving isFilterProperty'); // for testing only 
         mqlProperties.callBackIsFilterProperty(null, mqlProperties);
     }
-    else if (	is_array(mqlProperties.propertyValue) && 
+    else if (	isArray(mqlProperties.propertyValue) && 
 			count(mqlProperties.propertyValue)===0
 		) 
 	{
@@ -634,6 +621,7 @@ function analyzeProperty(mqlProperties, cb){
 	mqlProperties.callBackAnalyzeProperty(null, mqlProperties);
 }//eof analyzeProperty  
 
+//helper for getParentType
 function getTypeFromSchema(mqlProperties, cb) {
 	console.log('>>> inside getTypeFromSchema'); // for testing only
 	mqlProperties.callBackParentType = cb;
@@ -691,8 +679,7 @@ function getTypeFromSchema(mqlProperties, cb) {
 	}   
 }//eof getTypeFromSchema
 
-//helper for process_mql_object
-//function getParentType(metadata, parent, types, mql_object, cb) {
+//helper for processMQLObject
 function getParentType(mqlProperties, cb) {	
 	console.log('>>> inside getParentType'); // for testing only
 	mqlProperties.callBackProcessMQLObject = cb;
@@ -745,37 +732,29 @@ function getParentType(mqlProperties, cb) {
 	}
 }//eof getParentType
 //helper for process_mql_object
-function check_types(metadata, object_vars, properties, types, star_property, analyzed_property, property_value, cb) {
-	console.log('>>> inside check_types'); // for testing only
-	console.log('metadata:'); // for testing only
-	console.log(metadata); // for testing only
-	console.log('object_vars:'); // for testing only
-	console.log(object_vars); // for testing only
-	console.log('properties:'); // for testing only
-	console.log(properties); // for testing only
-	console.log('types:'); // for testing only
-	console.log(types); // for testing only	
-	console.log('star_property:'); // for testing only
-	console.log(star_property); // for testing only
-	console.log('analyzed_property:'); // for testing only
-	console.log(analyzed_property); // for testing only
-	console.log('property_value:'); // for testing only
-	console.log(property_value); // for testing only	
-	if(typeof(types) != 'undefined') {
-	    switch (Object.keys(types).length) {
+function checkTypes(mqlProperties, cb) {
+	console.log('>>> inside checkTypes'); // for testing only   NOTE properties = mqlProperties.parent['properties']
+	mqlProperties.callBackProcessMQLObject = cb;
+	console.log('mqlProperties.callBackProcessMQLObject:'); // for testing only
+	console.log(mqlProperties.callBackProcessMQLObject); // for testing only	
+	if(typeof(mqlProperties.types) != 'undefined') {
+	    switch (Object.keys(mqlProperties.types).length) {
 	        case 0:
 	            console.log('Could not find a type. Currently we rely on a known type');
-				return null; //TEMP
+				console.log('>>> leaving checkTypes with error'); // for testing only
+				var err = new Error('Could not find a type. Currently we rely on a known type');
+				mqlProperties.err = err;
+				mqlProperties.callBackProcessMQLObject(err, mqlProperties); //TEMP
 	        case 1:
 	            //assigning the contents of the array to the type variable.
-				var types_keys = Object.keys(types);
+				var types_keys = Object.keys(mqlProperties.types);
 				console.log('types_keys:'); // for testing only
 				console.log(types_keys); // for testing only			
 				for(var i=0; i<Object.keys(types_keys).length; i++) {
-					var type_key = Object.keys(types)[0];
+					var type_key = Object.keys(mqlProperties.types)[0];
 					console.log('type_key:'); // for testing only
 					console.log(type_key); // for testing only					
-					var type_value = Object.keys(types)[0];
+					var type_value = Object.keys(mqlProperties.types)[0];
 					console.log('type_value:'); // for testing only
 					console.log(type_value); // for testing only
 					var checked_types = {};
@@ -784,28 +763,32 @@ function check_types(metadata, object_vars, properties, types, star_property, an
 					console.log('checked_types:'); // for testing only
 					console.log(checked_types); // for testing only
 				}
-				console.log('>>> leaving check_types'); // for testing only
-				types = checked_types;
-				cb(null, metadata, object_vars, properties, types, star_property, analyzed_property, property_value); //TEMP
+				mqlProperties.types = checked_types;
+				console.log('mqlProperties.types:'); // for testing only
+				console.log(mqlProperties.types); // for testing only
+				console.log('>>> leaving checkTypes'); // for testing only
+				mqlProperties.callBackProcessMQLObject(null, mqlProperties); //TEMP
 	            break;
 	        default:
 	            console.log('Found more than one type. Currently we can handle only one type.');
-				console.log('>>> leaving check_types with error'); // for testing only
+				console.log('>>> leaving checkTypes with error'); // for testing only
 				var err = new Error('Found more than one type. Currently we can handle only one type.');
-				cb(err); //TEMP
+				mqlProperties.err = err;
+				mqlProperties.callBackProcessMQLObject(err,mqlProperties); //TEMP
 	    }
-		console.log('>>> leaving check_types'); // for testing only
-		types = checked_types;
-		cb(null, metadata, object_vars, properties, types, star_property, analyzed_property, property_value); //TEMP
+		console.log('>>> leaving checkTypes'); // for testing only
+		mqlProperties.types = checked_types;
+		mqlProperties.callBackProcessMQLObject(null, mqlProperties); //TEMP
 	} 
 	else {
 		console.log('types is not an object:');// for testing only
-		console.log(types);// for testing only	
-		console.log('>>> leaving check_types with error'); // for testing only
+		console.log(mqlProperties.types);// for testing only	
+		console.log('>>> leaving checkTypes with error'); // for testing only
 		var err = new Error('types is not an object');	
-		cb(err); //TEMP
+		mqlProperties.err = err;
+		mqlProperties.callBackProcessMQLObject(err, mqlProperties); //TEMP
 	}
-}//eof check_types
+}//eof checkTypes
 
 
 
@@ -836,7 +819,6 @@ function expand_star(source_properties, target_properties) {
 	return target_properties; // TEMP
 }//eof expand_star
 //helper for process_mql_object
-//function preProcessProperties(metadata, parent, object_vars, properties, types, star_property, cb) {
 function preProcessProperties(mqlProperties, cb) { 
 	console.log('>>> inside preProcessProperties'); // for testing only	
 	mqlProperties.callBackPreProcessProperties = cb;
@@ -852,60 +834,51 @@ function preProcessProperties(mqlProperties, cb) {
 		mqlProperties.propertyValue = mqlProperties.objectVars[mqlProperties.propertyKey.toString()];
 		console.log('mqlProperties.propertyValue:'); // for testing only
 		console.log(mqlProperties.propertyValue); // for testing only 
-		
-		
-		/// WE ARE HERE !!!!!!!!!!!!!!!!!!!
-		
-//		analyze_property(property_key, property_value, metadata, parent, object_vars, properties, types, star_property, parent_cb, function(err, property, metadata, parent, object_vars, properties, types, star_property, parent_cb){
 		analyzeProperty(mqlProperties, function(err, mqlProperties){			
 			console.log('>>> back inside preProcessProperties from analyzeProperty'); // for testing only
 			
+
 							
-		    if (typeof(property) != 'undefined'){
-	            console.log('property is valid.');
-				var operator = property[0]['operator'];
-				console.log('operator:'); // for testing only
-				console.log(operator); // for testing only			
-	
-				
+		/// WE ARE HERE !!!!!!!!!!!!!!!!!!!							
+							
+							
+							
+		    if (typeof(mqlProperties.analyzedProperty) != 'undefined'){
+	            console.log('mqlProperties.analyzedProperty is valid.');
+				console.log("mqlProperties.analyzedProperty[0]['operator']:"); // for testing only
+				console.log(mqlProperties.analyzedProperty[0]['operator']); // for testing only			
+		
 			// SO FAR SO GOOD !!!				
-				
-					
-		        if (operator) {  // We have not come into here yet with our test set       
-		            var operator_in = (operator==='|=')||(operator==='!|=');
+
+		        if (mqlProperties.analyzedProperty[0]['operator']) {  // We have not come into here yet with our test set       
+		            var operator_in = (mqlProperties.analyzedProperty[0]['operator']==='|=')||(mqlProperties.analyzedProperty[0]['operator']==='!|=');
 					console.log('operator_in:'); // for testing only
 					console.log(operator_in); // for testing only
-					
-					var property_value = property[0]['value'];
-					console.log('property_value:'); // for testing only
-					console.log(property_value); // for testing only
-										
-		            if (property_value === null
-		            ||  is_object(property_value)
-		            || (operator_in && is_array(property_value) && count(property_value)===0)
+					console.log("mqlProperties.analyzedProperty[0]['value']:"); // for testing only
+					console.log(mqlProperties.analyzedProperty[0]['value']); // for testing only
+		            if (mqlProperties.analyzedProperty[0]['value'] === null
+		            ||  isObject(mqlProperties.analyzedProperty[0]['value'])
+		            || (operator_in && isArray(mqlProperties.analyzedProperty[0]['value']) && count(mqlProperties.analyzedProperty[0]['value'])===0)
 		            ){
-		                console.log("Operator "+$operator+' '
-		                +((operator==='|=' || operator==='!|=')
+		                console.log("Operator "+mqlProperties.analyzedProperty[0]['operator']+' '
+		                +((mqlProperties.analyzedProperty[0]['operator']==='|=' || mqlProperties.analyzedProperty[0]['operator']==='!|=')
 		                ? 'takes a non-empty list of values' 
 		                : 'takes a single value (not an object or an array)')
 		                );
-						var err = new Error("Operator "+$operator+' '
-		                +((operator==='|=' || operator==='!|=')
+						var err = new Error("Operator "+mqlProperties.analyzedProperty[0]['operator']+' '
+		                +((mqlProperties.analyzedProperty[0]['operator']==='|=' || mqlProperties.analyzedProperty[0]['operator']==='!|=')
 		                ? 'takes a non-empty list of values' 
 		                : 'takes a single value (not an object or an array)'));
-						cb(err); // TEMP
-		            }
-		        }
+						mqlProperties.callBackPreProcessProperties(err, mqlProperties);
+		            }//eof if value
+		        }//eof if operator
 		
-		        var property_qualifier = property[0]['qualifier'];
-				console.log('property_qualifier:'); // for testing only
-				console.log(property_qualifier); // for testing only
-						
-		        var property_name = property[0]['name'];
-				console.log('property_name:'); // for testing only
-				console.log(property_name); // for testing only	
+				console.log("mqlProperties.analyzedProperty[0]['qualifier']:"); // for testing only
+				console.log(mqlProperties.analyzedProperty[0]['qualifier']); // for testing only
+				console.log("mqlProperties.analyzedProperty[0]['name']:"); // for testing only
+				console.log(mqlProperties.analyzedProperty[0]['name']); // for testing only	
 					
-				switch (property_name) {
+				switch (mqlProperties.analyzedProperty[0]['name']) {
 				    case 'type':
 				    case 'creator':
 				    case 'guid':
@@ -914,8 +887,8 @@ function preProcessProperties(mqlProperties, cb) {
 				    case 'name':
 				    case 'permission':
 				    case 'timestamp':
-				        if (property_qualifier==='') {
-				            property[0]['qualifier'] = '/type/object';
+				        if (mqlProperties.analyzedProperty[0]['qualifier']==='') {
+				            mqlProperties.analyzedProperty[0]['qualifier'] = '/type/object';
 				        }
 				        break;
 				    case 'limit':
@@ -923,34 +896,36 @@ function preProcessProperties(mqlProperties, cb) {
 				    case 'return':
 				    case 'sort':
 				    case '*':
-				        if (property_qualifier==='' ) {
-				            property[0]['is_directive'] = true;
+				        if (mqlProperties.analyzedProperty[0]['qualifier']==='' ) {
+				            mqlProperties.analyzedProperty[0]['is_directive'] = true;
 				            switch (property_name) {
 				                case 'optional':
-				                    parent['optional'] = (property_value===true || property_value==='optional');
+				                    mqlProperties.parent['optional'] = (mqlProperties.analyzedProperty[0]['value']===true || mqlProperties.analyzedProperty[0]['value']==='optional');
 				                    break;
 				                case '*':
-				                    star_property = true;
+				                    mqlProperties.starProperty = true;
 				                    break;
 				            }
 				        }
 				    default: // e.g. when property_name = undefined
-				        if (property_qualifier === '/type/object') {
-				            console.log('"'+property_name+'" is not a universal property, and may not have the qualifier "'+property_qualifier+'".');
-							var err = new Error('"'+property_name+'" is not a universal property, and may not have the qualifier "'+property_qualifier+'".');
-							cb(err); //TEMP
+				        if (mqlProperties.analyzedProperty[0]['qualifier'] === '/type/object') {
+				            console.log('"'+mqlProperties.analyzedProperty[0]['name']+'" is not a universal property, and may not have the qualifier "'+mqlProperties.analyzedProperty[0]['qualifier']+'".');
+							var err = new Error('"'+mqlProperties.analyzedProperty[0]['name']+'" is not a universal property, and may not have the qualifier "'+mqlProperties.analyzedProperty[0]['qualifier']+'".');
+							mqlProperties.callBackPreProcessProperties(err, mqlProperties);
 				        }
 				}//eof switch
-				if (property[0]['qualifier'] === '/type/object'
-		        &&  property_name === 'type'
-		        &&  is_object(property_value)
-		        && !is_object(types.property_value)
+				if (mqlProperties.analyzedProperty[0]['qualifier'] === '/type/object'
+		        &&  mqlProperties.analyzedProperty[0]['name'] === 'type'
+		        &&  isObject(mqlProperties.analyzedProperty[0]['value'])
+		        && !isObject(mqlProperties.types.property_value)
 		        ) {     
 			
 					// WE ARE HERE
+					console.log('mqlProperties.analyzedProperty[0]:'); // for testing only
+					console.log(mqlProperties.analyzedProperty[0]);
 			
 		            analyze_type(property_value, metadata, parent, object_vars, properties, types, star_property, function(err, type, metadata, parent, object_vars, properties, types, star_property) {
-						console.log('>>> back inside pre_process_properties from analyze_type'); // for testing only
+						console.log('>>> back inside pre_processProperties from analyze_type'); // for testing only
 						console.log('type:'); // for testing only
 						console.log(type); // for testing only
 						console.log('metadata:'); // for testing only
@@ -959,15 +934,15 @@ function preProcessProperties(mqlProperties, cb) {
 						console.log(parent); // for testing only
 						console.log('object_vars:'); // for testing only
 						console.log(object_vars); // for testing only						
-						console.log('properties:'); // for testing only
-						console.log(properties); // for testing only						
+						console.log("mqlProperties.parent['properties']:"); // for testing only
+						console.log(mqlProperties.parent['properties']); // for testing only						
 						console.log('types:'); // for testing only
 						console.log(types); // for testing only						
 						console.log('star_property:'); // for testing only
 						console.log(star_property); // for testing only
 				        if (!type) {
-			                console.log('"'+property_value+'" is not a valid type identifier.');
-							var err = new Error('"'+property_value+'" is not a valid type identifier.');
+			                console.log('"'+mqlProperties.analyzedProperty[0]['value']+'" is not a valid type identifier.');
+							var err = new Error('"'+mqlProperties.analyzedProperty[0]['value']+'" is not a valid type identifier.');
 							cb(err); //TEMP
 			            }
 			            var domain = type['domain'];
@@ -976,7 +951,7 @@ function preProcessProperties(mqlProperties, cb) {
 						// HOW DO WE GET metadata ??
 			
 						get_type_from_schema(metadata, parent, domain, domain_type, star_property, function(err, type, star_property){
-							console.log('>>> back inside pre_process_properties from get_type_from_schema'); // for testing only
+							console.log('>>> back inside pre_processProperties from get_type_from_schema'); // for testing only
 							console.log('metadata:'); // for testing only
 							console.log(metadata); // for testing only
 							console.log('parent:'); // for testing only
@@ -997,19 +972,13 @@ function preProcessProperties(mqlProperties, cb) {
 							console.log(types); // for testing only
 							cb(null, types, star_property);
 							
-							
-						});//eof get_type_from_schema
 
-				
-					});//eof analyze_type
-		
-					
+						});//eof get_type_from_schema
+					});//eof analyze_type					
 		        }//eof if            
-		        properties['property_key'] = property;
-				console.log('properties:'); // for testing only
-				console.log(properties); // for testing only
-				console.log('star_property:'); // for testing only
-				console.log(star_property); // for testing only
+		        mqlProperties.parent.properties['property_key'] = mqlProperties.analyzedProperty;
+				console.log("mqlProperties.parent.properties['property_key']:"); // for testing only
+				console.log(mqlProperties.parent.properties['property_key']); // for testing only
 				console.log('>>> leaving preProcessProperties'); // for testing only
 				mqlProperties.callBackPreProcessProperties(null, mqlProperties); //TEMP
 	        }//eof if
@@ -1032,6 +1001,75 @@ function preProcessProperties(mqlProperties, cb) {
 		mqlProperties.callBackPreProcessProperties(null, mqlProperties);	 //TEMP
 	}
 }//eof preProcessProperties
+
+//helper for processMQLObject
+//function processProperties(&$properties, $type_name, $type) {
+function processProperties(mqlProperties, cb) {	
+	console.log('>>> inside processProperties');
+	mqlProperties.callBackPreProcessProperties = cb;
+	// NOTE properties = mqlProperties.analyzedProperty
+	console.log('Object.keys(mqlProperties.analyzedProperty).length:');	
+	console.log(Object.keys(mqlProperties.analyzedProperty).length);
+	for(var i=0; i<Object.keys(mqlProperties.analyzedProperty).length; i++){	/// DOUBLE CHECK: should it be mqlProperties.analyzedProperty[0] ???
+		console.log('processProperties: ROUND i='+i); // for testing only
+        mqlProperties.analyzedPropertyKey = Object.keys(mqlProperties.analyzedProperty)[i];
+		console.log('mqlProperties.analyzedPropertyKey:'); // for testing only
+		console.log(mqlProperties.analyzedPropertyKey); // for testing only
+		mqlProperties.analyzedPropertyValue = mqlProperties.analyzedProperty[mqlProperties.analyzedPropertyKey.toString()];
+		console.log('mqlProperties.analyzedPropertyValue:'); // for testing only
+		console.log(mqlProperties.analyzedPropertyValue); // for testing only		
+        if (mqlProperties.analyzedPropertyValue['is_directive']===true) {
+            continue;
+        }		
+		console.log("mqlProperties.analyzedPropertyValue['qualifier']"); // for testing only
+		console.log(mqlProperties.analyzedPropertyValue['qualifier']); // for testing only
+		switch (mqlProperties.analyzedPropertyValue['qualifier']) { 
+		    case '/type/object':
+				continue;
+		    case '':
+                var schema_property = mqlProperties.type['properties'][mqlProperties.analyzedPropertyValue['name']];
+                if (schema_property) {
+                    mqlProperties.analyzedPropertyValue['qualifier'] = mqlProperties.typeName;
+                    mqlProperties.analyzedPropertyValue['schema'] = schema_property;
+                    if (typeof(schema_property['join_condition']) != 'undefined') {
+                        mqlProperties.analyzedPropertyValue['types'] = [schema_property['type']];
+                        mqlProperties.propertyValue = mqlProperties.analyzedPropertyValue['value'];
+                        if (isObject(mqlProperties.propertyValue) || isArray(mqlProperties.propertyValue)) {
+	
+                            //process_mql(mqlProperties.propertyValue, mqlProperties.analyzedProperty[0]);
+							processMQL(mqlProperties, function(err, mqlProperties){
+								console.log('>>> back inside processProperties from processMQL');
+								if(err){
+									console.log('>>> leaving processProperties with error');
+									mqlProperties.err = err;
+									mqlProperties.callBackPreProcessProperties(err, mqlProperties);
+								}
+								else {
+									console.log('>>> leaving processProperties');
+									mqlProperties.callBackPreProcessProperties(null, mqlProperties);
+								}
+							});	// eof processMQL
+                        }//eof isObject                        
+                    }//eof if typeof
+                }//eof if schema_property
+                else {
+                    var err = new Error('No property "'+mqlProperties.analyzedPropertyValue['name']+'" in type "'+mqlProperties.typeName+'".');
+					mqlProperties.err = err;
+					exit;
+                }
+                break;
+		    default: 
+				if (mqlProperties.analyzedPropertyValue['qualifier']!==mqlProperties.analyzedProperty[0].typeName) {
+                    var err = new Error('Property "'+mqlProperties.analyzedPropertyValue['qualifier']+'/'+mqlProperties.analyzedPropertyValue['name']
+                    +'" does not belong to the type "'+mqlProperties.typeName+'". This feature is not supported yet.');
+					mqlProperties.err = err;
+					exit;
+                }//eof default
+		}//eof switch
+	}//eof for
+	// cb here
+}//eof processProperties
+
 function processMQLObject(mqlProperties, cb) {
 	console.log('>>> inside processMQLObject'); // for testing only
 	mqlProperties.callBackProcessMQL = cb;
@@ -1043,8 +1081,7 @@ function processMQLObject(mqlProperties, cb) {
 	// MQL properties can map to two things:
 	//   - columns, in case the property type implies a value
 	//   - foreign keys, which implement a relationship to a table
-	var properties = [];
-    mqlProperties.parent['properties'] = properties;
+    mqlProperties.parent['properties'] = [];
 	console.log('mqlProperties.parent:'); // for testing only
 	console.log(mqlProperties.parent); // for testing only
 	mqlProperties.types = [];
@@ -1065,12 +1102,6 @@ function processMQLObject(mqlProperties, cb) {
 				mqlProperties.callBackProcessMQL(err, mqlProperties);
 			}
 			mqlProperties.starProperty = false;
-			
-			
-			/// WE ARE HERE !!!!!!!!!!!!!!!!!			
-			
-			
-//			preProcessProperties(metadata, parent, object_vars, properties, types, star_property, function(err, metadata, parent, object_vars, properties, types, star_property, analyzed_property, property_value) {
 			preProcessProperties(mqlProperties, function(err, mqlProperties) {				
 				console.log('>>> back inside processMQLObject from preProcessProperties'); // for testing only
 				if(err) {
@@ -1078,64 +1109,54 @@ function processMQLObject(mqlProperties, cb) {
 					console.log('>>> leaving processMQLObject with error'); // for testing only
 					mqlProperties.callBackProcessMQL(err, mqlProperties);					
 				}
-				console.log('WE DID: pre_process_properties ... '); // for testing only
-				
-				// WE ARE HERE ... !!!!!
-				// WE ARE HERE ... !!!!!
-				// WE ARE HERE ... !!!!!	
-							
-				
-				check_types(metadata, parent, object_vars, properties, types, star_property, analyzed_property, property_value, function(err, metadata, parent, object_vars, properties, types, star_property, analyzed_property, property_value) {
-					console.log('>>> back inside process_mql_object from check_types'); // for testing only
-					if(err) throw err;
-					console.log('metadata:'); // for testing only
-					console.log(metadata); // for testing only	
-					console.log('parent:'); // for testing only
-					console.log(parent); // for testing only									
-					console.log('object_vars:'); // for testing only
-					console.log(object_vars); // for testing only					
-					console.log('properties:'); // for testing only
-					console.log(properties); // for testing only					
-					console.log('types:'); // for testing only
-					console.log(types); // for testing only
-					console.log('star_property:'); // for testing only
-					console.log(star_property); // for testing only					
-					console.log('analyzed_property:'); // for testing only
-					console.log(analyzed_property); // for testing only	
-					console.log('property_value:'); // for testing only
-					console.log(property_value); // for testing only			
-					var type_name = [];
-				    for(var i=0; i<types.length; i++) { //extract the type name
-						type_name[i] = types[i];
+				console.log('WE DID: pre_processProperties ... '); // for testing only
+				checkTypes(mqlProperties, function(err, mqlProperties) {					
+					console.log('>>> back inside processMQLObject from checkTypes'); // for testing only
+					if(err) {
+						console.log('>>> leaving processMQLObject error'); // for testing only
+						mqlProperties.err = err;
+						mqlProperties.callBackProcessMQL(err, mqlProperties);
 					}
-				    parent['types'] = array_keys(types);
+					mqlProperties.typeName = [];
+				    for(var i=0; i<mqlProperties.types.length; i++) { //extract the type name
+						mqlProperties.typeName[i] = mqlProperties.types[i];
+					}
+				    mqlProperties.parent['types'] = array_keys(mqlProperties.types);					
 				
-					console.log('parent:'); // for testing only
-					console.log(parent); // for testing only					
-				
-				    if (star_property===true) {
+				    if (mqlProperties.starProperty===true) {
 	//			        expand_star(type['properties'], pre_processed_properties ); // TO DO: Make this work
 				    }
-					console.log('WE DID: check_types ... '); // for testing only
-					process_properties(pre_processed_properties , type_name, type, function(err, processed_properties) {
-						console.log('>>> back inside process_mql_object from process_properties'); // for testing only
-						if(err) throw err;
-						console.log('processed_properties:'); // for testing only
-						console.log(processed_properties); // for testing only
-						console.log('WE DID: process_properties ... '); // for testing only						
-						return processed_properties; // TEMP
-					});//eof process_properties
-				});//eof check_types
+					console.log('WE DID: checkTypes ... '); // for testing only
+					
+					// WE ARE HERE ... !!!!!
+					// WE ARE HERE ... !!!!!
+					// WE ARE HERE ... !!!!!					
+					
+					processProperties(mqlProperties, function(err, mqlProperties) {
+						console.log('>>> back inside processMQLObject from processProperties'); // for testing only
+						if(err) {
+							console.log('>>> leaving processMQLObject with error');
+							mqlProperties.err = err;
+							mqlProperties.callBackProcessMQL(err, mqlProperties);
+						}
+						//console.log('processed_properties:'); // for testing only
+						//console.log(processed_properties); // for testing only
+						console.log('>>> leaving processMQLObject');
+						console.log('WE DID: processProperties ... '); // for testing only						
+						//return processed_properties; // TEMP
+						mqlProperties.callBackProcessMQL(null, mqlProperties);
+					});//eof processProperties
+				});//eof checkTypes
 			});//eof preProcessProperties
 		});//eof getObjectVars
 	});//eof getParentType
 }//eof processMQLObject
 
-function process_mql_array(metadata, mql_array, parent, cb) {
-	console.log('>>> inside process_mql_array'); // for testing only
+function processMQLArray(metadata, mql_array, parent, cb) {
+	console.log('>>> inside processMQLArray'); // for testing only
 	// TO DO
 	cb(null); //TEMP
-}//eof process_mql_array
+}//eof processMQLArray
 
 function processMQL(mqlProperties, cb) {
 	console.log('>>> inside processMQL'); // for testing only
@@ -1151,7 +1172,7 @@ function processMQL(mqlProperties, cb) {
 		mqlProperties.err = err;
 		mqlProperties.callBackHandleQuery(err, mqlProperties);
     }
-    else if (is_object(mqlProperties.queryOrQueries[0])) {
+    else if (isObject(mqlProperties.queryOrQueries[0])) {
 		console.log('mqlProperties.queryOrQueries[0] is an object:'); // for testing only
 		console.log(mqlProperties.queryOrQueries[0]); // for testing only		
 		processMQLObject(mqlProperties, function(err, mqlProperties) {       ///  WE ARE HERE !!!!!!!!!!
@@ -1164,10 +1185,10 @@ function processMQL(mqlProperties, cb) {
 			mqlProperties.callBackHandleQuery(null, mqlProperties);
 		});
     }
-    else if (is_array(mqlProperties.queryOrQueries[0])) { 
+    else if (isArray(mqlProperties.queryOrQueries[0])) { 
 		console.log('mqlProperties.queryOrQueries[0] is an array:'); // for testing only
 		console.log(mqlProperties.queryOrQueries[0]); // for testing only	
-		process_mql_array(mqlProperties, function(err, mqlProperties) { 
+		processMQLArray(mqlProperties, function(err, mqlProperties) { 
 			
 			mqlProperties.err = err;
 			console.log('>>> leaving processMQL');	// for testing only
@@ -1185,19 +1206,19 @@ function processMQL(mqlProperties, cb) {
 /*****************************************************************************
 *   SQL Generation Functions
 ******************************************************************************/
-function reset_ids(t_alias_id, c_alias_id, p_id) {
-	console.log('>>> inside reset_ids'); // for testing only
-    t_alias_id = 0;
-    c_alias_id = 0;
-    p_id = 0;
-	return([t_alias_id,c_alias_id,p_id]);
-}
-
-
-function generate_sql(metadata, mql_node, queries, query_index, child_t_alias, merge_into) { // child_t_alias and merge_into are optional
-	console.log('>>> inside generate_sql'); // for testing only
-	child_t_alias = typeof child_t_alias !== 'undefined' ? child_t_alias : null;
-	merge_into = typeof merge_into !== 'undefined' ? merge_into : null;	
+//function generateSQL(metadata, mql_node, queries, query_index, child_t_alias, merge_into) { // child_t_alias and merge_into are optional
+	
+//helper for HandleQuery	
+function generateSQL(mqlProperties, cb) {	
+	console.log('>>> inside generateSQL'); // for testing only
+	mqlProperties.callBackHandleQuery = cb;	
+	mqlProperties.childTAlias = typeof mqlProperties.childTAlias !== 'undefined' ? mqlProperties.childTAlias : null;
+	console.log('mqlProperties.childTAlias:'); // for testing only
+	console.log(mqlProperties.childTAlias); // for testing only	
+	mqlProperties.mergeInto = typeof mqlProperties.mergeInto !== 'undefined' ? mqlProperties.mergeInto : null;	
+	console.log('mqlProperties.mergeInto:'); // for testing only
+	console.log(mqlProperties.mergeInto); // for testing only
+	
 	// TO DO
 
 
@@ -1209,10 +1230,13 @@ function generate_sql(metadata, mql_node, queries, query_index, child_t_alias, m
 
 
 
-	return null; //TEMP
+
+
+
+
 /*
     if (isset($mql_node['entries'])) {
-        generate_sql($mql_node['entries'], $queries, $query_index, $child_t_alias, $merge_into);
+        generateSQL($mql_node['entries'], $queries, $query_index, $child_t_alias, $merge_into);
         return;
     }
     
@@ -1329,7 +1353,7 @@ function generate_sql(metadata, mql_node, queries, query_index, child_t_alias, m
                     $new_query_index = $query_index;
                 }            
                 $property['query_index'] = $new_query_index;
-                generate_sql($property, $queries, $new_query_index, $t_alias, $merge_into);
+                generateSQL($property, $queries, $new_query_index, $t_alias, $merge_into);
             }
             else 
             if ($column_name = $schema['column_name']){
@@ -1362,7 +1386,9 @@ function generate_sql(metadata, mql_node, queries, query_index, child_t_alias, m
         }
     }
 */
-}//eof generate sql
+	console.log('>>> leaving generateSQL');
+	mqlProperties.callBackHandleQuery(null, mqlProperties); //TEMPORARY PLACEHOLDER TO FORCE A RETURN
+}//eof generateSQL
 /*****************************************************************************
 *   Execute Query / Render Result
 ******************************************************************************/
@@ -1487,47 +1513,30 @@ function handleQuery(mqlProperties, cb) {
 	console.log('mqlProperties.queryOrQueries:'); // for testing only	
 	console.log(mqlProperties.queryOrQueries); // for testing only	
 	//check if the query is an object
-    if (!is_object(mqlProperties.queryOrQueries[0])) { // [0] removes the possible brackets, which would make it a non-object
+    if (!isObject(mqlProperties.queryOrQueries[0])) { // [0] removes the possible brackets, which would make it a non-object
         console.log('mqlProperties.queryOrQueries[0] is not an object.');
 		console.log(mqlProperties.queryOrQueries[0]); // for testing only
 		console.log('>>> leaving handleQuery with error.');
 		var err = new Error('mqlProperties.queryOrQueries[0] is not an object.');
 		mqlProperties.err = err;
 		mqlProperties.callBackHandleQueries(err, mqlProperties);
-    } 
+    }// eof if !isObject
 	else {
 		//var mql_query = mqlProperties.queryOrQueries[0];// [0] removes the possible brackets, which would make it a non-object
 		console.log('mqlProperties.queryOrQueries[0]:'); // for testing only	
 		console.log(mqlProperties.queryOrQueries[0]); // for testing only
 		mqlProperties.parent = new Array();
 		
-		
-		
-		
-		
-		
-		
-		
 		var schema = new Array();
 		var domain_type = null;
 		var domain_type_array;
 		var domain = null;
 		var type = null;
-		var t_alias_id = typeof t_alias_id !== 'undefined' ? t_alias_id : 0;
-		var c_alias_id = typeof c_alias_id !== 'undefined' ? c_alias_id : 0;
-		var p_id = typeof p_id !== 'undefined' ? p_id : 0;
-		var ids = reset_ids(t_alias_id,c_alias_id,p_id);
-		t_alias_id = ids[0];
-		console.log('t_alias_id:'); // for testing only	
-		console.log(t_alias_id); // for testing only
-		c_alias_id = ids[1];
-		console.log('c_alias_id:'); // for testing only	
-		console.log(c_alias_id); // for testing only
-		p_id = ids[2];
-		console.log('p_id:'); // for testing only	
-		console.log(p_id); // for testing only
-		console.log('mqlProperties.metaData:'); // for testing only	
-		console.log(mqlProperties.metaData); // for testing only	
+		
+		mqlProperties.tAliasID = 0;
+		mqlProperties.cAliasID = 0;
+		mqlProperties.pAliasID = 0;
+			
 		// MQL Domains map to SQL schemas
 		// MQL Types map to SQL tables
 		// MQL properties can map to two things:
@@ -1550,61 +1559,74 @@ function handleQuery(mqlProperties, cb) {
 		mqlProperties.parent['schema'] = schema;
 		console.log('mqlProperties.parent:'); // for testing only	
 		console.log(mqlProperties.parent); // for testing only
+		processMQL(mqlProperties, function(err, mqlProperties) {
+			console.log('>>> back inside handleQuery from processMQL'); // for testing only 			
+			if(err){
+				console.log('>>> leaving handleQuery with error');
+				mqlProperties.err = err;
+				mqlProperties.callBackHandleQueries(err, mqlQueries);
+			}
+			mqlProperties.sqlQueries = null;
+			console.log('mqlProperties.sqlQueries:'); // for testing only	
+			console.log(mqlProperties.sqlQueries); // for testing only	
 
-// WE ARE HERE
-		
-		processMQL(mqlProperties, function(err, processed_mql) {
+//			var generated_sql = generateSQL(mqlProperties.metaData, mqlProperties.parent, mqlProperties.sqlQueries, 0); // MOST LIKELY THIS NEEDS processed_mql INSTEAD OF parent
 			
-			console.log('processed_mql:'); // for testing only	
-			console.log(processed_mql); // for testing only
-			
-			var sql_queries = null;
-			console.log('sql_queries:'); // for testing only	
-			console.log(sql_queries); // for testing only	
+			generateSQL(mqlProperties, function(err, mqlProperties){
+				console.log('>>> back inside handleQuery from generateSQL'); // for testing only 				
+				if(err){
+					console.log('>>> leaving handleQuery with error');
+					mqlProperties.err = err;
+					mqlProperties.callBackHandleQueries(err, mqlProperties);
+				}
+				
+				
+				
+				
+				
+				
+						// WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+							
 
-			// WE ARE HERE ......
-
-			var generated_sql = generate_sql(mqlProperties.metaData, mqlProperties.parent, sql_queries, 0); // MOST LIKELY THIS NEEDS processed_mql INSTEAD OF parent
-			console.log('generated_sql:'); // for testing only	
-			console.log(generated_sql); // for testing only	
 
 
 
 
 
-			var executed_sql_queries = execute_sql_queries(sql_queries);// MOST LIKELY THIS NEEDS generated_sql INSTEAD OF sql_queries
-			console.log('executed_sql_queries:'); // for testing only	
-			console.log(executed_sql_queries); // for testing only	
-			var result = executed_sql_queries[0]['results']; // temp
-			console.log('result:'); // for testing only	
-			console.log(result); // for testing only		
-			var return_value = array({'code': '/api/status/ok', 'result': result});
-			if (debug_info) {
-				var sql_statements = [];
-				for(var i=0; i<sql_queries.length; i++) {
-		             sql_statements.push({'statement': sql_queries[i]['sql'],
-		                                 'params':  sql_queries[i]['params'] });
-		        }
-		        args['sql'] = sql_statements;
-		
-		        //callstack_push('end query #'+$query_key);
-		
-				var unixtime_ms = new Date().getTime();
-				var sec = parseInt(unixtime_ms / 1000);
-				var name = 'end query #'+mqlProperties.queryKey;
-				var microtime = (unixtime_ms - (sec * 1000))/1000 + ' ' + sec;
-			    mqlProperties.callStack.push({"name":name, "microtime":microtime});
-				console.log('mqlProperties.callStack:'); // for testing only
-				console.log(mqlProperties.callStack); // for testing only
-		
-		//        args['timing'] = callstack;  // TO DO: We do not have access to this object momentarily, make it work
-		    }
-			console.log('return_value:'); // for testing only	
-			console.log(return_value); // for testing only	
-			console.log('>>> leaving handleQuery'); // for testing only
-			mqlProperties.callBackHandleQueries(null, mqlProperties);
+				var executed_sql_queries = execute_sql_queries(sql_queries);// MOST LIKELY THIS NEEDS generated_sql INSTEAD OF sql_queries
+				console.log('executed_sql_queries:'); // for testing only	
+				console.log(executed_sql_queries); // for testing only	
+				var result = executed_sql_queries[0]['results']; // temp
+				console.log('result:'); // for testing only	
+				console.log(result); // for testing only		
+				var return_value = array({'code': '/api/status/ok', 'result': result});
+				if (debug_info) {
+					var sql_statements = [];
+					for(var i=0; i<sql_queries.length; i++) {
+			             sql_statements.push({'statement': sql_queries[i]['sql'],
+			                                 'params':  sql_queries[i]['params'] });
+			        }
+			        args['sql'] = sql_statements;
+					var unixtime_ms = new Date().getTime();
+					var sec = parseInt(unixtime_ms / 1000);
+					var name = 'end query #'+mqlProperties.queryKey;
+					var microtime = (unixtime_ms - (sec * 1000))/1000 + ' ' + sec;
+				    mqlProperties.callStack.push({"name":name, "microtime":microtime});
+					console.log('mqlProperties.callStack:'); // for testing only
+					console.log(mqlProperties.callStack); // for testing only
+					mqlProperties.args['timing'] = mqlProperties.callStack;
+					console.log("mqlProperties.args['timing']:"); // for testing only
+					console.log(mqlProperties.args['timing']); // for testing only
+			    }
+				console.log('return_value:'); // for testing only	
+				console.log(return_value); // for testing only	
+				console.log('>>> leaving handleQuery'); // for testing only
+				mqlProperties.callBackHandleQueries(null, mqlProperties);
+				/// HOORAY, WE MADE IT IF WE HAVE COME ALL THE WAY TO HERE !!!
+
+			});//eof generateSQL
 		});//eof processMQL
-	} //eof else
+	} //eof else isObject
 }// eof handleQuery
 function handleQueries(mqlProperties){
 	console.log('>>> inside handleQueries'); // for testing only
