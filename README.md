@@ -3,6 +3,9 @@ chat
 
 The query layer.
 
+*See [chat readme] [1] in the docs chat docs subfolder.*
+[1]: ../../../docs/blob/master/chat/README.md "chat readme"
+
 ##Licence
 (The MIT License)
 
