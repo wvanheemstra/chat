@@ -18,55 +18,55 @@ exports.read = function(req, res) {
 	* Properties
 	*****************************************************************************/	
 	function mqlProperties() {
-		this.err = null;
-		this.req = null;
-		this.res = null;
-		this.tAliasID = null;
-		this.cAliasID = null;
-		this.pAliasID = null;
-		this.childTAlias = null;
-		this.mergeInto = null;
-	    this.metaDataFileName = null;
-	    this.metaData = null;
-		this.connectionFileName = null;
-		this.connection = null;
-		this.sqlDialectFileName = null;
-		this.dbConnection = null;
-		this.args = null;
-		this.queryOrQueries = null;
-		this.query = null;
-		this.queries = null;
-		this.callStack = [];
-		this.callBackHandleRequest = null;
-		this.result = null;  // we are in need of both result and results
-		this.results = null; 
-		this.queryKey = null;
-		this.callBackHandleQueries = null;
-		this.parent = null;
-		this.callBackHandleQuery = null;
-		this.mqlObject = null;
-		this.callBackProcessMQL = null;
-		this.callBackProcessMQLObject = null;
-		this.callBackParentType = null;
-		this.parentSchemaType = null;
-		this.types = null;
-		this.callBackObjectVars = null;
-		this.objectVars = null;
-		this.starProperty = null; 
-		this.callBackPreProcessProperties = null;
-		this.propertyKey = null;
-		this.propertyValue = null;
-		this.propertyPattern = null;
-		this.callBackAnalyzeProperty = null;
-		this.matches = null;
-		this.callBackPregMatchAll = null;
-		this.isFilterProperty = null;
-		this.analyzedProperty = null;
-		this.callBackIsFilterProperty = null;
-		this.typeName = null;
-		this.analyzedPropertyKey = null;
-		this.analyzedPropertyValue = null;
-		this.select = null;
+            this.err = null;
+            this.req = null;
+            this.res = null;
+            this.tAliasID = null;
+            this.cAliasID = null;
+            this.pAliasID = null;
+            this.childTAlias = null;
+            this.mergeInto = null;
+            this.metaDataFileName = null;
+            this.metaData = null;
+            this.connectionFileName = null;
+            this.connection = null;
+            this.sqlDialectFileName = null;
+            this.dbConnection = null;
+            this.args = null;
+            this.queryOrQueries = null;
+            this.query = null;
+            this.queries = null;
+            this.callStack = [];
+            this.callBackHandleRequest = null;
+            this.result = null;  // we are in need of both result and results
+            this.results = null; 
+            this.queryKey = null;
+            this.callBackHandleQueries = null;
+            this.parent = null;
+            this.callBackHandleQuery = null;
+            this.mqlObject = null;
+            this.callBackProcessMQL = null;
+            this.callBackProcessMQLObject = null;
+            this.callBackParentType = null;
+            this.parentSchemaType = null;
+            this.types = null;
+            this.callBackObjectVars = null;
+            this.objectVars = null;
+            this.starProperty = null; 
+            this.callBackPreProcessProperties = null;
+            this.propertyKey = null;
+            this.propertyValue = null;
+            this.propertyPattern = null;
+            this.callBackAnalyzeProperty = null;
+            this.matches = null;
+            this.callBackPregMatchAll = null;
+            this.isFilterProperty = null;
+            this.analyzedProperty = null;
+            this.callBackIsFilterProperty = null;
+            this.typeName = null;
+            this.analyzedPropertyKey = null;
+            this.analyzedPropertyValue = null;
+            this.select = null;
 	    this.from = null;
 	    this.where = null;
 	    this.params = null;
@@ -372,7 +372,7 @@ function getObjectVars (mqlProperties, cb) {
 //function pregMatchAll(property_pattern, property_name, property_value, metadata, object_vars, properties, types, star_property, parent_cb, cb) {
 function pregMatchAll(mqlProperties, cb) {
    // see http://coding.pressbin.com/16/Javascript-equivalent-of-PHPs-pregmatchall
-	console.log('>>> inside preg_match_all'); // for testing only
+	console.log('>>> inside pregMatchAll'); // for testing only
 	mqlProperties.callBackPregMatchAll = cb;	
 	mqlProperties.matches = new Array();
 	
@@ -381,6 +381,17 @@ function pregMatchAll(mqlProperties, cb) {
 	if(regexp.test(mqlProperties.propertyKey)) {
 		console.log("found a match for: "+mqlProperties.propertyKey);
 		mqlProperties.matches.push(mqlProperties.propertyKey);
+                
+                //TEMP SOLUTION by wvh: pushing the domain and type into matches
+                if (mqlProperties.mql_node) {
+                    mqlProperties.matches.push(mqlProperties.mql_node.schema.domain);
+                    console.log('mqlProperties.mql_node.schema.domain:'); // for testing only
+                    console.log(mqlProperties.mql_node.schema.domain); // for testing only 
+                    mqlProperties.matches.push(mqlProperties.mql_node.schema.type);
+                    console.log('mqlProperties.mql_node.schema.type:'); // for testing only
+                    console.log(mqlProperties.mql_node.schema.type); // for testing only 
+                }
+                
 	}
 	else {
 		console.log("found no match for: "+mqlProperties.propertyKey);
@@ -480,51 +491,63 @@ function callStackPush(name) {
 /*****************************************************************************
 * MQL Processing Functions
 ******************************************************************************/
-function analyze_type(type, metadata, star_property, parent_cb, cb) {
-	console.log('>>> inside analyze_type'); // for testing only
-	console.log('type:'); // for testing only
-	console.log(type); // for testing only
-	console.log('parent_cb:'); // for testing only
-	console.log(parent_cb); // for testing only
-	var type_pattern = type.toString(); // TEMP SOLUTION, ORIGINAL: '/^\/(\w+)\/(\w+)$/';
+//OLD function analyze_type(type, metadata, star_property, parent_cb, cb) {
+function analyzeType(mqlProperties, cb) {  
+	console.log('>>> inside analyzeType'); // for testing only
+        mqlProperties.callBackAnalyzeType = cb;
+	console.log('mqlProperties.type:'); // for testing only
+	console.log(mqlProperties.type); // for testing only
+	console.log('mqlProperties.parent_cb:'); // for testing only
+	console.log(mqlProperties.parent_cb); // for testing only
+	mqlProperties.type_pattern = mqlProperties.type.toString(); // TEMP SOLUTION, ORIGINAL: '/^\/(\w+)\/(\w+)$/';
+        console.log('mqlProperties.type_pattern:'); // for testing only
+	console.log(mqlProperties.type_pattern); // for testing only//
 	// Explanation:
 	// The (\w+) grouping looks for word characters, as denoted by the \w. 
 	// The + indicates that one or more word characters must appear (not necessarily the same one)
 	// The $ is a literal character. The second (\w+) grouping must be followed by a literal $ character.
-	preg_match_all(type_pattern, type, metadata, object_vars, properties, types, star_property, parent_cb, function(err, matches, property_value, metadata, object_vars, properties, types, star_property, parent_cb){
-		console.log('matches:'); // for testing only
-		console.log(matches); // for testing only
-		console.log('property_value:'); // for testing only
-		console.log(property_value); // for testing only
-		console.log('metadata:'); // for testing only
-		console.log(metadata); // for testing only	
-		console.log('object_vars:'); // for testing only
-		console.log(object_vars); // for testing only		
+//OLD	preg_match_all(type_pattern, type, metadata, object_vars, properties, types, star_property, parent_cb, function(err, matches, property_value, metadata, object_vars, properties, types, star_property, parent_cb){
+	pregMatchAll(mqlProperties, function(err, mqlProperties){          
+		console.log('mqlProperties.matches:'); // for testing only
+		console.log(mqlProperties.matches); // for testing only
+		console.log('mqlProperties.property_value:'); // for testing only
+		console.log(mqlProperties.property_value); // for testing only
+		console.log('mqlProperties.metadata:'); // for testing only
+		console.log(mqlProperties.metadata); // for testing only	
+		console.log('mqlProperties.object_vars:'); // for testing only
+		console.log(mqlProperties.object_vars); // for testing only		
 		console.log("mqlProperties.parent['properties']:"); // for testing only
 		console.log(mqlProperties.parent['properties']); // for testing only		
-		console.log('types:'); // for testing only
-		console.log(types); // for testing only		
-		console.log('star_property:'); // for testing only
-		console.log(star_property); // for testing only	
-		console.log('parent_cb:'); // for testing only
-		console.log(parent_cb); // for testing only	
-	    if (matches) {
-			var type = new Array({'domain': matches[1],'type': matches[2]});
-			console.log('type:'); // for testing only
-			console.log(type); // for testing only
-	        cb(null, type, metadata, object_vars, properties, types, star_property, parent_cb);
+		console.log('mqlProperties.types:'); // for testing only
+		console.log(mqlProperties.types); // for testing only		
+		console.log('mqlProperties.star_property:'); // for testing only
+		console.log(mqlProperties.star_property); // for testing only	
+		console.log('mqlProperties.parent_cb:'); // for testing only
+		console.log(mqlProperties.parent_cb); // for testing only	
+	    if (mqlProperties.matches) {
+                
+                console.log('mqlProperties.matches[1]:'); // for testing only
+		console.log(mqlProperties.matches[1]); // for testing only
+                console.log('mqlProperties.matches[2]:'); // for testing only
+		console.log(mqlProperties.matches[2]); // for testing only                
+                
+		mqlProperties.type = new Array({'domain': mqlProperties.matches[1],'type': mqlProperties.matches[2]});
+		console.log('mqlProperties.type:'); // for testing only
+		console.log(mqlProperties.type); // for testing only
+	        //OLD cb(null, type, metadata, object_vars, properties, types, star_property, parent_cb);
+                console.log('>>> leaving analyzeType'); // for testing only
+                mqlProperties.callBackAnalyzeType(null, mqlProperties)
 	    } 
-		else {
-			var type = false; // a boolean???, should be null surely
-			console.log('type:'); // for testing only
-			console.log(type); // for testing only
-	    	cb(null, type, metadata, object_vars, properties, types, star_property, parent_cb);
-		}
+	    else {
+		mqlProperties.type = false; // a boolean???, should be null surely
+		console.log('mqlProperties.type:'); // for testing only
+		console.log(mqlProperties.type); // for testing only
+	    	//OLD cb(null, type, metadata, object_vars, properties, types, star_property, parent_cb);
+                console.log('>>> leaving analyzeType'); // for testing only
+                mqlProperties.callBackAnalyzeType(null, mqlProperties)
+	    }
 	});//eof preg_match_all
 }
-
-
-
 
 function isFilterProperty(mqlProperties, cb){  	
 	console.log('>>> inside isFilterProperty'); // for testing only 
@@ -932,8 +955,8 @@ function preProcessProperties(mqlProperties, cb) {
 					console.log('mqlProperties.analyzedProperty[0]:'); // for testing only
 					console.log(mqlProperties.analyzedProperty[0]);
 			
-		            analyze_type(property_value, metadata, parent, object_vars, properties, types, star_property, function(err, type, metadata, parent, object_vars, properties, types, star_property) {
-						console.log('>>> back inside pre_processProperties from analyze_type'); // for testing only
+		            analyzeType(property_value, metadata, parent, object_vars, properties, types, star_property, function(err, type, metadata, parent, object_vars, properties, types, star_property) {
+						console.log('>>> back inside pre_processProperties from analyzeType'); // for testing only
 						console.log('type:'); // for testing only
 						console.log(type); // for testing only
 						console.log('metadata:'); // for testing only
@@ -982,7 +1005,7 @@ function preProcessProperties(mqlProperties, cb) {
 							
 
 						});//eof get_type_from_schema
-					});//eof analyze_type					
+					});//eof analyzeType					
 		        }//eof if            
 		        mqlProperties.parent.properties['property_key'] = mqlProperties.analyzedProperty;
 				console.log("mqlProperties.parent.properties['property_key']:"); // for testing only
@@ -1338,152 +1361,200 @@ function generateSQL(mqlProperties, cb) {
     mqlProperties.params = mqlProperties.query[0]['params'];
 	console.log('mqlProperties.params:'); // for testing only
 	console.log(mqlProperties.params); // for testing only
+    mqlProperties.mql_node = mqlProperties.query[0]['mql_node'];    
+ 	console.log('mqlProperties.mql_nodes:'); // for testing only
+	console.log(mqlProperties.mql_node); // for testing only  
     mqlProperties.indexes = mqlProperties.query[0]['indexes'];
 	console.log('mqlProperties.indexes:'); // for testing only
 	console.log(mqlProperties.indexes); // for testing only
 
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-	// WE ARE HERE ............************************************
-
-/*
-
+        console.log("mqlProperties.mql_node['types'][0]:");
+        console.log(mqlProperties.mql_node['types'][0]);
+    mqlProperties.type = mqlProperties.mql_node['types'][0]
+     	console.log('mqlProperties.type:'); // for testing only
+	console.log(mqlProperties.type); // for testing only   
     
-    $type = analyze_type($mql_node['types'][0]);
-    $domain_name = $type['domain'];
-    $domains = $metadata['domains'];
-    $schema_domain = $domains[$domain_name];
-    $type_name = $type['type'];
-    $schema_type = $schema_domain['types'][$type_name];
-    
-    //table_name is either explicitly specified, or we take the type name
-    if (isset($schema_type['table_name'])){
-        $table_name = $schema_type['table_name'];
-    } 
-    else {
-        $table_name = $type_name;
-    }
+    analyzeType(mqlProperties, function (err, mqlProperties) {
+        console.log('>>> back inside generateSQL from analyzeType'); // for testing only
+        console.log('mqlProperties.type:'); // for testing only
+        console.log(mqlProperties.type); // for testing only
+
+        mqlProperties.domain_name = mqlProperties.type[0]['domain'];
+            console.log('mqlProperties.domain_name:'); // for testing only
+            console.log(mqlProperties.domain_name); // for testing only
+        //REPLACES $domain_name = $type['domain'];
         
-    //schema_name is either explicitly specified, or we take the domain name
-    if (isset($schema_type['schema_name'])) {   //schema_name is defined at the type level
-        $schema_name = $schema_type['schema_name'];
-    }
-    else                                        //schema_name is defined at the domain level     
-    if (isset($schema_domain['schema_name'])){
-        $schema_name = $schema_domain['schema_name'];
-    }
-    else {                                      //schema_name not defined, settle for the domain name
-        $schema_name = $domain_name;
-    }
-    
-    $t_alias = get_t_alias();
+        
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************        
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************
+            // WE ARE HERE ............************************************        
 
-    get_from_clause($mql_node, $t_alias, $child_t_alias, $schema_name, $table_name, $query);
-    if (array_key_exists('properties', $mql_node)) {
-        $properties = &$mql_node['properties'];
-        foreach ($properties as $property_name => &$property) {
-            
-            if ($property['is_directive']) {
-                switch ($property_name) {
-                    case 'limit':
-                        $limit = intval($property['value']);
-                        if ($limit < 0) {
-                            exit('Limit must not be less than zero.');
-                        }
-                        $query['limit'] = $limit;
-                        break;
+        mqlProperties.domains = mqlProperties.metadata['domains']; 
+            console.log('mqlProperties.domains:'); // for testing only
+            console.log(mqlProperties.domains); // for testing only
+        //REPLACES $domains = $metadata['domains'];
+
+        mqlProperties.schema_domain = mqlProperties.domains[mqlProperties.domain_name];
+            console.log('mqlProperties.schema_domain:'); // for testing only
+            console.log(mqlProperties.schema_domain); // for testing only
+        //REPLACES $schema_domain = $domains[$domain_name];
+
+        mqlProperties.type_name = mqlProperties.type['type'];
+            console.log('mqlProperties.type_name:'); // for testing only
+            console.log(mqlProperties.type_name); // for testing only    
+        //REPLACES $type_name = $type['type'];
+
+        mqlProperties.schema_type = mqlProperties.schema_domain['types'][mqlProperties.type_name];
+            console.log('mqlProperties.schema_type:'); // for testing only
+            console.log(mqlProperties.schema_type); // for testing only     
+        //REPLACES $schema_type = $schema_domain['types'][$type_name];
+
+
+    /*            
+        //table_name is either explicitly specified, or we take the type name
+        if (isset($schema_type['table_name'])){
+            $table_name = $schema_type['table_name'];
+        } 
+        else {
+            $table_name = $type_name;
+        }
+
+        //schema_name is either explicitly specified, or we take the domain name
+        if (isset($schema_type['schema_name'])) {   //schema_name is defined at the type level
+            $schema_name = $schema_type['schema_name'];
+        }
+        else                                        //schema_name is defined at the domain level     
+        if (isset($schema_domain['schema_name'])){
+            $schema_name = $schema_domain['schema_name'];
+        }
+        else {                                      //schema_name not defined, settle for the domain name
+            $schema_name = $domain_name;
+        }
+
+        $t_alias = get_t_alias();
+
+        get_from_clause($mql_node, $t_alias, $child_t_alias, $schema_name, $table_name, $query);
+        if (array_key_exists('properties', $mql_node)) {
+            $properties = &$mql_node['properties'];
+            foreach ($properties as $property_name => &$property) {
+
+                if ($property['is_directive']) {
+                    switch ($property_name) {
+                        case 'limit':
+                            $limit = intval($property['value']);
+                            if ($limit < 0) {
+                                exit('Limit must not be less than zero.');
+                            }
+                            $query['limit'] = $limit;
+                            break;
+                    }
                 }
-            }
-            else
-                        if (isset($mql_node['outer_join'])){
-                                $property['outer_join'] = $mql_node['outer_join'];
+                else
+                            if (isset($mql_node['outer_join'])){
+                                    $property['outer_join'] = $mql_node['outer_join'];
+                            }
+
+                $schema = $property['schema'];
+                if (isset($schema['direction'])) {
+                                    $direction = $schema['direction'];
+                    if ($direction === 'referenced<-referencing'){
+                        $index_columns = array();
+                        $index_columns_string = '';
+                        foreach ($schema['join_condition'] as $columns) {
+                            $column_ref = $t_alias.'.'.$columns['referenced_column'];
+                            if (isset($select[$column_ref])) {
+                                                            $c_alias = $select[$column_ref];
+                            }
+                                                    else {
+                                $c_alias = $t_alias.get_c_alias();
+                                $select[$column_ref] = $c_alias;
+                                                    }
+                            $index_columns_string .= $c_alias;
+                            $index_columns[] = $c_alias;
                         }
-            
-            $schema = $property['schema'];
-            if (isset($schema['direction'])) {
-                                $direction = $schema['direction'];
-                if ($direction === 'referenced<-referencing'){
-                    $index_columns = array();
-                    $index_columns_string = '';
-                    foreach ($schema['join_condition'] as $columns) {
-                        $column_ref = $t_alias.'.'.$columns['referenced_column'];
-                        if (isset($select[$column_ref])) {
-                                                        $c_alias = $select[$column_ref];
+                        if (!isset($indexes[$index_columns_string])){
+                            $indexes[$index_columns_string] = array(
+                                'columns'   =>  $index_columns
+                            ,   'entries'   =>  array()
+                            );
                         }
-                                                else {
-                            $c_alias = $t_alias.get_c_alias();
-                            $select[$column_ref] = $c_alias;
-                                                }
-                        $index_columns_string .= $c_alias;
-                        $index_columns[] = $c_alias;
-                    }
-                    if (!isset($indexes[$index_columns_string])){
-                        $indexes[$index_columns_string] = array(
-                            'columns'   =>  $index_columns
-                        ,   'entries'   =>  array()
+                        $merge_into = array(
+                            'query_index'   =>  $query_index                  
+                        ,   'index'         =>  $index_columns_string
+                        ,   'columns'       =>  array()
                         );
+                        $new_query_index = count($queries);
                     }
-                    $merge_into = array(
-                        'query_index'   =>  $query_index                  
-                    ,   'index'         =>  $index_columns_string
-                    ,   'columns'       =>  array()
-                    );
-                    $new_query_index = count($queries);
+                    else 
+                    if ($direction === 'referencing->referenced') {
+                        $merge_into = NULL;
+                        $new_query_index = $query_index;
+                    }            
+                    $property['query_index'] = $new_query_index;
+                    generateSQL($property, $queries, $new_query_index, $t_alias, $merge_into);
                 }
                 else 
-                if ($direction === 'referencing->referenced') {
-                    $merge_into = NULL;
-                    $new_query_index = $query_index;
-                }            
-                $property['query_index'] = $new_query_index;
-                generateSQL($property, $queries, $new_query_index, $t_alias, $merge_into);
-            }
-            else 
-            if ($column_name = $schema['column_name']){
-                if ($property['is_filter']) {        
-                    handle_filter_property($queries, $query_index, $t_alias, $column_name, $property);
-                }
-                else {
-                    handle_non_filter_property($t_alias, $column_name, $select, $property);
+                if ($column_name = $schema['column_name']){
+                    if ($property['is_filter']) {        
+                        handle_filter_property($queries, $query_index, $t_alias, $column_name, $property);
+                    }
+                    else {
+                        handle_non_filter_property($t_alias, $column_name, $select, $property);
+                    }
                 }
             }
         }
-    }
-    else 
-    if (array_key_exists('default_property', $schema_type)) {
-        $default_property_name = $schema_type['default_property'];
-        $properties = $schema_type['properties'];
-        if (!array_key_exists($default_property_name, $properties)) {
-            exit('Default property "'.$default_property_name.'" specified but not found in "/'.$domain_name.'/'.$type_name.'"');
+        else 
+        if (array_key_exists('default_property', $schema_type)) {
+            $default_property_name = $schema_type['default_property'];
+            $properties = $schema_type['properties'];
+            if (!array_key_exists($default_property_name, $properties)) {
+                exit('Default property "'.$default_property_name.'" specified but not found in "/'.$domain_name.'/'.$type_name.'"');
+            }
+            $default_property = $properties[$default_property_name];
+            $column_name = $default_property['column_name'];
+            $property = &$mql_node;
+            $schema = &$property['schema'];
+            $schema['type'] = $default_property['type'];
+            if ($property['is_filter']) {        
+                handle_filter_property($where, $params, $t_alias, $column_name, $property);
+            }
+            else {
+                handle_non_filter_property($t_alias, $column_name, $select, $property);
+            }
         }
-        $default_property = $properties[$default_property_name];
-        $column_name = $default_property['column_name'];
-        $property = &$mql_node;
-        $schema = &$property['schema'];
-        $schema['type'] = $default_property['type'];
-        if ($property['is_filter']) {        
-            handle_filter_property($where, $params, $t_alias, $column_name, $property);
-        }
-        else {
-            handle_non_filter_property($t_alias, $column_name, $select, $property);
-        }
-    }
-*/
-	console.log('>>> leaving generateSQL');
-	mqlProperties.callBackHandleQuery(null, mqlProperties); //TEMPORARY PLACEHOLDER TO FORCE A RETURN
+    */
+            console.log('>>> leaving generateSQL');
+            mqlProperties.callBackHandleQuery(null, mqlProperties); //TEMPORARY PLACEHOLDER TO FORCE A RETURN
+
+
+
+
+
+        
+    });//eof analyzeType          
 }//eof generateSQL
 /*****************************************************************************
 *   Execute Query / Render Result
