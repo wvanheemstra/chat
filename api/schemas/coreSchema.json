@@ -1,0 +1,19 @@
+{
+    "domains": {
+        "core": {
+            "schema_name": "core", 
+            "types": {
+                "person": {
+                    "properties": {
+                        "kp_PersonID": {
+                            "column_name": "kp_PersonID", 
+                            "nullable": false, 
+                            "type": "type/int"
+                        }
+                    }, 
+                    "table_name": "tbl_person"
+                }
+            }
+        }
+    }
+}
