@@ -13,6 +13,7 @@ exports.read = function(req, res) {
 	    url = require("url"),  
 	    path = require("path"),  
 	    fs = require("fs");
+            mysql = require("mysql");
 	/****************************************************************************
 	* Properties
 	*****************************************************************************/	
