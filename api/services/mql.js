@@ -1276,7 +1276,7 @@ function resetIDs(mqlProperties){
     mqlProperties.pID = 0;
     console.log('>>> leaving resetIDs'); // for testing only       
     return mqlProperties;
-}
+}//eof resetIDs
 
 function getTAlias(mqlProperties){
     console.log('>>> inside getTAlias'); // for testing only
@@ -1284,7 +1284,7 @@ function getTAlias(mqlProperties){
     mqlProperties.tAlias = 't'+mqlProperties.tAliasID;
     console.log('>>> leaving getTAlias'); // for testing only
     return mqlProperties;
-}
+}//eof getTAlias
 
 function getCAlias(mqlProperties, isNew){
     console.log('>>> inside getCAlias'); // for testing only     
@@ -1297,7 +1297,7 @@ function getCAlias(mqlProperties, isNew){
     mqlProperties.cAlias = 'c'+mqlProperties.cAliasID;
     console.log('>>> leaving getCAlias'); // for testing only    
     return mqlProperties;
-}
+}//eof getCAlias
 
 function getPName(mqlProperties){
     console.log('>>> inside getPName'); // for testing only      
@@ -1305,7 +1305,134 @@ function getPName(mqlProperties){
     mqlProperties.pName = 'p'+mqlProperties.pID;
     console.log('>>> leaving getPName'); // for testing only     
     return mqlProperties;
-}
+}//eof getPName
+
+
+//TO DO function is_optional()
+
+
+function getFromClause(mqlProperties){
+    console.log('>>> inside getFromClause'); // for testing only     
+    if(typeof(mqlProperties.mql_node['schema']) === 'undefined'){
+        mqlProperties.schema = null;
+    }
+    else {
+        mqlProperties.schema = mqlProperties.mql_node['schema'];
+    }
+    console.log('mqlProperties.schema:');
+    console.log(mqlProperties.schema);    
+    
+    mqlProperties.from = mqlProperties.query[0].from;
+    //REPLACES  $from = &$query['from'];
+    console.log('mqlProperties.from:');
+    console.log(mqlProperties.from); 
+    
+    mqlProperties.count_from = mqlProperties.query[0].from.length;
+    //REPLACES $count_from = count($from);
+    console.log('mqlProperties.count_from:');
+    console.log(mqlProperties.count_from);   
+
+    mqlProperties.from_line = [];
+    //REPLACES $from_line = array();
+    console.log('mqlProperties.from_line:');
+    console.log(mqlProperties.from_line);  
+
+    mqlProperties.join_condition = '';
+    //REPLACES $join_condition = '';
+    console.log('mqlProperties.join_condition:');
+    console.log(mqlProperties.join_condition);    
+    
+    // TO DO ...
+    
+    
+    
+    
+    
+    /* REPLACES
+    
+    if (isset($schema['direction'])) {
+                $direction = $schema['direction'];
+        if (($optional = is_optional($mql_node))===TRUE){
+            $mql_node['outer_join'] = TRUE;
+            $outer_join = TRUE;
+        }
+        else
+                if (isset($mql_node['outer_join'])) {
+            $outer_join = $mql_node['outer_join'];
+        }
+                else {
+                        $outer_join = FALSE;
+                }
+        
+        $from_line['join_type'] = ($outer_join===TRUE) ? 'LEFT' : 'INNER';
+
+        switch ($direction) {
+            case 'referencing->referenced':     //lookup (n:1 relationship)           
+                break;
+            case 'referenced<-referencing':     //lookdown (1:n relationship) - starts a separate query.
+                $select = &$query['select'];
+                $order_by = &$query['order_by'];
+                $merge_into = &$query['merge_into'];
+                $merge_into_columns = &$merge_into['columns'];
+                break;
+        }
+
+        foreach ($schema['join_condition'] as $columns) {
+            $join_condition .= ($join_condition==='')? 'ON':"\nAND";
+            switch ($direction){
+                case 'referencing->referenced':
+                    $referenced_column = $t_alias.'.'.$columns['referenced_column'];
+
+                    if ($outer_join===TRUE && $join_condition === 'ON'){
+                        if ($optional===TRUE) {
+                            $from_line['optionality_group'] = $t_alias;
+                        }
+                        else {
+                            if ($count_from) {                        
+                                $from_line['optionality_group'] = $from[$child_t_alias]['optionality_group'];
+                            }
+                            else {
+                                $from_line['optionality_group'] = $child_t_alias;
+                            }
+                        }
+                        $from_line['optionality_group_column'] = $referenced_column;
+                    }
+
+                    $join_condition .= ' '  .$child_t_alias.'.'.$columns['referencing_column']
+                                    .  ' = '.$referenced_column;
+
+                    break;
+                case 'referenced<-referencing':
+                    $column_ref = $t_alias.'.'.$columns['referencing_column'];
+                    $alias = $t_alias.get_c_alias();
+                    $merge_into_columns[] = $alias;
+                    $select[$column_ref] = $alias;
+                    $order_by .= ($order_by===''? 'ORDER BY ' : "\n, ");
+                    $order_by .= $alias;
+                    break;
+            }
+        }            
+    }
+    
+    
+    
+    $from_line['table'] = ($schema_name? $schema_name.'.' : '').$table_name;
+    $from_line['alias'] = $t_alias;
+    if ($join_condition) {
+        $from_line['join_condition'] = $join_condition;
+    }
+    $from[$t_alias] = $from_line;    
+    
+    */
+    
+    
+    
+    
+    console.log('>>> leaving getFromClause'); // for testing only  
+    return mqlProperties;
+}// eof getFromClause
+
+
 
 
 
@@ -1506,10 +1633,16 @@ function generateSQL(mqlProperties, cb) {
             // WE ARE HERE ............************************************ 
             
         
+        mqlProperties = getFromClause(mqlProperties);
+            //console.log('mqlProperties:'); // for testing only
+            //console.log(mqlProperties); // for testing only  
+        //REPLACES get_from_clause($mql_node, $t_alias, $child_t_alias, $schema_name, $table_name, $query);
         
         
-  /*
-        get_from_clause($mql_node, $t_alias, $child_t_alias, $schema_name, $table_name, $query);
+        
+ /*       
+        
+        
         if (array_key_exists('properties', $mql_node)) {
             $properties = &$mql_node['properties'];
             foreach ($properties as $property_name => &$property) {
