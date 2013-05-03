@@ -21,9 +21,9 @@ exports.read = function(req, res) {
             this.err = null;
             this.req = null;
             this.res = null;
-            this.tAliasID = null;
-            this.cAliasID = null;
-            this.pAliasID = null;
+            this.tAliasID = 0;
+            this.cAliasID = 0;
+            this.pID = 0;
             this.childTAlias = null;
             this.mergeInto = null;
             this.metaDataFileName = null;
@@ -593,7 +593,7 @@ function isFilterProperty(mqlProperties, cb){
 function analyzeProperty(mqlProperties, cb){
 	console.log('>>> inside analyzeProperty'); // for testing only 
 	mqlProperties.callBackAnalyzeProperty = cb;
-    mqlProperties.propertyPattern = mqlProperties.propertyKey; //TEMPORARY FIX, 
+        mqlProperties.propertyPattern = mqlProperties.propertyKey; //TEMPORARY FIX, 
 	//ORIGINAL '/^(((\w+):)?(((\/\w+\/\w+)\/)?(\w+|\*))(=|<=?|>=?|~=|!=|\|=|!\|=|\?=|!\?=)?)$/';
 	console.log('mqlProperties.propertyPattern:'); // for testing only
 	console.log(mqlProperties.propertyPattern); // for testing only
@@ -1269,6 +1269,46 @@ function processMQL(mqlProperties, cb) {
 /*****************************************************************************
 *   SQL Generation Functions
 ******************************************************************************/
+function resetIDs(mqlProperties){
+    console.log('>>> inside resetIDs'); // for testing only    
+    mqlProperties.tAliasID = 0;
+    mqlProperties.cAliasID = 0;    
+    mqlProperties.pID = 0;
+    console.log('>>> leaving resetIDs'); // for testing only       
+    return mqlProperties;
+}
+
+function getTAlias(mqlProperties){
+    console.log('>>> inside getTAlias'); // for testing only
+    mqlProperties.tAliasID = mqlProperties.tAliasID + 1;
+    mqlProperties.tAlias = 't'+mqlProperties.tAliasID;
+    console.log('>>> leaving getTAlias'); // for testing only
+    return mqlProperties;
+}
+
+function getCAlias(mqlProperties, isNew){
+    console.log('>>> inside getCAlias'); // for testing only     
+    if(typeof(isNew)==='undefined'){
+        isNew = true; // set default to true
+    }
+    if(isNew){
+        mqlProperties.cAliasID = mqlProperties.cAliasID + 1;
+    }
+    mqlProperties.cAlias = 'c'+mqlProperties.cAliasID;
+    console.log('>>> leaving getCAlias'); // for testing only    
+    return mqlProperties;
+}
+
+function getPName(mqlProperties){
+    console.log('>>> inside getPName'); // for testing only      
+    mqlProperties.pID = mqlProperties.pID + 1;
+    mqlProperties.pName = 'p'+mqlProperties.pID;
+    console.log('>>> leaving getPName'); // for testing only     
+    return mqlProperties;
+}
+
+
+
 //function generateSQL(metaData, mql_node, queries, query_index, child_t_alias, merge_into) { // child_t_alias and merge_into are optional
 	
 //helper for HandleQuery	
@@ -1415,8 +1455,30 @@ function generateSQL(mqlProperties, cb) {
             mqlProperties.table_name = mqlProperties.schema_type['table_name'];
         }
             console.log('mqlProperties.table_name:'); // for testing only
-            console.log(mqlProperties.table_name); // for testing only        
+            console.log(mqlProperties.table_name); // for testing only   
+            //     
+        //schema_name is either explicitly specified, or we take the domain name
+        if(typeof(mqlProperties.schema_type['schema_name']) === 'undefined'){
+            if(typeof(mqlProperties.schema_domain['schema_name']) === 'undefined'){
+                //schema_name not defined, settle for the domain name
+                mqlProperties.schema_name = mqlProperties.domain_name;
+            }
+            else { //schema_name is defined at the domain level 
+                mqlProperties.schema_name = mqlProperties.schema_domain['schema_name'];
+            }
+        }
+        else { //schema_name is defined at the type level
+            mqlProperties.schema_name = mqlProperties.schema_type['schema_name'];
+        }
+            console.log('mqlProperties.schema_name:'); // for testing only
+            console.log(mqlProperties.schema_name); // for testing only        
         
+        mqlProperties = getTAlias(mqlProperties);
+            console.log('mqlProperties.tAlias:'); // for testing only
+            console.log(mqlProperties.tAlias); // for testing only  
+        //REPLACES $t_alias = get_t_alias();
+        
+         
             // WE ARE HERE ............************************************
             // WE ARE HERE ............************************************
             // WE ARE HERE ............************************************
@@ -1442,23 +1504,11 @@ function generateSQL(mqlProperties, cb) {
             // WE ARE HERE ............************************************
             // WE ARE HERE ............************************************
             // WE ARE HERE ............************************************ 
+            
         
-   /*     
-
-        //schema_name is either explicitly specified, or we take the domain name
-        if (isset($schema_type['schema_name'])) {   //schema_name is defined at the type level
-            $schema_name = $schema_type['schema_name'];
-        }
-        else                                        //schema_name is defined at the domain level     
-        if (isset($schema_domain['schema_name'])){
-            $schema_name = $schema_domain['schema_name'];
-        }
-        else {                                      //schema_name not defined, settle for the domain name
-            $schema_name = $domain_name;
-        }
-
-        $t_alias = get_t_alias();
-
+        
+        
+  /*
         get_from_clause($mql_node, $t_alias, $child_t_alias, $schema_name, $table_name, $query);
         if (array_key_exists('properties', $mql_node)) {
             $properties = &$mql_node['properties'];
