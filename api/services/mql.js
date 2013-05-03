@@ -84,7 +84,7 @@ exports.read = function(req, res) {
 	console.log("mqlProperties.metaDataFileName: "); // for testing only
 	console.log(mqlProperties.metaDataFileName); // for testing only	
 
-	mqlProperties.metaData = JSON.parse(fs.readFileSync(mqlProperties.metaDataFileName, 'utf8')); // now metadata is set to the schema
+	mqlProperties.metaData = JSON.parse(fs.readFileSync(mqlProperties.metaDataFileName, 'utf8')); // now metaData is set to the schema
 	console.log("mqlProperties.metaData:"); // for testing only
 	console.log(mqlProperties.metaData); // for testing only
 	
@@ -369,7 +369,7 @@ function getObjectVars (mqlProperties, cb) {
 	console.log('>>> leaving getObjectVars'); // for testing only
 	mqlProperties.callBackObjectVars(null, mqlProperties);
 } // eof getObjectVars
-//function pregMatchAll(property_pattern, property_name, property_value, metadata, object_vars, properties, types, star_property, parent_cb, cb) {
+//function pregMatchAll(property_pattern, property_name, property_value, metaData, object_vars, properties, types, star_property, parent_cb, cb) {
 function pregMatchAll(mqlProperties, cb) {
    // see http://coding.pressbin.com/16/Javascript-equivalent-of-PHPs-pregmatchall
 	console.log('>>> inside pregMatchAll'); // for testing only
@@ -491,7 +491,7 @@ function callStackPush(name) {
 /*****************************************************************************
 * MQL Processing Functions
 ******************************************************************************/
-//OLD function analyze_type(type, metadata, star_property, parent_cb, cb) {
+//OLD function analyze_type(type, metaData, star_property, parent_cb, cb) {
 function analyzeType(mqlProperties, cb) {  
 	console.log('>>> inside analyzeType'); // for testing only
         mqlProperties.callBackAnalyzeType = cb;
@@ -506,14 +506,14 @@ function analyzeType(mqlProperties, cb) {
 	// The (\w+) grouping looks for word characters, as denoted by the \w. 
 	// The + indicates that one or more word characters must appear (not necessarily the same one)
 	// The $ is a literal character. The second (\w+) grouping must be followed by a literal $ character.
-//OLD	preg_match_all(type_pattern, type, metadata, object_vars, properties, types, star_property, parent_cb, function(err, matches, property_value, metadata, object_vars, properties, types, star_property, parent_cb){
+//OLD	preg_match_all(type_pattern, type, metaData, object_vars, properties, types, star_property, parent_cb, function(err, matches, property_value, metaData, object_vars, properties, types, star_property, parent_cb){
 	pregMatchAll(mqlProperties, function(err, mqlProperties){          
 		console.log('mqlProperties.matches:'); // for testing only
 		console.log(mqlProperties.matches); // for testing only
 		console.log('mqlProperties.property_value:'); // for testing only
 		console.log(mqlProperties.property_value); // for testing only
-		console.log('mqlProperties.metadata:'); // for testing only
-		console.log(mqlProperties.metadata); // for testing only	
+		console.log('mqlProperties.metaData:'); // for testing only
+		console.log(mqlProperties.metaData); // for testing only	
 		console.log('mqlProperties.object_vars:'); // for testing only
 		console.log(mqlProperties.object_vars); // for testing only		
 		console.log("mqlProperties.parent['properties']:"); // for testing only
@@ -534,7 +534,7 @@ function analyzeType(mqlProperties, cb) {
 		mqlProperties.type = new Array({'domain': mqlProperties.matches[1],'type': mqlProperties.matches[2]});
 		console.log('mqlProperties.type:'); // for testing only
 		console.log(mqlProperties.type); // for testing only
-	        //OLD cb(null, type, metadata, object_vars, properties, types, star_property, parent_cb);
+	        //OLD cb(null, type, metaData, object_vars, properties, types, star_property, parent_cb);
                 console.log('>>> leaving analyzeType'); // for testing only
                 mqlProperties.callBackAnalyzeType(null, mqlProperties)
 	    } 
@@ -542,7 +542,7 @@ function analyzeType(mqlProperties, cb) {
 		mqlProperties.type = false; // a boolean???, should be null surely
 		console.log('mqlProperties.type:'); // for testing only
 		console.log(mqlProperties.type); // for testing only
-	    	//OLD cb(null, type, metadata, object_vars, properties, types, star_property, parent_cb);
+	    	//OLD cb(null, type, metaData, object_vars, properties, types, star_property, parent_cb);
                 console.log('>>> leaving analyzeType'); // for testing only
                 mqlProperties.callBackAnalyzeType(null, mqlProperties)
 	    }
@@ -559,7 +559,7 @@ function isFilterProperty(mqlProperties, cb){
     }
     else if (	isObject(mqlProperties.propertyValue) && 
 			count(
-				get_object_vars(metadata, parent, property_value, null, function(err, metadata, parent, object_vars, types){
+				get_object_vars(metaData, parent, property_value, null, function(err, metaData, parent, object_vars, types){
 					console.log('mqlProperties.objectVars:'); // for testing only
 					console.log(mqlProperties.objectVars); // for testing only
 					console.log('count(mqlProperties.objectVars):'); // for testing only
@@ -638,7 +638,7 @@ function analyzeProperty(mqlProperties, cb){
 			//console.log('analyzed_property:'); // for testing only
 			//console.log(analyzed_property); // for testing only		
 			console.log('>>> leaving analyzeProperty');	
-			//parent_cb(null, metadata, parent, object_vars, properties, types, star_property, analyzed_property, property_value);
+			//parent_cb(null, metaData, parent, object_vars, properties, types, star_property, analyzed_property, property_value);
 			mqlProperties.callBackAnalyzeProperty(null, mqlProperties);
 	    } 
 		else {
@@ -664,7 +664,7 @@ function getTypeFromSchema(mqlProperties, cb) {
 	var type = mqlProperties.parent.schema.type;
 	console.log('type:'); // for testing only
 	console.log(type); // for testing only		
-    var domains = mqlProperties.metaData.domains;
+        var domains = mqlProperties.metaData.domains;
 	console.log('domains:'); // for testing only
 	console.log(domains); // for testing only
 	// MQL Domains map to SQL schemas
@@ -955,12 +955,12 @@ function preProcessProperties(mqlProperties, cb) {
 					console.log('mqlProperties.analyzedProperty[0]:'); // for testing only
 					console.log(mqlProperties.analyzedProperty[0]);
 			
-		            analyzeType(property_value, metadata, parent, object_vars, properties, types, star_property, function(err, type, metadata, parent, object_vars, properties, types, star_property) {
+		            analyzeType(property_value, metaData, parent, object_vars, properties, types, star_property, function(err, type, metaData, parent, object_vars, properties, types, star_property) {
 						console.log('>>> back inside pre_processProperties from analyzeType'); // for testing only
 						console.log('type:'); // for testing only
 						console.log(type); // for testing only
-						console.log('metadata:'); // for testing only
-						console.log(metadata); // for testing only
+						console.log('metaData:'); // for testing only
+						console.log(metaData); // for testing only
 						console.log('parent:'); // for testing only
 						console.log(parent); // for testing only
 						console.log('object_vars:'); // for testing only
@@ -979,12 +979,12 @@ function preProcessProperties(mqlProperties, cb) {
 			            var domain = type['domain'];
 			            var domain_type = type['type'];
 			
-						// HOW DO WE GET metadata ??
+						// HOW DO WE GET metaData ??
 			
-						get_type_from_schema(metadata, parent, domain, domain_type, star_property, function(err, type, star_property){
+						get_type_from_schema(metaData, parent, domain, domain_type, star_property, function(err, type, star_property){
 							console.log('>>> back inside pre_processProperties from get_type_from_schema'); // for testing only
-							console.log('metadata:'); // for testing only
-							console.log(metadata); // for testing only
+							console.log('metaData:'); // for testing only
+							console.log(metaData); // for testing only
 							console.log('parent:'); // for testing only
 							console.log(parent); // for testing only
 							console.log('domain:'); // for testing only
@@ -1183,7 +1183,7 @@ function processMQLObject(mqlProperties, cb) {
 	});//eof getParentType
 }//eof processMQLObject
 
-//function processMQLArray(metadata, mql_array, parent, cb) {
+//function processMQLArray(metaData, mql_array, parent, cb) {
 function processMQLArray(mqlProperties, cb) {	
 	console.log('>>> inside processMQLArray'); // for testing only
 	mqlProperties.callBackProcessMQL = cb;
@@ -1269,7 +1269,7 @@ function processMQL(mqlProperties, cb) {
 /*****************************************************************************
 *   SQL Generation Functions
 ******************************************************************************/
-//function generateSQL(metadata, mql_node, queries, query_index, child_t_alias, merge_into) { // child_t_alias and merge_into are optional
+//function generateSQL(metaData, mql_node, queries, query_index, child_t_alias, merge_into) { // child_t_alias and merge_into are optional
 	
 //helper for HandleQuery	
 function generateSQL(mqlProperties, cb) {	
@@ -1384,6 +1384,38 @@ function generateSQL(mqlProperties, cb) {
             console.log(mqlProperties.domain_name); // for testing only
         //REPLACES $domain_name = $type['domain'];
         
+            console.log('mqlProperties.metaData:'); // for testing only
+            console.log(mqlProperties.metaData); // for testing only
+
+        mqlProperties.domains = mqlProperties.metaData['domains']; 
+            console.log('mqlProperties.domains:'); // for testing only
+            console.log(mqlProperties.domains); // for testing only
+        //REPLACES $domains = $metaData['domains'];
+
+        mqlProperties.schema_domain = mqlProperties.domains[mqlProperties.domain_name];
+            console.log('mqlProperties.schema_domain:'); // for testing only
+            console.log(mqlProperties.schema_domain); // for testing only
+        //REPLACES $schema_domain = $domains[$domain_name];
+
+        mqlProperties.type_name = mqlProperties.type[0]['type'];
+            console.log('mqlProperties.type_name:'); // for testing only
+            console.log(mqlProperties.type_name); // for testing only    
+        //REPLACES $type_name = $type['type'];
+
+        mqlProperties.schema_type = mqlProperties.schema_domain['types'][mqlProperties.type_name];
+            console.log('mqlProperties.schema_type:'); // for testing only
+            console.log(mqlProperties.schema_type); // for testing only     
+        //REPLACES $schema_type = $schema_domain['types'][$type_name];
+
+        //table_name is either explicitly specified, or we take the type name
+        if(typeof(mqlProperties.schema_type['table_name']) === 'undefined'){
+            mqlProperties.table_name = mqlProperties.type_name;
+        }
+        else {
+            mqlProperties.table_name = mqlProperties.schema_type['table_name'];
+        }
+            console.log('mqlProperties.table_name:'); // for testing only
+            console.log(mqlProperties.table_name); // for testing only        
         
             // WE ARE HERE ............************************************
             // WE ARE HERE ............************************************
@@ -1409,37 +1441,9 @@ function generateSQL(mqlProperties, cb) {
             // WE ARE HERE ............************************************
             // WE ARE HERE ............************************************
             // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************        
-
-        mqlProperties.domains = mqlProperties.metadata['domains']; 
-            console.log('mqlProperties.domains:'); // for testing only
-            console.log(mqlProperties.domains); // for testing only
-        //REPLACES $domains = $metadata['domains'];
-
-        mqlProperties.schema_domain = mqlProperties.domains[mqlProperties.domain_name];
-            console.log('mqlProperties.schema_domain:'); // for testing only
-            console.log(mqlProperties.schema_domain); // for testing only
-        //REPLACES $schema_domain = $domains[$domain_name];
-
-        mqlProperties.type_name = mqlProperties.type['type'];
-            console.log('mqlProperties.type_name:'); // for testing only
-            console.log(mqlProperties.type_name); // for testing only    
-        //REPLACES $type_name = $type['type'];
-
-        mqlProperties.schema_type = mqlProperties.schema_domain['types'][mqlProperties.type_name];
-            console.log('mqlProperties.schema_type:'); // for testing only
-            console.log(mqlProperties.schema_type); // for testing only     
-        //REPLACES $schema_type = $schema_domain['types'][$type_name];
-
-
-    /*            
-        //table_name is either explicitly specified, or we take the type name
-        if (isset($schema_type['table_name'])){
-            $table_name = $schema_type['table_name'];
-        } 
-        else {
-            $table_name = $type_name;
-        }
+            // WE ARE HERE ............************************************ 
+        
+   /*     
 
         //schema_name is either explicitly specified, or we take the domain name
         if (isset($schema_type['schema_name'])) {   //schema_name is defined at the type level
