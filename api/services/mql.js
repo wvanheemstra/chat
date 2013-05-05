@@ -1781,35 +1781,6 @@ function generateSQL(mqlProperties, cb) {
             console.log(mqlProperties.from); // for testing only  
         //REPLACES get_from_clause($mql_node, $tAlias, $child_tAlias, $schema_name, $table_name, $query);
         
-         
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************        
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************
-            // WE ARE HERE ............************************************         
-            // SO FAR SO GOOD .........************************************
-        
-        
         if(arrayKeyExists('properties', mqlProperties.mql_node)){
             
             mqlProperties.properties = mqlProperties.mql_node['properties'];
@@ -1846,47 +1817,37 @@ function generateSQL(mqlProperties, cb) {
               mqlProperties.schema = mqlProperties.properties[i]['schema'];        
               console.log('mqlProperties.schema:');
               console.log(mqlProperties.schema);
-              if(typeof(mqlProperties.schema['direction']) !== 'undefined'){           
-                  // TO DO
+              if(typeof(mqlProperties.schema['direction']) !== 'undefined'){
                 mqlProperties.direction = mqlProperties.schema['direction'];
                 if(mqlProperties.direction === 'referenced<-referencing'){
                   mqlProperties.index_columns = [];   
-                  mqlProperties.index_columns_string = '';  
-
-                  // TO DO
-
-
-
-// REPLACES
-//                        foreach ($schema['join_condition'] as $columns) {
-//                            $column_ref = $tAlias.'.'.$columns['referenced_column'];
-//                            if (isset($select[$column_ref])) {
-//                              $cAlias = $select[$column_ref];
-//                            }
-//                            else {
-//                              $cAlias = $tAlias.get_cAlias();
-//                              $select[$column_ref] = $cAlias;
-//                            }
-//                            $index_columns_string .= $cAlias;
-//                            $index_columns[] = $cAlias;
-//                        }
-//                        
-//                        
-//                        if (!isset($indexes[$index_columns_string])){
-//                            $indexes[$index_columns_string] = array(
-//                                'columns'   =>  $index_columns
-//                            ,   'entries'   =>  array()
-//                            );
-//                        }
-//                        
-//                        $merge_into = array(
-//                            'query_index'   =>  $query_index                  
-//                        ,   'index'         =>  $index_columns_string
-//                        ,   'columns'       =>  array()
-//                        );
-//                        
-//                        $new_query_index = count($queries);                    
-                    
+                  mqlProperties.index_columns_string = '';
+                  for(n=0; n<mqlProperties.schema['join_condition'].length; n++) {
+                    console.log('n:');
+                    console.log(n);
+                    mqlProperties.column_ref = mqlProperties.tAlias+'.'+mqlProperties.schema['join_condition'][n]['referenced_column'];
+                    if(typeof(mqlProperties.select[mqlProperties.column_ref]) !== 'undefined'){
+                      mqlProperties.cAlias = mqlProperties.select[mqlProperties.column_ref]; 
+                    }//eof if
+                    else{
+                      mqlProperties.cAlias = mqlProperties.tAlias.getCAlias(); // TO DO: Will this work???
+                      mqlProperties.select[mqlProperties.column_ref] = mqlProperties.cAlias;
+                    }//eof else
+                    mqlProperties.index_columns_string = mqlProperties.index_columns_string + mqlProperties.cAlias;
+                    mqlProperties.index_columns[0] = mqlProperties.cAlias;
+                  }
+                  if(typeof(mqlProperties.indexes[mqlProperties.index_columns_string]) === 'undefined'){
+                    mqlProperties.indexes[mqlProperties.index_columns_string] = new Array({
+                      'columns' : mqlProperties.index_columns,
+                      'entries' : []
+                    });      
+                  }//eof if         
+                  mqlProperties.merge_into = new Array({
+                    'query_index' : mqlProperties.query_index,
+                    'index' : mqlProperties.index_columns_string,
+                    'columns' : []                
+                  });                    
+                  mqlProperties.new_query_index = mqlProperties.queries.length;                 
                 }//eof if                    
                 else if ($direction === 'referencing->referenced') {
                   mqlProperties.merge_into = null;
@@ -1916,31 +1877,26 @@ function generateSQL(mqlProperties, cb) {
             }//eof for
         }//eof if
         else if(arrayKeyExists('default_property', mqlProperties.schema_type)){
-            
+          mqlProperties.default_property_name = mqlProperties.schema_type['default_property'];
+          mqlProperties.properties = mqlProperties.schema_type['properties'];
+          if(!arrayKeyExists(mqlProperties.default_property_name, mqlProperties.properties)){
+            exit('Default property "'+mqlProperties.default_property_name+'" specified but not found in "/'+mqlProperties.domain_name+'/'+mqlProperties.type_name+'"');
+          }//eof if           
+          mqlProperties.default_property = mqlProperties.properties[mqlProperties.default_property_name];
+          mqlProperties.column_name = mqlProperties.default_property['column_name'];
+          mqlProperties.property = mqlProperties.mql_node;
+          mqlProperties.schema = mqlProperties.property['schema'];
+          mqlProperties.schema['type'] = mqlProperties.default_property['type'];
+          if(mqlProperties.property['is_filter']){
             // TO DO
-            
-            
-            
-            // REPLACES
-            
-//            $default_property_name = $schema_type['default_property'];
-//            $properties = $schema_type['properties'];
-//            if (!array_key_exists($default_property_name, $properties)) {
-//                exit('Default property "'.$default_property_name.'" specified but not found in "/'.$domain_name.'/'.$type_name.'"');
-//            }
-//            $default_property = $properties[$default_property_name];
-//            $column_name = $default_property['column_name'];
-//            $property = &$mql_node;
-//            $schema = &$property['schema'];
-//            $schema['type'] = $default_property['type'];
-//            if ($property['is_filter']) {        
-//                handle_filter_property($where, $params, $tAlias, $column_name, $property);
-//            }
-//            else {
-//                handle_non_filter_property($tAlias, $column_name, $select, $property);
-//            }            
-            
-            
+            //     
+            // REPLACES handle_filter_property($where, $params, $tAlias, $column_name, $property);              
+          }//eof if        
+          else {
+            // TO DO
+            // 
+            // REPLACES handle_non_filter_property($tAlias, $column_name, $select, $property);
+          }//eof else          
         }//eof else if
         console.log('>>> leaving generateSQL');
         mqlProperties.callBackHandleQuery(null, mqlProperties); //TEMPORARY PLACEHOLDER TO FORCE A RETURN
@@ -1951,19 +1907,15 @@ function generateSQL(mqlProperties, cb) {
 ******************************************************************************/
 
 
+// helper for handleQuery
+function executeSQLQueries(mqlProperties, cb) {	
+    console.log('>>> inside executeSQLQueries'); // for testing only
+    mqlProperties.callBackHandleQuery = cb;
+	
+ // TO DO
 
-function execute_sql_queries(sql_queries) {
-	console.log('>>> inside execute_sql_queries'); // for testing only
-	
-	// TO DO
-	
-	
-	
-	
-	
-	
-	
-	return null; //TEMP
+
+
 /*	
     foreach($sql_queries as $sql_query_index => &$sql_query){
     
@@ -2025,51 +1977,54 @@ function execute_sql_queries(sql_queries) {
         }
     }
 */
-}//eof execute_sql_queries
+
+  console.log('>>> leaving executeSQLQueries');
+  mqlProperties.callBackHandleQuery(null, mqlProperties);
+}//eof executeSQLQueries
 /*****************************************************************************
 *   Queries
 ******************************************************************************/
 function handleQuery(mqlProperties, cb) {
-	console.log('>>> inside handleQuery'); // for testing only 
-	mqlProperties.callBackHandleQueries = cb;
-	console.log('mqlProperties.callBackHandleQueries:'); // for testing only	
-	console.log(mqlProperties.callBackHandleQueries); // for testing only	
-	
-	
+    console.log('>>> inside handleQuery'); // for testing only 
+    mqlProperties.callBackHandleQueries = cb;
+    console.log('mqlProperties.callBackHandleQueries:'); // for testing only	
+    console.log(mqlProperties.callBackHandleQueries); // for testing only	
+
+
 /*	NO NEED FOR THIS HERE
-	
-	if(typeof(mqlProperties.args.debug_info) != 'undefined') {
-    	var debug_info = mqlProperties.args['debug_info'];
-	} 
-	else { 
-		var debug_info = false;
-	}
-	console.log('debug_info:'); // for testing only	
-	console.log(debug_info); // for testing only
-	
-	if(typeof(mqlProperties.args.noexecute) != 'undefined') {
-    	var noexecute = mqlProperties.args['noexecute'];
-	} 
-	else { 
-		var noexecute = false;
-	}
-	console.log('noexecute:'); // for testing only	
-	console.log(noexecute); // for testing only
-	
+
+    if(typeof(mqlProperties.args.debug_info) != 'undefined') {
+    var debug_info = mqlProperties.args['debug_info'];
+    } 
+    else { 
+            var debug_info = false;
+    }
+    console.log('debug_info:'); // for testing only	
+    console.log(debug_info); // for testing only
+
+    if(typeof(mqlProperties.args.noexecute) != 'undefined') {
+    var noexecute = mqlProperties.args['noexecute'];
+    } 
+    else { 
+            var noexecute = false;
+    }
+    console.log('noexecute:'); // for testing only	
+    console.log(noexecute); // for testing only
+
 */	
-	
-	if(typeof(mqlProperties.args.debug_info) != 'undefined') {
-		var unixtime_ms = new Date().getTime();
-		var sec = parseInt(unixtime_ms / 1000);
-		var name = 'begin query #'+mqlProperties.queryKey;
-		var microtime = (unixtime_ms - (sec * 1000))/1000 + ' ' + sec;
-	    mqlProperties.callStack.push({"name":name, "microtime":microtime});
-		console.log('mqlProperties.callStack:'); // for testing only
-		console.log(mqlProperties.callStack); // for testing only
-	}
-	console.log('mqlProperties.queryOrQueries:'); // for testing only	
-	console.log(mqlProperties.queryOrQueries); // for testing only	
-	//check if the query is an object
+
+    if(typeof(mqlProperties.args.debug_info) !== 'undefined') {
+            var unixtime_ms = new Date().getTime();
+            var sec = parseInt(unixtime_ms / 1000);
+            var name = 'begin query #'+mqlProperties.queryKey;
+            var microtime = (unixtime_ms - (sec * 1000))/1000 + ' ' + sec;
+        mqlProperties.callStack.push({"name":name, "microtime":microtime});
+            console.log('mqlProperties.callStack:'); // for testing only
+            console.log(mqlProperties.callStack); // for testing only
+    }
+    console.log('mqlProperties.queryOrQueries:'); // for testing only	
+    console.log(mqlProperties.queryOrQueries); // for testing only	
+    //check if the query is an object
     if (!isObject(mqlProperties.queryOrQueries[0])) { // [0] removes the possible brackets, which would make it a non-object
         console.log('mqlProperties.queryOrQueries[0] is not an object.');
 		console.log(mqlProperties.queryOrQueries[0]); // for testing only
@@ -2078,128 +2033,138 @@ function handleQuery(mqlProperties, cb) {
 		mqlProperties.err = err;
 		mqlProperties.callBackHandleQueries(err, mqlProperties);
     }// eof if !isObject
-	else {
-		//var mql_query = mqlProperties.queryOrQueries[0];// [0] removes the possible brackets, which would make it a non-object
-		console.log('mqlProperties.queryOrQueries[0]:'); // for testing only	
-		console.log(mqlProperties.queryOrQueries[0]); // for testing only
-		mqlProperties.parent = new Array();
-		
-		var schema = new Array();
-		var domain_type = null;
-		var domain_type_array;
-		var domain = null;
-		var type = null;
-		
-		mqlProperties.tAliasID = 0;
-		mqlProperties.cAliasID = 0;
-		mqlProperties.pAliasID = 0;
-			
-		// MQL Domains map to SQL schemas
-		// MQL Types map to SQL tables
-		// MQL properties can map to two things:
-		//   - columns, in case the property type implies a value
-		//   - foreign keys, which implement a relationship to a table
-		domain_type = mqlProperties.queryOrQueries[0].type;
-		console.log('domain_type:'); // for testing only	
-		console.log(domain_type); // for testing only
-		domain_type_array = domain_type.split("/");
-		console.log('domain_type_array:'); // for testing only	
-		console.log(domain_type_array); // for testing only		
-		domain = domain_type_array[1];
-		console.log('domain:'); // for testing only	
-		console.log(domain); // for testing only
-		type = domain_type_array[2];
-		console.log('type:'); // for testing only	
-		console.log(type); // for testing only
-		schema['domain'] = domain;
-		schema['type'] = type;			
-		mqlProperties.parent['schema'] = schema;
-		console.log('mqlProperties.parent:'); // for testing only	
-		console.log(mqlProperties.parent); // for testing only
-		processMQL(mqlProperties, function(err, mqlProperties) {
-			console.log('>>> back inside handleQuery from processMQL'); // for testing only 			
-			if(err){
-				console.log('>>> leaving handleQuery with error');
-				mqlProperties.err = err;
-				mqlProperties.callBackHandleQueries(err, mqlQueries);
-			}
-			mqlProperties.sqlQueries = null;
-			console.log('mqlProperties.sqlQueries:'); // for testing only	
-			console.log(mqlProperties.sqlQueries); // for testing only	
+    else {
+        //var mql_query = mqlProperties.queryOrQueries[0];// [0] removes the possible brackets, which would make it a non-object
+        console.log('mqlProperties.queryOrQueries[0]:'); // for testing only	
+        console.log(mqlProperties.queryOrQueries[0]); // for testing only
+        mqlProperties.parent = new Array();
+
+        var schema = new Array();
+        var domain_type = null;
+        var domain_type_array;
+        var domain = null;
+        var type = null;
+
+        mqlProperties.tAliasID = 0;
+        mqlProperties.cAliasID = 0;
+        mqlProperties.pAliasID = 0;
+
+        // MQL Domains map to SQL schemas
+        // MQL Types map to SQL tables
+        // MQL properties can map to two things:
+        //   - columns, in case the property type implies a value
+        //   - foreign keys, which implement a relationship to a table
+        domain_type = mqlProperties.queryOrQueries[0].type;
+        console.log('domain_type:'); // for testing only	
+        console.log(domain_type); // for testing only
+        domain_type_array = domain_type.split("/");
+        console.log('domain_type_array:'); // for testing only	
+        console.log(domain_type_array); // for testing only		
+        domain = domain_type_array[1];
+        console.log('domain:'); // for testing only	
+        console.log(domain); // for testing only
+        type = domain_type_array[2];
+        console.log('type:'); // for testing only	
+        console.log(type); // for testing only
+        schema['domain'] = domain;
+        schema['type'] = type;			
+        mqlProperties.parent['schema'] = schema;
+        console.log('mqlProperties.parent:'); // for testing only	
+        console.log(mqlProperties.parent); // for testing only
+        processMQL(mqlProperties, function(err, mqlProperties) {
+            console.log('>>> back inside handleQuery from processMQL'); // for testing only 			
+            if(err){
+                    console.log('>>> leaving handleQuery with error');
+                    mqlProperties.err = err;
+                    mqlProperties.callBackHandleQueries(err, mqlQueries);
+            }
+            mqlProperties.sqlQueries = null;
+            console.log('mqlProperties.sqlQueries:'); // for testing only	
+            console.log(mqlProperties.sqlQueries); // for testing only	
 
 //			var generated_sql = generateSQL(mqlProperties.metaData, mqlProperties.parent, mqlProperties.sqlQueries, 0); // MOST LIKELY THIS NEEDS processed_mql INSTEAD OF parent
-			
-			generateSQL(mqlProperties, function(err, mqlProperties){
-				console.log('>>> back inside handleQuery from generateSQL'); // for testing only 				
-				if(err){
-					console.log('>>> leaving handleQuery with error');
-					mqlProperties.err = err;
-					mqlProperties.callBackHandleQueries(err, mqlProperties);
-				}
-				
-				
-				
-				
-				
-				
-						// WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
-							
 
+            generateSQL(mqlProperties, function(err, mqlProperties){
+                console.log('>>> back inside handleQuery from generateSQL'); // for testing only 				
+                if(err){
+                        console.log('>>> leaving handleQuery with error');
+                        mqlProperties.err = err;
+                        mqlProperties.callBackHandleQueries(err, mqlProperties);
+                }
 
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
+                // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
 
-
-
-
-				var executed_sql_queries = execute_sql_queries(sql_queries);// MOST LIKELY THIS NEEDS generated_sql INSTEAD OF sql_queries
-				console.log('executed_sql_queries:'); // for testing only	
-				console.log(executed_sql_queries); // for testing only	
-				var result = executed_sql_queries[0]['results']; // temp
-				console.log('result:'); // for testing only	
-				console.log(result); // for testing only		
-				var return_value = new Array({'code': '/api/status/ok', 'result': result});
-				if (debug_info) {
-					var sql_statements = [];
-					for(var i=0; i<sql_queries.length; i++) {
-			             sql_statements.push({'statement': sql_queries[i]['sql'],
-			                                 'params':  sql_queries[i]['params'] });
-			        }
-			        args['sql'] = sql_statements;
-					var unixtime_ms = new Date().getTime();
-					var sec = parseInt(unixtime_ms / 1000);
-					var name = 'end query #'+mqlProperties.queryKey;
-					var microtime = (unixtime_ms - (sec * 1000))/1000 + ' ' + sec;
-				    mqlProperties.callStack.push({"name":name, "microtime":microtime});
-					console.log('mqlProperties.callStack:'); // for testing only
-					console.log(mqlProperties.callStack); // for testing only
-					mqlProperties.args['timing'] = mqlProperties.callStack;
-					console.log("mqlProperties.args['timing']:"); // for testing only
-					console.log(mqlProperties.args['timing']); // for testing only
-			    }
-				console.log('return_value:'); // for testing only	
-				console.log(return_value); // for testing only	
-				console.log('>>> leaving handleQuery'); // for testing only
-				mqlProperties.callBackHandleQueries(null, mqlProperties);
-				/// HOORAY, WE MADE IT IF WE HAVE COME ALL THE WAY TO HERE !!!
-
-			});//eof generateSQL
-		});//eof processMQL
-	} //eof else isObject
+                executeSQLQueries(mqlProperties, function(err, mqlProperties){
+                  console.log('>>> back inside handleQuery from executeSQLQueries'); // for testing only 				
+                  if(err){
+                    console.log('>>> leaving handleQuery with error');
+                    mqlProperties.err = err;
+                    mqlProperties.callBackHandleQueries(err, mqlProperties);
+                  }//eof if
+                  console.log('executed_sql_queries:'); // for testing only //   THIS WILL MOST LIKELY BE A DIFFERENT NAME, CHECK WITH executeSQLQueries	
+                  console.log(executed_sql_queries); // for testing only	
+                  var result = executed_sql_queries[0]['results']; // temp
+                  console.log('result:'); // for testing only	
+                  console.log(result); // for testing only		
+                  var return_value = new Array({'code': '/api/status/ok', 'result': result});
+                  if (debug_info) {
+                    var sql_statements = [];
+                    for(var i=0; i<sql_queries.length; i++) {
+                      sql_statements.push({'statement': sql_queries[i]['sql'],
+                                         'params':  sql_queries[i]['params'] });
+                    }//eof for
+                  }//eof if
+                  args['sql'] = sql_statements;
+                  var unixtime_ms = new Date().getTime();
+                  var sec = parseInt(unixtime_ms / 1000);
+                  var name = 'end query #'+mqlProperties.queryKey;
+                  var microtime = (unixtime_ms - (sec * 1000))/1000 + ' ' + sec;
+                  mqlProperties.callStack.push({"name":name, "microtime":microtime});
+                  console.log('mqlProperties.callStack:'); // for testing only
+                  console.log(mqlProperties.callStack); // for testing only
+                  mqlProperties.args['timing'] = mqlProperties.callStack;
+                  console.log("mqlProperties.args['timing']:"); // for testing only
+                  console.log(mqlProperties.args['timing']); // for testing only
+                  console.log('return_value:'); // for testing only	
+                  console.log(return_value); // for testing only                                  
+                  console.log('>>> leaving handleQuery'); // for testing only
+                  mqlProperties.callBackHandleQueries(null, mqlProperties);
+                  /// HOORAY, WE MADE IT IF WE HAVE COME ALL THE WAY TO HERE !!!
+                });//eof executeSQLQueries
+            });//eof generateSQL
+        });//eof processMQL
+    } //eof else isObject
 }// eof handleQuery
+
 function handleQueries(mqlProperties){
-	console.log('>>> inside handleQueries'); // for testing only
-	mqlProperties.results = [];
-	mqlProperties.results.push({'code':'/api/status/ok'});
-	for(var queryKey=0; queryKey<mqlProperties.queryOrQueries.length; queryKey++) { // TO DO: we do not know for sure that this mqlProperties.queryOrQueries.length is working
-		mqlProperties.queryKey = queryKey;
-		console.log('mqlProperties.queryKey:');// for testing only
-		console.log(mqlProperties.queryKey);// for testing only		
-		handleQuery(mqlProperties, function(err, mqlProperties){ 
-			console.log('>>> back inside handleQueries from handleQuery'); // for testing only			
-			mqlProperties.results[mqlProperties.queryKey] = mqlProperties.result;
-			console.log('mqlProperties.results[mqlProperties.queryKey]:');// for testing only
-			console.log(mqlProperties.results[mqlProperties.queryKey]);// for testing only			
-		});
-	}
-	console.log('>>> leaving handleQueries'); // for testing only
-	mqlProperties.callBackHandleRequest(null, mqlProperties);
+    console.log('>>> inside handleQueries'); // for testing only
+    mqlProperties.results = [];
+    mqlProperties.results.push({'code':'/api/status/ok'});
+    for(var queryKey=0; queryKey<mqlProperties.queryOrQueries.length; queryKey++) { // TO DO: we do not know for sure that this mqlProperties.queryOrQueries.length is working
+        mqlProperties.queryKey = queryKey;
+        console.log('mqlProperties.queryKey:');// for testing only
+        console.log(mqlProperties.queryKey);// for testing only		
+        handleQuery(mqlProperties, function(err, mqlProperties){ 
+                console.log('>>> back inside handleQueries from handleQuery'); // for testing only			
+                mqlProperties.results[mqlProperties.queryKey] = mqlProperties.result;
+                console.log('mqlProperties.results[mqlProperties.queryKey]:');// for testing only
+                console.log(mqlProperties.results[mqlProperties.queryKey]);// for testing only			
+        });
+    }
+    console.log('>>> leaving handleQueries'); // for testing only
+    mqlProperties.callBackHandleRequest(null, mqlProperties);
 }// eof handleQueries
