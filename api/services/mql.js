@@ -1195,22 +1195,22 @@ function processMQLArray(mqlProperties, cb) {
 	var count = count(mqlProperties.mqlArray);							// TO DO: DOES THIS WORK???
 	console.log('count:'); // for testing only
 	console.log(count); // for testing only	
-    switch (count) {
-        case 0:
-            break;
-        case 1:
-            mqlProperties.parent['entries'] = new Array();
-            if (array_key_exists('schema', mqlProperties.parent)) {								// TO DO
-                mqlProperties.parent['entries']['schema'] = mqlProperties.parent['schema'];
-            }
-            processMQL(mqlProperties.mqlArray[0], mqlProperties.parent['entries']);				// TO DO
-            break;
-        default:
-            console.log('Expected a dictionary or a list with one element in a read (were you trying to write?)');
-			var err = new Error('Expected a dictionary or a list with one element in a read (were you trying to write?)');
-			mqlProperties.err = err;
-			exit;
-    }
+        switch (count) {
+            case 0:
+                break;
+            case 1:
+                mqlProperties.parent['entries'] = new Array();
+                if (array_key_exists('schema', mqlProperties.parent)) {								// TO DO
+                    mqlProperties.parent['entries']['schema'] = mqlProperties.parent['schema'];
+                }
+                processMQL(mqlProperties.mqlArray[0], mqlProperties.parent['entries']);				// TO DO
+                break;
+            default:
+                console.log('Expected a dictionary or a list with one element in a read (were you trying to write?)');
+                            var err = new Error('Expected a dictionary or a list with one element in a read (were you trying to write?)');
+                            mqlProperties.err = err;
+                            exit;
+        }
 	if(mqlProperties.err){
 		console.log('>>> leaving processMQLArray with error');
 		mqlProperties.callBackProcessMQL(mqlProperties.err, mqlProperties); //TEMPORARY PLACEHOLDER TO FORCE CONTINUATION		
@@ -1307,9 +1307,101 @@ function getPName(mqlProperties){
     return mqlProperties;
 }//eof getPName
 
+function isOptional(mqlProperties){
+    console.log('>>> inside isOptional');
+    mqlProperties.optional = false; 
+    if(mqlProperties.mql_node instanceof Array){
+        if(arrayKeyExists('properties', mqlProperties.mql_node)){
+            mqlProperties.properties = mqlProperties.mql_node['properties'];
+            if(count(mqlProperties.properties)===0){
+                mqlProperties.optional = true;
+            }//eof if
+            else if(typeof(mqlProperties.properties['optional']) !== 'undefined') {
+                mqlProperties.optional_property = mqlProperties.properties['optional'];
+                mqlProperties.value = mqlProperties.optional_property['value'];
+                switch (mqlProperties.value) {
+                    case true:
+                        break;
+                    case 'optional':
+                        mqlProperties.optional = true;
+                        break;
+                }//eof switch
+            }//eof else if            
+        }//eof if
+        else if(arrayKeyExists('entries', mqlProperties.mql_node)){            
+            mqlProperties.entries = mqlProperties.mql_node['entries'];
+            if (count(mqlProperties.entries)===null){
+                mqlProperties.optional = true;
+            }
+        }//eof else if
+        else if(arrayKeyExists('value', mqlProperties.mql_node)){
+            mqlProperties.value = mqlProperties.mql_node['value'];
+            if (mqlProperties.value===null){
+                mqlProperties.optional = true;
+            }//eof if            
+        }//eof else if
+    }//eof if
+    else{
+        console.log("type is " + getType(mqlProperties)); // TO DO... make this work
+    }//eof else
+    console.log('mqlProperties.optional:');
+    console.log(mqlProperties.optional);
+    console.log('>>> leaving isOptional');
+    return mqlProperties.optional; 
+     
+// REPLACES
+//    $optional = FALSE;
+//    if (is_array($mql_node)) {
+//        if (array_key_exists('properties', $mql_node)){
+//            $properties = $mql_node['properties'];
+//            if (count($properties)===0){
+//                $optional = TRUE;
+//            }
+//            else 
+//            if (isset($properties['optional'])) {
+//                $optional_property = $properties['optional'];
+//                $value = $optional_property['value'];
+//                switch ($value) {
+//                    case TRUE:
+//                    case 'optional':
+//                        $optional = TRUE;
+//                }
+//            }
+//        }
+//        else 
+//        if (array_key_exists('entries', $mql_node)){
+//            $entries = $mql_node['entries'];
+//            if (count($entries)===NULL){
+//                $optional = TRUE;
+//            }
+//        }
+//        else 
+//        if (array_key_exists('value', $mql_node)) {
+//            $value = $mql_node['value'];
+//            if ($value===NULL) {  
+//                $optional = TRUE;
+//            }
+//        }
+//    }
+//    else {
+//        print_r("\ntype is ".gettype($mql_node)."\n");
+//    }
+//    return $optional; 
+    
+}
 
-//TO DO function is_optional()
-
+function arrayKeyExists (key, search) {
+  // http://kevin.vanzonneveld.net
+  // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +   improved by: Felix Geisendoerfer (http://www.debuggable.com/felix)
+  // *     example 1: array_key_exists('kevin', {'kevin': 'van Zonneveld'});
+  // *     returns 1: true
+  // input sanitation
+  if (!search || (search.constructor !== Array && search.constructor !== Object)) {
+    return false;
+  }
+  return key in search;
+}
 
 function getFromClause(mqlProperties){
     console.log('>>> inside getFromClause'); // for testing only     
@@ -1523,63 +1615,59 @@ function getFromClause(mqlProperties){
 	
 //helper for HandleQuery	
 function generateSQL(mqlProperties, cb) {	
-	console.log('>>> inside generateSQL'); // for testing only
-	mqlProperties.callBackHandleQuery = cb;	
-	mqlProperties.childTAlias = typeof mqlProperties.childTAlias !== 'undefined' ? mqlProperties.childTAlias : null;
-	console.log('mqlProperties.childTAlias:'); // for testing only
-	console.log(mqlProperties.childTAlias); // for testing only	
-	mqlProperties.mergeInto = typeof mqlProperties.mergeInto !== 'undefined' ? mqlProperties.mergeInto : null;	
-	console.log('mqlProperties.mergeInto:'); // for testing only
-	console.log(mqlProperties.mergeInto); // for testing only
-	
-	// TO DO
-
-	console.log("mqlProperties.parent['entries']:"); // for testing only
-	console.log(mqlProperties.parent['entries']); // for testing only
+    console.log('>>> inside generateSQL'); // for testing only
+    mqlProperties.callBackHandleQuery = cb;	
+    mqlProperties.childTAlias = typeof mqlProperties.childTAlias !== 'undefined' ? mqlProperties.childTAlias : null;
+    console.log('mqlProperties.childTAlias:'); // for testing only
+    console.log(mqlProperties.childTAlias); // for testing only	
+    mqlProperties.mergeInto = typeof mqlProperties.mergeInto !== 'undefined' ? mqlProperties.mergeInto : null;	
+    console.log('mqlProperties.mergeInto:'); // for testing only
+    console.log(mqlProperties.mergeInto); // for testing only
+    console.log("mqlProperties.parent['entries']:"); // for testing only
+    console.log(mqlProperties.parent['entries']); // for testing only
 	
 	// NOTE: $mql_node = mqlProperties.parent
-    if (typeof(mqlProperties.parent['entries']) != 'undefined') {
+    if (typeof(mqlProperties.parent['entries']) !== 'undefined') {
         //generateSQL(mqlProperties.parent['entries'], $queries, $query_index, mqlProperties.childTAlias, mqlProperties.mergeInto);
-		generateSQL(mqlProperties, function(err, mqlProperties) {
-			console.log('>>> back inside generateSQL from generateSQL (itself!)'); // for testing only			
-			
-			// TO DO			
-			
-			console.log('>>> leaving generateSQL');
-			// callback here
-		});//eof generateSQL... a call to itself!
+        generateSQL(mqlProperties, function(err, mqlProperties) {
+          console.log('>>> back inside generateSQL from generateSQL (itself!)'); // for testing only			
+
+          // TO DO			
+
+          console.log('>>> leaving generateSQL');
+          mqlProperties.callBackHandleQuery(null, mqlProperties);
+        });//eof generateSQL... a call to itself!
     }//eof if
 
-
-    if (typeof(mqlProperties.parent['query_index']) == 'undefined'){
+    if (typeof(mqlProperties.parent['query_index']) === 'undefined'){
         mqlProperties.parent['query_index'] = mqlProperties.queryKey;//WAS $query_index TEMPORARY SET TO mqlProperties.queryKey
 		console.log("mqlProperties.parent['query_index']:"); // for testing only
 		console.log(mqlProperties.parent['query_index']); // for testing only
     }
 
-	if(typeof(mqlProperties.queries) != 'undefined' && mqlProperties.queries != null) {
-		console.log('mqlProperties.queries:');
-		console.log(mqlProperties.queries);		
-		if(typeof(mqlProperties.queries[mqlProperties.queryKey]) != 'undefined') {
-			mqlProperties.query = mqlProperties.queries[mqlProperties.queryKey];
-			console.log('mqlProperties.query:');
-			console.log(mqlProperties.query);
-		}//eof if 
-		else {
-			mqlProperties.query = null;
-			console.log('mqlProperties.query:');
-			console.log(mqlProperties.query);
-		}//eof else
-		
-	}//eof if 
-	else {
-		mqlProperties.queries = [];
-    	mqlProperties.query = null;
-		console.log('mqlProperties.query:');
-		console.log(mqlProperties.query);
-	}//eof else
-	console.log('mqlProperties.query:'); // for testing only
-	console.log(mqlProperties.query); // for testing only
+    if(typeof(mqlProperties.queries) !== 'undefined' && mqlProperties.queries !== null) {
+            console.log('mqlProperties.queries:');
+            console.log(mqlProperties.queries);		
+            if(typeof(mqlProperties.queries[mqlProperties.queryKey]) !== 'undefined') {
+                    mqlProperties.query = mqlProperties.queries[mqlProperties.queryKey];
+                    console.log('mqlProperties.query:');
+                    console.log(mqlProperties.query);
+            }//eof if 
+            else {
+                    mqlProperties.query = null;
+                    console.log('mqlProperties.query:');
+                    console.log(mqlProperties.query);
+            }//eof else
+
+    }//eof if 
+    else {
+            mqlProperties.queries = [];
+    mqlProperties.query = null;
+            console.log('mqlProperties.query:');
+            console.log(mqlProperties.query);
+    }//eof else
+    console.log('mqlProperties.query:'); // for testing only
+    console.log(mqlProperties.query); // for testing only
 	
     if (!mqlProperties.query){
         mqlProperties.query = new Array({
@@ -1620,7 +1708,7 @@ function generateSQL(mqlProperties, cb) {
 
         console.log("mqlProperties.mql_node['types'][0]:");
         console.log(mqlProperties.mql_node['types'][0]);
-    mqlProperties.type = mqlProperties.mql_node['types'][0]
+    mqlProperties.type = mqlProperties.mql_node['types'][0];
      	console.log('mqlProperties.type:'); // for testing only
 	console.log(mqlProperties.type); // for testing only   
     
@@ -1722,108 +1810,140 @@ function generateSQL(mqlProperties, cb) {
             // SO FAR SO GOOD .........************************************
         
         
-        
- /*       
-        
-        
-        if (array_key_exists('properties', $mql_node)) {
-            $properties = &$mql_node['properties'];
-            foreach ($properties as $property_name => &$property) {
+        if(arrayKeyExists('properties', mqlProperties.mql_node)){
+            
+            mqlProperties.properties = mqlProperties.mql_node['properties'];
+            console.log('mqlProperties.properties:');
+            console.log(mqlProperties.properties);
+            //REPLACES $properties = &$mql_node['properties'];
+            
+            console.log('mqlProperties.properties.length:');
+            console.log(mqlProperties.properties.length);         
+            
+            for(i=0; i<mqlProperties.properties.length; i++) {
+              console.log('i:');
+              console.log(i);
+              
+              if(mqlProperties.properties[i]['is_directive']){
+                switch(mqlProperties.properties[i].key) // TO DO: Will this retrieve the key ????  Test it !!!
+                {
+                   case 'limit': 
+                      mqlProperties.limit = mqlProperties.properties[i]['value'].toInt();
+                      console.log('mqlProperties.limit:');
+                      console.log(mqlProperties.limit);
+                      if (mqlProperties.limit < 0) {
+                        exit('Limit must not be less than zero.');
+                      }                           
+                      mqlProperties.query['limit'] = mqlProperties.limit;     
+                      break;
+                }//eof switch 
+              }//eof if  
+              else if(typeof(mqlProperties.mql_node['outer_join']) !== 'undefined') {
+                 mqlProperties.properties[i]['outer_join'] = mqlProperties.mql_node['outer_join'];
+                 console.log("mqlProperties.properties[i]['outer_join']:");
+                 console.log(mqlProperties.properties[i]['outer_join']);         
+              }//eof else if
+              mqlProperties.schema = mqlProperties.properties[i]['schema'];        
+              console.log('mqlProperties.schema:');
+              console.log(mqlProperties.schema);
+              if(typeof(mqlProperties.schema['direction']) !== 'undefined'){           
+                  // TO DO
+                mqlProperties.direction = mqlProperties.schema['direction'];
+                if(mqlProperties.direction === 'referenced<-referencing'){
+                  mqlProperties.index_columns = [];   
+                  mqlProperties.index_columns_string = '';  
 
-                if ($property['is_directive']) {
-                    switch ($property_name) {
-                        case 'limit':
-                            $limit = intval($property['value']);
-                            if ($limit < 0) {
-                                exit('Limit must not be less than zero.');
-                            }
-                            $query['limit'] = $limit;
-                            break;
-                    }
-                }
-                else
-                            if (isset($mql_node['outer_join'])){
-                                    $property['outer_join'] = $mql_node['outer_join'];
-                            }
-
-                $schema = $property['schema'];
-                if (isset($schema['direction'])) {
-                                    $direction = $schema['direction'];
-                    if ($direction === 'referenced<-referencing'){
-                        $index_columns = array();
-                        $index_columns_string = '';
-                        foreach ($schema['join_condition'] as $columns) {
-                            $column_ref = $tAlias.'.'.$columns['referenced_column'];
-                            if (isset($select[$column_ref])) {
-                                                            $cAlias = $select[$column_ref];
-                            }
-                                                    else {
-                                $cAlias = $tAlias.get_cAlias();
-                                $select[$column_ref] = $cAlias;
-                                                    }
-                            $index_columns_string .= $cAlias;
-                            $index_columns[] = $cAlias;
-                        }
-                        if (!isset($indexes[$index_columns_string])){
-                            $indexes[$index_columns_string] = array(
-                                'columns'   =>  $index_columns
-                            ,   'entries'   =>  array()
-                            );
-                        }
-                        $merge_into = array(
-                            'query_index'   =>  $query_index                  
-                        ,   'index'         =>  $index_columns_string
-                        ,   'columns'       =>  array()
-                        );
-                        $new_query_index = count($queries);
-                    }
-                    else 
-                    if ($direction === 'referencing->referenced') {
-                        $merge_into = NULL;
-                        $new_query_index = $query_index;
-                    }            
-                    $property['query_index'] = $new_query_index;
-                    generateSQL($property, $queries, $new_query_index, $tAlias, $merge_into);
-                }
-                else 
-                if ($column_name = $schema['column_name']){
-                    if ($property['is_filter']) {        
-                        handle_filter_property($queries, $query_index, $tAlias, $column_name, $property);
-                    }
-                    else {
-                        handle_non_filter_property($tAlias, $column_name, $select, $property);
-                    }
-                }
-            }
-        }
-        else 
-        if (array_key_exists('default_property', $schema_type)) {
-            $default_property_name = $schema_type['default_property'];
-            $properties = $schema_type['properties'];
-            if (!array_key_exists($default_property_name, $properties)) {
-                exit('Default property "'.$default_property_name.'" specified but not found in "/'.$domain_name.'/'.$type_name.'"');
-            }
-            $default_property = $properties[$default_property_name];
-            $column_name = $default_property['column_name'];
-            $property = &$mql_node;
-            $schema = &$property['schema'];
-            $schema['type'] = $default_property['type'];
-            if ($property['is_filter']) {        
-                handle_filter_property($where, $params, $tAlias, $column_name, $property);
-            }
-            else {
-                handle_non_filter_property($tAlias, $column_name, $select, $property);
-            }
-        }
-    */
-            console.log('>>> leaving generateSQL');
-            mqlProperties.callBackHandleQuery(null, mqlProperties); //TEMPORARY PLACEHOLDER TO FORCE A RETURN
+                  // TO DO
 
 
 
+// REPLACES
+//                        foreach ($schema['join_condition'] as $columns) {
+//                            $column_ref = $tAlias.'.'.$columns['referenced_column'];
+//                            if (isset($select[$column_ref])) {
+//                              $cAlias = $select[$column_ref];
+//                            }
+//                            else {
+//                              $cAlias = $tAlias.get_cAlias();
+//                              $select[$column_ref] = $cAlias;
+//                            }
+//                            $index_columns_string .= $cAlias;
+//                            $index_columns[] = $cAlias;
+//                        }
+//                        
+//                        
+//                        if (!isset($indexes[$index_columns_string])){
+//                            $indexes[$index_columns_string] = array(
+//                                'columns'   =>  $index_columns
+//                            ,   'entries'   =>  array()
+//                            );
+//                        }
+//                        
+//                        $merge_into = array(
+//                            'query_index'   =>  $query_index                  
+//                        ,   'index'         =>  $index_columns_string
+//                        ,   'columns'       =>  array()
+//                        );
+//                        
+//                        $new_query_index = count($queries);                    
+                    
+                }//eof if                    
+                else if ($direction === 'referencing->referenced') {
+                  mqlProperties.merge_into = null;
+                  mqlProperties.new_query_index = mqlProperties.query_index;
+                }//eof else if                                          
+                mqlProperties.properties[i]['query_index'] = mqlProperties.new_query_index;
+                generateSQL(mqlProperties, function(err, mqlProperties) {
+                  console.log('>>> back inside generateSQL from generateSQL (itself!)'); // for testing only			
+                  // TO DO			
 
-
-        
+                  console.log('>>> leaving generateSQL');
+                  mqlProperties.callBackHandleQuery(null, mqlProperties);
+                });//eof generateSQL... a call to itself!                 
+              }//eof if
+              else if(mqlProperties.column_name === mqlProperties.schema['column_name']) {  
+                if(mqlProperties.properties[i]['is_filter']){ 
+                  // TO DO
+                  //   
+                  // REPLACES handle_filter_property($queries, $query_index, $tAlias, $column_name, $property);
+                }//eof if
+                else {
+                  // TO DO  
+                  //  
+                  // REPLACES handle_non_filter_property($tAlias, $column_name, $select, $property);
+                }//eof else                    
+              }//eof else if                     
+            }//eof for
+        }//eof if
+        else if(arrayKeyExists('default_property', mqlProperties.schema_type)){
+            
+            // TO DO
+            
+            
+            
+            // REPLACES
+            
+//            $default_property_name = $schema_type['default_property'];
+//            $properties = $schema_type['properties'];
+//            if (!array_key_exists($default_property_name, $properties)) {
+//                exit('Default property "'.$default_property_name.'" specified but not found in "/'.$domain_name.'/'.$type_name.'"');
+//            }
+//            $default_property = $properties[$default_property_name];
+//            $column_name = $default_property['column_name'];
+//            $property = &$mql_node;
+//            $schema = &$property['schema'];
+//            $schema['type'] = $default_property['type'];
+//            if ($property['is_filter']) {        
+//                handle_filter_property($where, $params, $tAlias, $column_name, $property);
+//            }
+//            else {
+//                handle_non_filter_property($tAlias, $column_name, $select, $property);
+//            }            
+            
+            
+        }//eof else if
+        console.log('>>> leaving generateSQL');
+        mqlProperties.callBackHandleQuery(null, mqlProperties); //TEMPORARY PLACEHOLDER TO FORCE A RETURN
     });//eof analyzeType          
 }//eof generateSQL
 /*****************************************************************************
