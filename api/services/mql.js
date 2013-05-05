@@ -1905,79 +1905,190 @@ function generateSQL(mqlProperties, cb) {
 /*****************************************************************************
 *   Execute Query / Render Result
 ******************************************************************************/
-
+// helper for executeSQLQueries: NOT callback function
+function getResultObject(mqlProperties, index, object, key){
+  console.log('>>> inside getResultObject'); // for testing only
+  if(mqlProperties.mql_node['query_index'] !== index){
+    console.log('>>> leaving getResultObject');
+    return;      
+  }//eof if
+  mqlProperties.object = [];
+  if(mqlProperties.result_object instanceof Array){
+    mqlProperties.result_object[mqlProperties.key] = mqlProperties.object;  
+  }//eof if
+  else{
+    mqlProperties.result_object = mqlProperties.object;  
+  }//eof else
+  if(typeof(mqlProperties.mql_node['entries']) !== 'undefined'){
+    getResultObject(mqlProperties, index, mqlProperties.object, 0);    
+  }//eof if
+  else if(typeof(mqlProperties.mql_node['properties']) !== 'undefined') {
+    // TO DO
+    for(i=0; i<mqlProperties.mql_node['properties'].length; i++) {
+      if(mqlProperties.mql_node['properties'][i]['operator'] || mqlProperties.mql_node['properties'][i]['is_directive']){
+        continue;  
+      }//eof if
+      mqlProperties.value = mqlProperties.mql_node['properties'][i]['value'];
+      console.log('mqlProperties.value:');
+      console.log(mqlProperties.value);
+      if(mqlProperties.value instanceof Object || mqlProperties.value instanceof Array){
+        getResultObject(mqlProperties, index, mqlProperties.object, mqlProperties.mql_node['properties'][i].key);   
+      }//eof if
+      else{
+        mqlProperties.object[mqlProperties.mql_node['properties'][i].key] = mqlProperties.value;
+      }//eof else
+    }//eof for     
+  }//eof else if
+  mqlProperties.mql_node['result_object'] = mqlProperties.object;
+  console.log('>>> leaving getResultObject');
+  return mqlProperties.object;
+}//eof getResultObject
 
 // helper for handleQuery
 function executeSQLQueries(mqlProperties, cb) {	
-    console.log('>>> inside executeSQLQueries'); // for testing only
-    mqlProperties.callBackHandleQuery = cb;
-	
- // TO DO
+  console.log('>>> inside executeSQLQueries'); // for testing only
+  mqlProperties.callBackHandleQuery = cb;
+  console.log('mqlProperties.queries:'); // for testing only
+  console.log(mqlProperties.queries); // for testing only 
+  mqlProperties.sql_queries = mqlProperties.queries;
+  for(i=0; i<mqlProperties.sql_queries.length; i++) {
+  // REPLACES foreach($sql_queries as $sql_query_index => &$sql_query){
+    console.log('i:'); // for testing only
+    console.log(i); // for testing only   
 
-
-
-/*	
-    foreach($sql_queries as $sql_query_index => &$sql_query){
+    mqlProperties.indexes = mqlProperties.sql_queries[i]['indexes'];
+    console.log('mqlProperties.indexes:'); // for testing only
+    console.log(mqlProperties.indexes); // for testing only 
     
-        $indexes = &$sql_query['indexes'];
-                
-        $mql_node = $sql_query['mql_node'];
-        get_result_object($mql_node, $sql_query_index);
-        $result_object = $mql_node['result_object'];
-                
-        if ($merge_into = $sql_query['merge_into']) {
-            $merge_into_columns = $merge_into['columns'];
-            $select_columns = $sql_query['select'];
-            $merge_into_values_new = array();
-            $merge_into_values_old = array();
-            $offset = -1;
+    mqlProperties.mql_node = mqlProperties.sql_queries[i]['mql_node'];
+    console.log('mqlProperties.mql_node:'); // for testing only
+    console.log(mqlProperties.mql_node); // for testing only 
 
-            $index_name = $merge_into['index'];
-            $index = $sql_queries[$merge_into['query_index']]['indexes'][$index_name];
-            $index_columns = $index['columns'];
-            $extra_from_line = array(
-                'table' => $index['inline_table']
-            ,   'alias' => $index_name
-            );
-            $join_condition = '';
-            foreach ($index_columns as $position => $index_column) {
-                $join_condition .= ($join_condition==='' ? 'ON' : "\nAND").' '
-                                .   $index_name.'.'.$index_column.' = '
-                                .   array_search($merge_into_columns[$position], $select_columns, TRUE)
-                                ;
-            }
-            $from = &$sql_query['from'];
-                        //php guru's, isn't the a func to get the first element of an array?
-                        foreach ($from as &$first_from_line) { break; }
-            $first_from_line['join_condition'] = $join_condition;
-            $first_from_line['join_type'] = 'INNER';
-            array_unshift($from, $extra_from_line);            
-        }
+    getResultObject(mqlProperties,i); // NOT a callback function
+
+    mqlProperties.result_object = mqlProperties.mql_node['result_object'];
+    console.log('mqlProperties.result_object:'); // for testing only
+    console.log(mqlProperties.result_object); // for testing only 
         
-        $result = &$sql_query['results'];
-        $rows = execute_sql_query($sql_query);
-        foreach($rows as $row_index => $row){
-            if ($merge_into){            
-                foreach ($merge_into_columns as $col_index => $alias){
-                    $merge_into_values_new[$col_index] = $row[$alias];
-                }
-                if ($merge_into_values_new !== $merge_into_values_old){
-                    merge_results($sql_queries, $sql_query_index, $merge_into_values_old, $offset, $row_index);
-                    $offset = $row_index;
-                }
-                $merge_into_values_old = $merge_into_values_new;
-            }
-            fill_result_object($mql_node, $sql_query_index, $row, $result_object);
-            $result[$row_index] = $result_object;
-            add_entry_to_indexes($indexes, $row_index, $row);
-        }
-        create_inline_tables_for_indexes($indexes);
-        if (isset($merge_into_values_old) && count($merge_into_values_old)) {
-            merge_results($sql_queries, $sql_query_index, $merge_into_values_old, $offset, $row_index);
-        }
-    }
-*/
+    if(mqlProperties.merge_into === mqlProperties.sql_queries[i]['merge_into']){
+      mqlProperties.merge_into_columns = mqlProperties.merge_into['columns'];
+      console.log('mqlProperties.merge_into_columns:'); // for testing only
+      console.log(mqlProperties.merge_into_columns); // for testing only 
 
+      mqlProperties.select_columns = mqlProperties.sql_queries[i]['select'];
+      console.log('mqlProperties.select_columns:'); // for testing only
+      console.log(mqlProperties.select_columns); // for testing only       
+      
+      mqlProperties.merge_into_values_new = [];
+      console.log('mqlProperties.merge_into_values_new:'); // for testing only
+      console.log(mqlProperties.merge_into_values_new); // for testing only       
+
+      mqlProperties.merge_into_values_old = [];
+      console.log('mqlProperties.merge_into_values_old:'); // for testing only
+      console.log(mqlProperties.merge_into_values_old); // for testing only        
+
+      mqlProperties.offset = -1;
+      console.log('mqlProperties.offset:'); // for testing only
+      console.log(mqlProperties.offset); // for testing only            
+
+      mqlProperties.index_name = mqlProperties.merge_into['index'];
+      console.log('mqlProperties.index_name:'); // for testing only
+      console.log(mqlProperties.index_name); // for testing only 
+      mqlProperties.index = mqlProperties.sql_queries[mqlProperties.merge_into['query_index']]['indexes'][mqlProperties.index_name];
+      console.log('mqlProperties.index:'); // for testing only
+      console.log(mqlProperties.index); // for testing only       
+      mqlProperties.index_columns = mqlProperties.index['columns'];
+      console.log('mqlProperties.index_columns:'); // for testing only
+      console.log(mqlProperties.index_columns); // for testing only 
+      
+      mqlProperties.extra_from_line = new Array({
+        'table' : mqlProperties.index['inline_table'],    
+        'alias' : mqlProperties.index_name 
+      });      
+      console.log('mqlProperties.extra_from_line:'); // for testing only
+      console.log(mqlProperties.extra_from_line); // for testing only 
+                  
+      mqlProperties.join_condition = ''; 
+      console.log('mqlProperties.join_condition:'); // for testing only
+      console.log(mqlProperties.join_condition); // for testing only       
+      // TO DO
+      
+      for(n=0; n<mqlProperties.index_columns.length; n++) {
+        if(mqlProperties.join_condition === ''){
+            mqlProperties.join_condition = mqlProperties.join_condition 
+              + 'ON'
+              + ' '
+              + mqlProperties.index_name
+              + '.'
+              + mqlProperties.index_columns[n]
+              + ' = '
+              + arraySearch(mqlProperties.merge_into_columns[mqlProperties.index_columns[n].key], mqlProperties.select_columns, true); // TO DO implement the function arraySearch()
+        }//eof if 
+        else{
+            mqlProperties.join_condition = mqlProperties.join_condition 
+              + '\AND'
+              + ' '
+              + mqlProperties.index_name
+              + '.'
+              + mqlProperties.index_columns[n]
+              + ' = '
+              + arraySearch(mqlProperties.merge_into_columns[mqlProperties.index_columns[n].key], mqlProperties.select_columns, true); // TO DO implement the function arraySearch()
+        }//eof else  
+      }//eof for
+      mqlProperties.from = mqlProperties.sql_queries[i]['from'];
+      console.log('mqlProperties.from:'); // for testing only
+      console.log(mqlProperties.from); // for testing only       
+      // TO DO
+      
+      
+      
+      
+      
+      
+      
+      
+//    // REPLACES
+//
+//    //php guru's, isn't there a function to get the first element of an array?
+//    foreach ($from as &$first_from_line) {
+//      break; 
+//    }
+//    
+//    $first_from_line['join_condition'] = $join_condition;
+//    $first_from_line['join_type'] = 'INNER';
+//    array_unshift($from, $extra_from_line);             
+            
+        
+    }//eof if  
+      
+    // TO DO
+    //   
+    // REPLACES
+//        
+//        
+//  $result = &$sql_query['results'];
+//  $rows = execute_sql_query($sql_query);
+//  foreach($rows as $row_index => $row){
+//            if ($merge_into){            
+//                foreach ($merge_into_columns as $col_index => $alias){
+//                    $merge_into_values_new[$col_index] = $row[$alias];
+//                }
+//                if ($merge_into_values_new !== $merge_into_values_old){
+//                    merge_results($sql_queries, $sql_query_index, $merge_into_values_old, $offset, $row_index);
+//                    $offset = $row_index;
+//                }
+//                $merge_into_values_old = $merge_into_values_new;
+//            }
+//            fill_result_object($mql_node, $sql_query_index, $row, $result_object);
+//            $result[$row_index] = $result_object;
+//            add_entry_to_indexes($indexes, $row_index, $row);
+//  }
+//  create_inline_tables_for_indexes($indexes);
+//  if (isset($merge_into_values_old) && count($merge_into_values_old)) {
+//            merge_results($sql_queries, $sql_query_index, $merge_into_values_old, $offset, $row_index);
+//  }        
+  
+  }//eof for
   console.log('>>> leaving executeSQLQueries');
   mqlProperties.callBackHandleQuery(null, mqlProperties);
 }//eof executeSQLQueries
@@ -2080,10 +2191,7 @@ function handleQuery(mqlProperties, cb) {
             }
             mqlProperties.sqlQueries = null;
             console.log('mqlProperties.sqlQueries:'); // for testing only	
-            console.log(mqlProperties.sqlQueries); // for testing only	
-
-//			var generated_sql = generateSQL(mqlProperties.metaData, mqlProperties.parent, mqlProperties.sqlQueries, 0); // MOST LIKELY THIS NEEDS processed_mql INSTEAD OF parent
-
+            console.log(mqlProperties.sqlQueries); // for testing only
             generateSQL(mqlProperties, function(err, mqlProperties){
                 console.log('>>> back inside handleQuery from generateSQL'); // for testing only 				
                 if(err){
