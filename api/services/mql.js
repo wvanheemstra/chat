@@ -14,6 +14,38 @@ exports.read = function(req, res) {
             path = require("path"),
             fs = require("fs"),
             mysql = require("mysql");
+    
+    var nuodb = require('db-nuodb');
+    /* testing the new nuodb */
+    /* info to be found here http://nuodb.github.io/node-db-nuodb/ */
+    /*
+    new nuodb.Database({
+        hostname: 'localhost',
+        user: 'newAdmin',
+        password: 'newAdminPW',
+        database: 'test',
+        schema: 'test'
+    }).connect(function(error) {
+        if (error) {
+            return console.log("CONNECTION ERROR: " + error);
+        } else {
+            // 'this' object represents the connection cursor
+        }
+    });
+    */
+    
+    new nuodb.Database({
+        hostname: 'localhost',
+        user: 'dba',
+        password: 'goalie',
+        database: 'test',
+        schema: 'test'
+    }).on('error', function(error) {
+        console.log('ERROR: ' + error);
+    }).on('ready', function(server) {
+        console.log('Connected to ' + server.hostname + ' (' + server.version + ')');
+    }).connect();
+    
     /****************************************************************************
      * Properties
      *****************************************************************************/
@@ -321,10 +353,10 @@ function handleRequest(mqlProperties, cb) {
  *   Miscellaneous
  ******************************************************************************/
 function debug(message) {
-   var debug = true; // switch to log or not log messages     
-   if(debug){
-       console.log(message);
-   }
+    var debug = true; // switch to log or not log messages     
+    if (debug) {
+        console.log(message);
+    }
 }
 
 function isObject(mixed_var) {
@@ -1162,7 +1194,7 @@ function processMQLObject(mqlProperties, cb) {
                     mqlProperties.parent['types'] = arrayKeys(mqlProperties.types);
 
                     if (mqlProperties.starProperty === true) {
-                        //			        expand_star(type['properties'], pre_processed_properties ); // TO DO: Make this work
+                        //  expand_star(type['properties'], pre_processed_properties ); // TO DO: Make this work
                     }
                     debug('WE DID: checkTypes ... '); // for testing only
 
@@ -1199,7 +1231,7 @@ function processMQLArray(mqlProperties, cb) {
     mqlProperties.mqlArray = mqlProperties.queryOrQueries[0];
     debug('mqlProperties.mqlArray:'); // for testing only
     debug(mqlProperties.mqlArray); // for testing only
-    var count = count(mqlProperties.mqlArray);							// TO DO: DOES THIS WORK???
+    var count = count(mqlProperties.mqlArray);	// TO DO: DOES THIS WORK???
     debug('count:'); // for testing only
     debug(count); // for testing only	
     switch (count) {
@@ -1210,7 +1242,7 @@ function processMQLArray(mqlProperties, cb) {
             if (array_key_exists('schema', mqlProperties.parent)) {								// TO DO
                 mqlProperties.parent['entries']['schema'] = mqlProperties.parent['schema'];
             }
-            processMQL(mqlProperties.mqlArray[0], mqlProperties.parent['entries']);				// TO DO
+            processMQL(mqlProperties.mqlArray[0], mqlProperties.parent['entries']); // TO DO
             break;
         default:
             debug('Expected a dictionary or a list with one element in a read (were you trying to write?)');
@@ -1931,6 +1963,147 @@ function generateSQL(mqlProperties, cb) {
  *   Execute Query / Render Result
  ******************************************************************************/
 
+// helper for executeSQL: NOT a callback function
+function prepareSQLStatement(mqlProperties){
+    debug('>>> inside prepareSQLStatement'); // for testing only
+
+    if(typeof(mqlProperties.statement_cache) == 'undefined'){
+        mqlProperties.statement_cache = [];
+    }//eof if
+
+//REPLACES $statement_cache = array();
+
+    // TO DO
+    if(typeof(mqlProperties.statement_cache[mqlProperties.sql]) !== 'undefinded'){
+        mqlProperties.statement_handle = mqlProperties.statement_cache[mqlProperties.sql];
+    }//eof if
+    else{
+        mqlProperties.statement_handle = ''; // TO DO: implement the javascript variant of a PDO prepare()
+        mqlProperties.statement_cache[mqlProperties.sql] = mqlProperties.statement_handle;
+    }//eof else
+
+
+// REPLACES
+//function prepare_sql_statement($statement_text){
+//    global $pdo, $statement_cache;
+//    if (isset($statement_cache[$statement_text])){
+//        $statement_handle = $statement_cache[$statement_text];
+//    } else {
+//        $statement_handle = $pdo->prepare($statement_text);
+//        $statement_cache[$statement_text] = $statement_handle;
+//    }
+//    return $statement_handle;
+//}
+
+    debug('>>> leaving prepareSQLStatement'); // for testing only
+    return mqlProperties;
+}//eof prepareSQLStatement
+
+// helper for executeSQLQuery: NOT a callback function
+function executeSQL(mqlProperties){
+    debug('>>> inside executeSQL'); // for testing only
+
+    debug('mqlProperties.sql:');
+    debug(mqlProperties.sql); 
+    
+    debug("mqlProperties.sql_query['params']:");
+    debug(mqlProperties.sql_query['params']);
+    
+    debug('mqlProperties.limit:');
+    debug(mqlProperties.limit);    
+
+    debug('mqlProperties.noexecute:');
+    debug(mqlProperties.noexecute); 
+    
+    if(mqlProperties.noexecute){
+        mqlProperties.result = [];
+        return mqlProperties;
+    }//eof if
+    
+    try{
+        mqlProperties.statement_handle = prepareSQLStatement(mqlProperties); // TO DO: implement function prepareSQLStatement
+        
+        // TO DO
+        
+        
+        
+        
+        // REPLACES
+//        foreach($params as $param_key => $param){
+//            $statement_handle->bindValue(
+//                $param['name']
+//            ,   $param['value']
+//            ,   $param['type']
+//            );
+//        }
+//        $statement_handle->execute();
+//        if ($limit === -1) {
+//            $result = $statement_handle->fetchAll(PDO::FETCH_ASSOC);
+//        }
+//        else {
+//            $result = array();
+//            while ($limit-- && $row = $statement_handle->fetch(PDO::FETCH_ASSOC)) {
+//                $result[] = $row;
+//            }
+//        }
+//        $statement_handle->closeCursor();        
+        
+    }//eof try
+    catch(ex){
+        debug(ex.message
+            + ' Offending statement: '
+            + mqlProperties.sql);
+        mqlProperties.err = ex;
+        return mqlProperties;
+        //throw new Exception(
+        //    ex.message
+        //    + ' Offending statement: '
+        //    + mqlProperties.sql
+        //);
+    }//eof catch
+    
+    
+    // REPLACES
+//function &execute_sql($statement_text, $params, $limit){
+//    global $pdo, $noexecute;
+//    if ($noexecute){
+//        return array();
+//    }
+//    try {
+//        $statement_handle = prepare_sql_statement($statement_text);
+//        foreach($params as $param_key => $param){
+//            $statement_handle->bindValue(
+//                $param['name']
+//            ,   $param['value']
+//            ,   $param['type']
+//            );
+//        }
+//        $statement_handle->execute();
+//        if ($limit === -1) {
+//            $result = $statement_handle->fetchAll(PDO::FETCH_ASSOC);
+//        }
+//        else {
+//            $result = array();
+//            while ($limit-- && $row = $statement_handle->fetch(PDO::FETCH_ASSOC)) {
+//                $result[] = $row;
+//            }
+//        }
+//        $statement_handle->closeCursor();
+//    } catch (Exception $exception) {
+//        throw new Exception(
+//            $exception->getMessage().
+//            ' Offending statement: '.$statement_text
+//        );
+//    }
+//    return $result;
+//}
+    mqlProperties.rows = mqlProperties.result;
+    debug('>>> leaving executeSQL');
+    return mqlProperties;
+}//eof executeSQL
+
+
+
 // helper for executeSQLQuery: NOT a callback function
 function getQuerySQL(mqlProperties) {
     debug('>>> inside getQuerySQL'); // for testing only
@@ -1979,53 +2152,50 @@ function getQuerySQL(mqlProperties) {
     mqlProperties.optionality_groups = [];
     debug('mqlProperties.optionality_groups:');
     debug(mqlProperties.optionality_groups);
-//TO DO
     for (i = 0; i < mqlProperties.sql_query['from'].length; i++) {
-
-
-
-
-
-
-
-// TO DO BY WILLEM      
-
-
-
-
-
-
-    }//eof for  
-
-//REPLACES    
-//    foreach ($query['from'] as $index => $from_line) {
-//        if (isset($from_line['optionality_group'])) {
-//                        $optionality_group_name = $from_line['optionality_group'];
-//            if (!array_key_exists ($optionality_group_name, $optionality_groups)) {
-//                $optionality_groups[$optionality_group_name] = array();
-//            }
-//            $optionality_group = &$optionality_groups[$optionality_group_name];
-//            $optionality_group[] = $from_line['optionality_group_column'];
-//        }
-//        $from_or_join = $index && (isset($from_line['join_type']));
-//        if ($from_or_join) {
-//            $sql .= "\n".$from_line['join_type'].' JOIN '
-//                    .$from_line['table'].' '.$from_line['alias']
-//                    ."\n".$from_line['join_condition']
-//            ;
-//        }
-//        else
-//        if (array_key_exists('table', $from_line)) {
-//            $sql .= "\nFROM ".$from_line['table'].' '.$from_line['alias'];
-//        }
-//        else
-//        if ($from_line['join_condition']){
-//            //these are filter condition but we write them in the join
-//            //this is required to handle outer joins.
-//            $sql .= "\n".$from_line['join_condition'];
-//        }
-//    }  
-//    
+        if (typeof(mqlProperties.sql_query['from'][i].value['optionality_group']) !== 'undefined') {
+            mqlProperties.optionality_group_name = mqlProperties.sql_query['from'][i].value['optionality_group'];
+            debug('mqlProperties.optionality_group_name:');
+            debug(mqlProperties.optionality_group_name);
+            if (!arrayKeyExists(mqlProperties.optionality_group_name, mqlProperties.optionality_groups)) {
+                mqlProperties.optionality_groups[mqlProperties.optionality_group_name] = [];
+            }//eof if
+            mqlProperties.optionality_group = mqlProperties.optionality_groups[mqlProperties.optionality_group_name];
+            mqlProperties.optionality_group[0] = mqlProperties.sql_query['from'][i].value['optionality_group_column'];
+            debug('mqlProperties.optionality_group:');
+            debug(mqlProperties.optionality_group);
+        }//eof if 
+        mqlProperties.from_or_join = mqlProperties.sql_query['from'][i].key && (typeof(mqlProperties.sql_query['from'][i].value['join_type']) !== 'undefined');
+        debug('mqlProperties.from_or_join:');
+        debug(mqlProperties.from_or_join);
+        if (mqlProperties.from_or_join) {
+            mqlProperties.sql = mqlProperties.sql
+                    + '\n'
+                    + mqlProperties.sql_query['from'][i].value['join_type']
+                    + ' JOIN '
+                    + mqlProperties.sql_query['from'][i].value['table']
+                    + ' '
+                    + mqlProperties.sql_query['from'][i].value['alias']
+                    + '\n'
+                    + mqlProperties.sql_query['from'][i].value['join_condition'];
+        }//eof if
+        else if (arrayKeyExists('table', mqlProperties.sql_query['from'][i].value)) {
+            mqlProperties.sql = mqlProperties.sql
+                    + '\nFROM '
+                    + mqlProperties.sql_query['from'][i].value['table']
+                    + ' '
+                    + mqlProperties.sql_query['from'][i].value['alias'];
+        }//eof else if
+        else if (mqlProperties.sql_query['from'][i].value['join_condition']) {
+            //these are filter condition but we write them in the join
+            //this is required to handle outer joins. 
+            mqlProperties.sql = mqlProperties.sql
+                    + '\n'
+                    + mqlProperties.sql_query['from'][i].value['join_condition'];
+        }//eof else if
+        debug('mqlProperties.sql:');
+        debug(mqlProperties.sql);
+    }//eof for     
     mqlProperties.where = mqlProperties.sql_query['where'];
     debug('mqlProperties.where:');
     debug(mqlProperties.where);
@@ -2120,8 +2290,7 @@ function executeSQLQuery(mqlProperties) {
     mqlProperties.sql_query['sql'] = mqlProperties.sql;
 
     debug('>>> leaving executeSQLQuery');
-
-    // TO DO
+    return executeSQL(mqlProperties); // TO DO: implement function executeSQL
 
     // REPLACES
 //    return execute_sql($sql, $sql_query['params'], $limit);  
@@ -2288,7 +2457,7 @@ function executeSQLQueries(mqlProperties, cb) {
         debug('mqlProperties.sql_query:');
         debug(mqlProperties.sql_query);
 
-        mqlProperties.rows = executeSQLQuery(mqlProperties);// TO DO: Should this be a call back function???
+        mqlProperties = executeSQLQuery(mqlProperties);// TO DO: Should this be a call back function???
         debug('mqlProperties.rows:');
         debug(mqlProperties.rows);
 
