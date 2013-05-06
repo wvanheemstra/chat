@@ -412,9 +412,9 @@ function pregMatchAll(mqlProperties, cb) {
 	console.log('>>> leaving pregMatchAll'); // for testing only
 	mqlProperties.callBackPregMatchAll(null, mqlProperties);
 }//eof pregMatchAll
-function array_keys(input, search_value, argStrict) {
-	console.log('>>> inside array_keys'); // for testing only 
-  // see http://phpjs.org/functions/array_keys/	
+function arrayKeys(input, search_value, argStrict) {
+	console.log('>>> inside arrayKeys'); // for testing only 
+  // see http://phpjs.org/functions/arrayKeys/	
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
   // +      input by: Brett Zamir (http://brett-zamir.me)
@@ -423,7 +423,7 @@ function array_keys(input, search_value, argStrict) {
   // +   improved by: Brett Zamir (http://brett-zamir.me)
   // +   input by: P
   // +   bugfixed by: Brett Zamir (http://brett-zamir.me)
-  // *     example 1: array_keys( {firstname: 'Kevin', surname: 'van Zonneveld'} );
+  // *     example 1: arrayKeys( {firstname: 'Kevin', surname: 'van Zonneveld'} );
   // *     returns 1: {0: 'firstname', 1: 'surname'}
   var search = typeof search_value !== 'undefined',
     tmp_arr = [],
@@ -450,7 +450,7 @@ function array_keys(input, search_value, argStrict) {
     }
   }
   return tmp_arr;
-}//eof array_keys
+}//eof arrayKeys
 /**
 * Unset variables, objects, array elements and object 
 * properties in Javascript much like you can in PHP
@@ -1152,7 +1152,7 @@ function processMQLObject(mqlProperties, cb) {
 				    for(var i=0; i<mqlProperties.types.length; i++) { //extract the type name
 						mqlProperties.typeName[i] = mqlProperties.types[i];
 					}
-				    mqlProperties.parent['types'] = array_keys(mqlProperties.types);					
+				    mqlProperties.parent['types'] = arrayKeys(mqlProperties.types);					
 				
 				    if (mqlProperties.starProperty===true) {
 	//			        expand_star(type['properties'], pre_processed_properties ); // TO DO: Make this work
@@ -1388,6 +1388,23 @@ function isOptional(mqlProperties){
 //    }
 //    return $optional; 
     
+}
+
+function arrayUnshift (array) {
+  // http://kevin.vanzonneveld.net
+  // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +   improved by: Martijn Wieringa
+  // +   improved by: jmweb
+  // %        note 1: Currently does not handle objects
+  // *     example 1: array_unshift(['van', 'Zonneveld'], 'Kevin');
+  // *     returns 1: 3
+  var i = arguments.length;
+
+  while (--i !== 0) {
+    arguments[0].unshift(arguments[i]);
+  }
+
+  return arguments[0].length;
 }
 
 function arrayKeyExists (key, search) {
@@ -1905,7 +1922,205 @@ function generateSQL(mqlProperties, cb) {
 /*****************************************************************************
 *   Execute Query / Render Result
 ******************************************************************************/
-// helper for executeSQLQueries: NOT callback function
+
+// helper for executeSQLQuery: NOT a callback function
+function getQuerySQL(mqlProperties){
+  console.log('>>> inside getQuerySQL'); // for testing only
+
+  console.log('mqlProperties.sqlDialect:');
+  console.log(mqlProperties.sqlDialect);
+
+  console.log('mqlProperties.sql_query:');
+  console.log(mqlProperties.sql_query);
+  
+  mqlProperties.identifier_quote_start = mqlProperties.sqlDialect['identifier_quote_start'];
+  console.log('mqlProperties.identifier_quote_start:');
+  console.log(mqlProperties.identifier_quote_start);
+  
+  mqlProperties.identifier_quote_end = mqlProperties.sqlDialect['identifier_quote_end'];
+  console.log('mqlProperties.identifier_quote_end:');
+  console.log(mqlProperties.identifier_quote_end);
+  
+  mqlProperties.sql = 'SELECT';
+  console.log('mqlProperties.sql:');
+  console.log(mqlProperties.sql);  
+  
+  if(mqlProperties.select_columns === mqlProperties.sql_query['select']){
+    for(i=0; i<mqlProperties.select_columns.length; i++) {
+      if(mqlProperties.sql === 'SELECT'){
+        mqlProperties.sql = mqlProperties.sql 
+                          + '  '
+                          + mqlProperties.select_columns[i].key
+                          + ' AS '
+                          + mqlProperties.select_columns[i].value;  
+      }//eof if
+      else{
+        mqlProperties.sql = mqlProperties.sql 
+                          + '\n, '
+                          + mqlProperties.select_columns[i].key
+                          + ' AS '
+                          + mqlProperties.select_columns[i].value; 
+      }//eof else
+    }//eof for 
+  }//eof if
+  else{
+    mqlProperties.sql = mqlProperties.sql + ' NULL';    
+  }//eof else
+  console.log('mqlProperties.sql:');
+  console.log(mqlProperties.sql);
+  mqlProperties.optionality_groups = [];
+  console.log('mqlProperties.optionality_groups:');
+  console.log(mqlProperties.optionality_groups);
+//TO DO
+  for(i=0; i<mqlProperties.sql_query['from'].length; i++){
+    
+      
+      
+      
+      
+      
+      
+// TO DO BY WILLEM      
+      
+        
+      
+      
+      
+      
+  }//eof for  
+            
+//REPLACES    
+//    foreach ($query['from'] as $index => $from_line) {
+//        if (isset($from_line['optionality_group'])) {
+//                        $optionality_group_name = $from_line['optionality_group'];
+//            if (!array_key_exists ($optionality_group_name, $optionality_groups)) {
+//                $optionality_groups[$optionality_group_name] = array();
+//            }
+//            $optionality_group = &$optionality_groups[$optionality_group_name];
+//            $optionality_group[] = $from_line['optionality_group_column'];
+//        }
+//        $from_or_join = $index && (isset($from_line['join_type']));
+//        if ($from_or_join) {
+//            $sql .= "\n".$from_line['join_type'].' JOIN '
+//                    .$from_line['table'].' '.$from_line['alias']
+//                    ."\n".$from_line['join_condition']
+//            ;
+//        }
+//        else
+//        if (array_key_exists('table', $from_line)) {
+//            $sql .= "\nFROM ".$from_line['table'].' '.$from_line['alias'];
+//        }
+//        else
+//        if ($from_line['join_condition']){
+//            //these are filter condition but we write them in the join
+//            //this is required to handle outer joins.
+//            $sql .= "\n".$from_line['join_condition'];
+//        }
+//    }  
+//    
+  mqlProperties.where = mqlProperties.sql_query['where'];
+  console.log('mqlProperties.where:');
+  console.log(mqlProperties.where);
+  for(i=0; i<mqlProperties.optionality_groups.length; i++) {
+    mqlProperties.condition_null = '';
+    mqlProperties.condition_not_null = '';
+    // foreach here
+    for(n=0; n<mqlProperties.optionality_groups[i].value.length; n++){
+      if(mqlProperties.condition_null !== ''){
+        mqlProperties.condition_null = mqlProperties.condition_null
+                                       + ' AND ';
+      }//eof if
+      mqlProperties.condition_null = mqlProperties.condition_null
+                                     + mqlProperties.optionality_groups[i].value[n] 
+                                     + ' IS NULL';
+      if(mqlProperties.condition_not_null !== ''){
+        mqlProperties.condition_not_null = mqlProperties.condition_not_null
+                                       + ' AND ';
+      }//eof if
+      mqlProperties.condition_not_null = mqlProperties.condition_not_null
+                                     + mqlProperties.optionality_groups[i].value[n] 
+                                     + ' IS NOT NULL';
+    }//eof for
+    if(mqlProperties.where){
+      mqlProperties.where = mqlProperties.where
+                            + '\nAND';
+    }//eof if
+    else{
+      mqlProperties.where = mqlProperties.where
+                            + '\nWHERE';        
+    }//eof else
+    mqlProperties.where = mqlProperties.where
+                          + ' (('
+                          + mqlProperties.condition_null
+                          + ') OR ('
+                          + mqlProperties.condition_not_null
+                          + '))';
+  }//eof for
+  console.log('mqlProperties.where:');
+  console.log(mqlProperties.where);
+  if(mqlProperties.where){
+    mqlProperties.sql = mqlProperties.sql
+                        + '\n'
+                        + mqlProperties.where;
+  }//eof if
+  if(mqlProperties.sql_query['order_by']){
+    mqlProperties.sql = mqlProperties.sql
+                        + '\n'
+                        + mqlProperties.sql_query['order_by'];      
+  }//eof if
+  console.log('mqlProperties.sql:');
+  console.log(mqlProperties.sql);     
+  //TODO: this implementation of limit is buggy!
+  //It works fine if applied to a top-level mql node,
+  //When used for a nested mql node, it does not take into 
+  //account that the limit should be applied only to the nested node
+  if(mqlProperties.sql_query['limit']){
+    if(mqlProperties.sqlDialect['supports_limits']){
+      mqlProperties.sql = mqlProperties.sql
+                          + 'n\LIMIT '
+                          + mqlProperties.sql_query['limit'];
+    }//eof if  
+  }//eof if
+  console.log('>>> leaving getQuerySQL');
+  return mqlProperties;
+}// eof getQuerySQL
+
+
+// helper for executeSQLQueries: NOT a callback function
+function executeSQLQuery(mqlProperties){
+  console.log('>>> inside executeSQLQuery'); // for testing only
+
+  console.log('mqlProperties.sqlDialect:');
+  console.log(mqlProperties.sqlDialect); 
+  
+  if(mqlProperties.sql_query['limit'] && !mqlProperties.sqlDialect['supports_limit']){
+    //TO DO: this implementation of limit is buggy!
+    //It works fine if applied to a top-level mql node,
+    //When used for a nested mql node, it does not take into 
+    //account that the limit should be applied only to the nested node    
+    mqlProperties.limit = mqlProperties.sql_query['limit'];
+  }//eof if
+  else{
+    //limit has been implemented directly in SQL
+    mqlProperties.limit = -1;
+  }//eof else
+
+  console.log('mqlProperties.limit:');
+  console.log(mqlProperties.limit);
+    
+  mqlProperties = getQuerySQL(mqlProperties); // TO DO implement function getQuerySQL()
+  mqlProperties.sql_query['sql'] = mqlProperties.sql;
+
+  console.log('>>> leaving executeSQLQuery');
+  
+  // TO DO
+  
+  // REPLACES
+//    return execute_sql($sql, $sql_query['params'], $limit);  
+
+}//eof executeSQLQuery
+
+// helper for executeSQLQueries: NOT a callback function
 function getResultObject(mqlProperties, index, object, key){
   console.log('>>> inside getResultObject'); // for testing only
   if(mqlProperties.mql_node['query_index'] !== index){
@@ -2038,36 +2253,47 @@ function executeSQLQueries(mqlProperties, cb) {
       mqlProperties.from = mqlProperties.sql_queries[i]['from'];
       console.log('mqlProperties.from:'); // for testing only
       console.log(mqlProperties.from); // for testing only       
-      // TO DO
       
+      mqlProperties.from[0]['join_condition'] = mqlProperties.mqlProperties.join_condition;
+      console.log("mqlProperties.from[0]['join_condition']:");
+      console.log(mqlProperties.from[0]['join_condition']);
       
-      
-      
-      
-      
-      
-      
+      mqlProperties.from[0]['join_type'] = 'INNER';
+      console.log("mqlProperties.from[0]['join_type']:");
+      console.log(mqlProperties.from[0]['join_type']);           
 //    // REPLACES
-//
 //    //php guru's, isn't there a function to get the first element of an array?
 //    foreach ($from as &$first_from_line) {
 //      break; 
 //    }
-//    
 //    $first_from_line['join_condition'] = $join_condition;
 //    $first_from_line['join_type'] = 'INNER';
-//    array_unshift($from, $extra_from_line);             
-            
-        
-    }//eof if  
-      
-    // TO DO
-    //   
-    // REPLACES
-//        
+      arrayUnshift(mqlProperties.from, mqlProperties.extra_from_line);
+//    // REPLACES
+//    array_unshift($from, $extra_from_line);
+    }//eof if
+    mqlProperties.result = mqlProperties.sql_queries[i]['results'];
+    console.log('mqlProperties.result:');
+    console.log(mqlProperties.result);
+    
+    mqlProperties.sql_query = mqlProperties.sql_queries[i];
+    console.log('mqlProperties.sql_query:');
+    console.log(mqlProperties.sql_query); 
+    
+    mqlProperties.rows = executeSQLQuery(mqlProperties);// TO DO: Should this be a call back function???
+    console.log('mqlProperties.rows:');
+    console.log(mqlProperties.rows);
+    
+    
+    
+    
+    
+    // REPLACES      
 //        
 //  $result = &$sql_query['results'];
 //  $rows = execute_sql_query($sql_query);
+//  
+//  
 //  foreach($rows as $row_index => $row){
 //            if ($merge_into){            
 //                foreach ($merge_into_columns as $col_index => $alias){
