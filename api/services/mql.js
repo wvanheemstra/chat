@@ -145,6 +145,7 @@ exports.read = function(req, res) {
     var port = mqlProperties.connection.connection_config.dsn['port'];
     var username = mqlProperties.connection.connection_config['username'];
     var password = mqlProperties.connection.connection_config['password'];
+    mqlProperties.db_connection = db_connection;
 
     var db_connection_string = {};
     db_connection_string['host'] = host;
@@ -153,12 +154,17 @@ exports.read = function(req, res) {
     db_connection_string['password'] = password;
     debug("db_connection_string: "); // for testing only
     debug(db_connection_string); // for testing only
+    mqlProperties.db_connection_string = db_connection_string;
 
-    var db_connection_created = db_connection.createConnection(db_connection_string);
-    debug("created db_connection."); // for testing only
+// Don't create a connection yet
+//    var db_connection_created = db_connection.createConnection(db_connection_string);
+//    debug("created db_connection."); // for testing only
+//    mqlProperties.db_connection_created = db_connection_created;
 
-    var db = db_connection_created.connect();
-    debug("connection: successful"); // for testing only
+// Don't connect yet
+//    var db = db_connection_created.connect();
+//    debug("connection: successful"); // for testing only
+//    mqlProperties.db = db;
 
     debug('mqlProperties.req.method:'); // for testing only	
     debug(mqlProperties.req.method); // for testing only
@@ -1969,17 +1975,31 @@ function prepareSQLStatement(mqlProperties){
 
     if(typeof(mqlProperties.statement_cache) == 'undefined'){
         mqlProperties.statement_cache = [];
+        debug('mqlProperties.statement_cache:');
+        debug(mqlProperties.statement_cache);
     }//eof if
 
 //REPLACES $statement_cache = array();
 
-    // TO DO
-    if(typeof(mqlProperties.statement_cache[mqlProperties.sql]) !== 'undefinded'){
+    if(typeof(mqlProperties.statement_cache[mqlProperties.sql]) !== 'undefined'){
         mqlProperties.statement_handle = mqlProperties.statement_cache[mqlProperties.sql];
+        debug('mqlProperties.statement_handle:');
+        debug(mqlProperties.statement_handle);
     }//eof if
     else{
-        mqlProperties.statement_handle = ''; // TO DO: implement the javascript variant of a PDO prepare()
-        mqlProperties.statement_cache[mqlProperties.sql] = mqlProperties.statement_handle;
+        try{
+            mqlProperties.statement_handle = mqlProperties.db_connection.createQuery(mqlProperties.sql); //prepared statement
+            debug('mqlProperties.statement_handle:');
+            debug(mqlProperties.statement_handle);
+            mqlProperties.statement_cache[mqlProperties.sql] = mqlProperties.statement_handle;
+            debug("mqlProperties.statement_cache[mqlProperties.sql]:");
+            debug(mqlProperties.statement_cache[mqlProperties.sql]); 
+        }//eof try
+        catch (ex){
+            debug('EXCEPTION at prepareSQLStatement:');
+            debug(ex.message);
+            // handle the exception here
+        }//eof catch
     }//eof else
 
 
@@ -1999,10 +2019,10 @@ function prepareSQLStatement(mqlProperties){
     return mqlProperties;
 }//eof prepareSQLStatement
 
-// helper for executeSQLQuery: NOT a callback function
-function executeSQL(mqlProperties){
+// helper for executeSQLQuery: a callback function
+function executeSQL(mqlProperties, cb){
     debug('>>> inside executeSQL'); // for testing only
-
+    mqlProperties.callBackExecuteSQLQuery = cb;
     debug('mqlProperties.sql:');
     debug(mqlProperties.sql); 
     
@@ -2021,87 +2041,99 @@ function executeSQL(mqlProperties){
     }//eof if
     
     try{
-        mqlProperties.statement_handle = prepareSQLStatement(mqlProperties); // TO DO: implement function prepareSQLStatement
-        
+        mqlProperties = prepareSQLStatement(mqlProperties); // TO DO: implement function prepareSQLStatement
         // TO DO
-        
-        
-        
-        
+        var parameters = {};
+        for (i = 0; i < mqlProperties.sql_query['params'].length; i++) {
         // REPLACES
 //        foreach($params as $param_key => $param){
-//            $statement_handle->bindValue(
+//            $statement_handle->bindValue(                 //TO DO: THIS STILL NEEDS TO BE DONE !!!
 //                $param['name']
 //            ,   $param['value']
 //            ,   $param['type']
 //            );
+//            
+            //var post  = {id: 1, title: 'Hello MySQL'}; 
+            parameters[i] = new Array(
+                mqlProperties.sql_query['params'][i]['name'],
+                mqlProperties.sql_query['params'][i]['value'],
+                mqlProperties.sql_query['params'][i]['type']
+            );      
+            debug('parameters:');
+            debug(parameters);           
 //        }
-//        $statement_handle->execute();
-//        if ($limit === -1) {
-//            $result = $statement_handle->fetchAll(PDO::FETCH_ASSOC);
-//        }
-//        else {
-//            $result = array();
-//            while ($limit-- && $row = $statement_handle->fetch(PDO::FETCH_ASSOC)) {
-//                $result[] = $row;
-//            }
-//        }
-//        $statement_handle->closeCursor();        
+//
+        }//eof for
         
+//      var query = mqlProperties.db_connection.createQuery('INSERT INTO foo SET ?', parameters, function(err, result) {
+//          // Neat!
+//      });
+//      debug('query.sql:');
+//      debug(query.sql); // INSERT INTO posts SET `id` = 1, `title` = 'Hello MySQL' 
+        
+        var db_connection_created = mqlProperties.db_connection.createConnection(mqlProperties.db_connection_string);
+        debug("db_connection_created:"); // for testing only
+        debug(db_connection_created); // for testing only      
+        
+        //FOR TESTING ONLY
+        mqlProperties.statement_handle.sql = 'SELECT * FROM core.tbl_person LIMIT 0,2';
+        
+        if(mqlProperties.limit === -1){          
+
+            db_connection_created.query(mqlProperties.statement_handle.sql, function(err, rows) {
+              if (err) {
+                debug('>>> leaving executeSQL from if with error');
+                mqlProperties.err = err;
+                mqlProperties.callBackExecuteSQLQuery(err, mqlProperties);
+              }
+              
+              // `rows` is an array with one element for every statement in the query:
+              console.log('rows:');
+              console.log(rows);
+
+              mqlProperties.rows = rows;
+              
+              // Can we see this in here:
+              console.log('mqlProperties.rows inside query:');
+              console.log(mqlProperties.rows); 
+              
+              mqlProperties.result = mqlProperties.rows;
+              console.log('mqlProperties.result:');
+              console.log(mqlProperties.result);
+                
+              console.log('this.sql:');
+              console.log(this.sql);
+              
+              debug('>>> leaving executeSQL from if');
+              mqlProperties.callBackExecuteSQLQuery(null, mqlProperties);              
+            });
+        }//eof if
+        else{
+           mqlProperties.result = [];
+           
+           // STILL TO DO
+           
+           
+//         // REPLACES
+//           
+//         while ($limit-- && $row = $statement_handle->fetch(PDO::FETCH_ASSOC)) {
+//              $result[] = $row;
+//         }
+           
+           mqlProperties.rows = mqlProperties.result;
+           debug('>>> leaving executeSQL from else');
+           mqlProperties.callBackExecuteSQLQuery(null, mqlProperties);
+        }//eof else 
     }//eof try
     catch(ex){
         debug(ex.message
             + ' Offending statement: '
             + mqlProperties.sql);
         mqlProperties.err = ex;
-        return mqlProperties;
-        //throw new Exception(
-        //    ex.message
-        //    + ' Offending statement: '
-        //    + mqlProperties.sql
-        //);
+        debug('>>> leaving executeSQL with exception');
+        mqlProperties.callBackExecuteSQLQuery(ex, mqlProperties);
     }//eof catch
-    
-    
-    // REPLACES
-//function &execute_sql($statement_text, $params, $limit){
-//    global $pdo, $noexecute;
-//    if ($noexecute){
-//        return array();
-//    }
-//    try {
-//        $statement_handle = prepare_sql_statement($statement_text);
-//        foreach($params as $param_key => $param){
-//            $statement_handle->bindValue(
-//                $param['name']
-//            ,   $param['value']
-//            ,   $param['type']
-//            );
-//        }
-//        $statement_handle->execute();
-//        if ($limit === -1) {
-//            $result = $statement_handle->fetchAll(PDO::FETCH_ASSOC);
-//        }
-//        else {
-//            $result = array();
-//            while ($limit-- && $row = $statement_handle->fetch(PDO::FETCH_ASSOC)) {
-//                $result[] = $row;
-//            }
-//        }
-//        $statement_handle->closeCursor();
-//    } catch (Exception $exception) {
-//        throw new Exception(
-//            $exception->getMessage().
-//            ' Offending statement: '.$statement_text
-//        );
-//    }
-//    return $result;
-//}
-    mqlProperties.rows = mqlProperties.result;
-    debug('>>> leaving executeSQL');
-    return mqlProperties;
 }//eof executeSQL
-
 
 
 // helper for executeSQLQuery: NOT a callback function
@@ -2264,10 +2296,10 @@ function getQuerySQL(mqlProperties) {
 }// eof getQuerySQL
 
 
-// helper for executeSQLQueries: NOT a callback function
-function executeSQLQuery(mqlProperties) {
+// helper for executeSQLQueries: a callback function
+function executeSQLQuery(mqlProperties, cb) {
     debug('>>> inside executeSQLQuery'); // for testing only
-
+    mqlProperties.callBackExecuteSQLQueries = cb;
     debug('mqlProperties.sqlDialect:');
     debug(mqlProperties.sqlDialect);
 
@@ -2288,13 +2320,21 @@ function executeSQLQuery(mqlProperties) {
 
     mqlProperties = getQuerySQL(mqlProperties); // TO DO implement function getQuerySQL()
     mqlProperties.sql_query['sql'] = mqlProperties.sql;
-
-    debug('>>> leaving executeSQLQuery');
-    return executeSQL(mqlProperties); // TO DO: implement function executeSQL
-
-    // REPLACES
-//    return execute_sql($sql, $sql_query['params'], $limit);  
-
+    
+//OLD    return executeSQL(mqlProperties); // TO DO: implement function executeSQL
+    
+    executeSQL(mqlProperties, function(err, mqlProperties){
+        debug('>>> back inside executeSQLQuery from executeSQL'); 
+        
+        
+        // TO DO
+        
+        
+        debug('>>> leaving executeSQLQuery');
+        mqlProperties.callBackExecuteSQLQueries(null, mqlProperties);
+    });
+//  REPLACES
+//  return execute_sql($sql, $sql_query['params'], $limit);
 }//eof executeSQLQuery
 
 // helper for executeSQLQueries: NOT a callback function
@@ -2456,44 +2496,73 @@ function executeSQLQueries(mqlProperties, cb) {
         mqlProperties.sql_query = mqlProperties.sql_queries[i];
         debug('mqlProperties.sql_query:');
         debug(mqlProperties.sql_query);
-
-        mqlProperties = executeSQLQuery(mqlProperties);// TO DO: Should this be a call back function???
-        debug('mqlProperties.rows:');
-        debug(mqlProperties.rows);
-
-
-
-
-
-        // REPLACES      
+        
+        
+//      REPLACES      
 //        
-//  $result = &$sql_query['results'];
-//  $rows = execute_sql_query($sql_query);
-//  
-//  
-//  foreach($rows as $row_index => $row){
-//            if ($merge_into){            
-//                foreach ($merge_into_columns as $col_index => $alias){
-//                    $merge_into_values_new[$col_index] = $row[$alias];
-//                }
-//                if ($merge_into_values_new !== $merge_into_values_old){
-//                    merge_results($sql_queries, $sql_query_index, $merge_into_values_old, $offset, $row_index);
-//                    $offset = $row_index;
-//                }
-//                $merge_into_values_old = $merge_into_values_new;
-//            }
-//            fill_result_object($mql_node, $sql_query_index, $row, $result_object);
-//            $result[$row_index] = $result_object;
-//            add_entry_to_indexes($indexes, $row_index, $row);
-//  }
-//  create_inline_tables_for_indexes($indexes);
-//  if (isset($merge_into_values_old) && count($merge_into_values_old)) {
-//            merge_results($sql_queries, $sql_query_index, $merge_into_values_old, $offset, $row_index);
-//  }        
+//      $result = &$sql_query['results'];        
+        
 
+//OLD     mqlProperties = executeSQLQuery(mqlProperties);// TO DO: Should this be a call back function???
+//        debug('mqlProperties.rows:');
+//        debug(mqlProperties.rows);
+
+
+        // callback variant
+        executeSQLQuery(mqlProperties, function(err, mqlProperties){
+            debug('>>> back inside executeSQLQueries from executeSQLQuery'); // for testing only 			
+            if (err) {
+                debug('>>> leaving executeSQLQueries with error');
+                mqlProperties.err = err;
+                mqlProperties.callBackHandleQuery(err, mqlProperties);
+            }
+            debug('mqlProperties.rows:');            
+            debug(mqlProperties.rows);
+            //TO DO
+            
+            
+            
+            
+            
+            
+            // WE ARE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE
+            
+            
+            
+            
+            
+            
+            
+//          REPLACES  
+//                    
+//          foreach($rows as $row_index => $row){
+//                    if ($merge_into){            
+//                        foreach ($merge_into_columns as $col_index => $alias){
+//                            $merge_into_values_new[$col_index] = $row[$alias];
+//                        }
+//                        if ($merge_into_values_new !== $merge_into_values_old){
+//                            merge_results($sql_queries, $sql_query_index, $merge_into_values_old, $offset, $row_index);
+//                            $offset = $row_index;
+//                        }
+//                        $merge_into_values_old = $merge_into_values_new;
+//                    }
+//                    fill_result_object($mql_node, $sql_query_index, $row, $result_object);
+//                    $result[$row_index] = $result_object;
+//                    add_entry_to_indexes($indexes, $row_index, $row);
+//          }
+//          create_inline_tables_for_indexes($indexes);
+//          if (isset($merge_into_values_old) && count($merge_into_values_old)) {
+//                    merge_results($sql_queries, $sql_query_index, $merge_into_values_old, $offset, $row_index);
+//          } 
+            
+            debug('>>> leaving executeSQLQueries');
+            mqlProperties.callBackHandleQuery(null, mqlProperties);           
+        });//eof executeSQLQuery
+               
+//      REPLACES        
+//      $rows = execute_sql_query($sql_query);
+//     
     }//eof for
-    debug('>>> leaving executeSQLQueries');
-    mqlProperties.callBackHandleQuery(null, mqlProperties);
 }//eof executeSQLQueries
 /*****************************************************************************
  *   Queries
@@ -2504,28 +2573,23 @@ function handleQuery(mqlProperties, cb) {
     debug('mqlProperties.callBackHandleQueries:'); // for testing only	
     debug(mqlProperties.callBackHandleQueries); // for testing only	
 
+    if(typeof(mqlProperties.args.debug_info) != 'undefined') {
+        mqlProperties.debug_info = mqlProperties.args['debug_info'];
+    } 
+    else { 
+        mqlProperties.debug_info = false;
+    }
+    debug('mqlProperties.debug_info:'); // for testing only	
+    debug(mqlProperties.debug_info); // for testing only
 
-    /*	NO NEED FOR THIS HERE
-     
-     if(typeof(mqlProperties.args.debug_info) != 'undefined') {
-     var debug_info = mqlProperties.args['debug_info'];
-     } 
-     else { 
-     var debug_info = false;
-     }
-     debug('debug_info:'); // for testing only	
-     debug(debug_info); // for testing only
-     
-     if(typeof(mqlProperties.args.noexecute) != 'undefined') {
-     var noexecute = mqlProperties.args['noexecute'];
-     } 
-     else { 
-     var noexecute = false;
-     }
-     debug('noexecute:'); // for testing only	
-     debug(noexecute); // for testing only
-     
-     */
+    if(typeof(mqlProperties.args.noexecute) != 'undefined') {
+        mqlProperties.noexecute = mqlProperties.args['noexecute'];
+    } 
+    else { 
+        mqlProperties.noexecute = false;
+    }
+    debug('mqlProperties.noexecute:'); // for testing only	
+    debug(mqlProperties.noexecute); // for testing only
 
     if (typeof(mqlProperties.args.debug_info) !== 'undefined') {
         var unixtime_ms = new Date().getTime();
