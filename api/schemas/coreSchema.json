@@ -8,10 +8,26 @@
                         "kp_PersonID": {
                             "column_name": "kp_PersonID", 
                             "nullable": false, 
-                            "type": "type/int"
+                            "type": "/type/int"
+                        },
+                        "PersonFirstName": {
+                            "column_name": "PersonFirstName", 
+                            "nullable": false, 
+                            "type": "/type/text"
+                        },
+                        "PersonLastName": {
+                            "column_name": "PersonLastName", 
+                            "nullable": false, 
+                            "type": "/type/text"
                         }
                     }, 
-                    "table_name": "tbl_person"
+                    "table_name": "tbl_person",
+                    "keys": {
+                        "PRIMARY": {
+                            "type": "PRIMARY KEY",
+                            "columns": ["kp_PersonID"]
+                        }
+                    }
                 }
             }
         }
