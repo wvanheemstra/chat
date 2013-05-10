@@ -2271,7 +2271,7 @@ function getFromClause(mqlProperties) {
 //helper for HandleQuery	
 function generateSQL(mqlProperties, cb) {
     debug('>>> inside generateSQL'); // for testing only
-    mqlProperties.callBackHandleQuery = cb;
+    mqlProperties.callBackHandleQuery = cb; // THIS IS CORRECT!!
     mqlProperties.childTAlias = typeof mqlProperties.childTAlias !== 'undefined' ? mqlProperties.childTAlias : null;
     debug('mqlProperties.childTAlias:'); // for testing only
     debug(mqlProperties.childTAlias); // for testing only	
@@ -2554,7 +2554,7 @@ function generateSQL(mqlProperties, cb) {
             }//eof else          
         }//eof else if
         debug('>>> leaving generateSQL');
-        mqlProperties.callBackHandleQuery(null, mqlProperties); //TEMPORARY PLACEHOLDER TO FORCE A RETURN
+        mqlProperties.callBackHandleQuery(null, mqlProperties);
     });//eof analyzeType          
 }//eof generateSQL
 /*****************************************************************************
@@ -3266,6 +3266,10 @@ function handleQuery(mqlProperties, cb) {
                     mqlProperties.err = err;
                     mqlProperties.callBackHandleQueries(err, mqlProperties);
                 }
+                
+                // WE NEED TO MAKE SURE SOMEWHERE INSIDE processMQL THE VALUE FOR mql_node.types GETS SET
+                // BECAUSE MOMENTARILY mql_node.types = ['0'] WE DO NOT GET A VALID SQL GENERATED !!! 
+                
                 executeSQLQueries(mqlProperties, function(err, mqlProperties) {
                     debug('>>> back inside handleQuery from executeSQLQueries'); // for testing only 				
                     if (err) {
