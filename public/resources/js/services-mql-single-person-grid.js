@@ -120,9 +120,9 @@ Ext.onReady(function() {
 					"mql" : {
 						"query" : [{
 							"type": "/core/person",
-							"personID": 1,
-							"personFirstName": null,
-							"personLastName": null
+							"kp_PersonID": 1,
+							"PersonFirstName": null,
+							"PersonLastName": null
 						}]
 					},
 					"debug_info" : {

@@ -189,9 +189,9 @@ exports.read = function(req, res) {
                     mql: {
                         "query": [{
                                 "type": "/core/person",
-                                "personID": 1,
-                                "personFirstName": null,
-                                "personLastName": null
+                                "kp_PersonID": 1,
+                                "PersonFirstName": null,
+                                "PersonLastName": null
                             }]
                     },
                     debug_info: {
@@ -416,11 +416,14 @@ function isObject(mixed_var) {
 function isArray(mixed_var) {
     return typeof(mixed_var) === 'object' && (mixed_var instanceof Array);
 }//eof isArray
+
+
+// helper of processMQLObject
 function getObjectVars(mqlProperties, cb) {
     debug('>>> inside getObjectVars'); // for testing only
-    mqlProperties.callBackObjectVars = cb;
-    debug('mqlProperties.callBackObjectVars:'); // for testing only
-    debug(mqlProperties.callBackObjectVars); // for testing only		
+    mqlProperties.callBackProcessMQLObject = cb;
+    debug('mqlProperties.callBackProcessMQLObject:'); // for testing only
+    debug(mqlProperties.callBackProcessMQLObject); // for testing only		
     // see http://phpjs.org/functions/get_objectVars/	
     // http://kevin.vanzonneveld.net
     // +   original by: Brett Zamir (http://brett-zamir.me)
@@ -445,33 +448,54 @@ function getObjectVars(mqlProperties, cb) {
     debug('mqlProperties.objectVars:'); // for testing only
     debug(mqlProperties.objectVars); // for testing only    
     debug('>>> leaving getObjectVars'); // for testing only
-    mqlProperties.callBackObjectVars(null, mqlProperties);
+    mqlProperties.callBackProcessMQLObject(null, mqlProperties);
 } // eof getObjectVars
 
 
 /* THE NON-CALL BACK FUNCTION pregMatchAll */
-function pregMatchAll(mqlProperties) {
+function pregMatchAll(mqlProperties, pattern, key, value) {
     debug('>>> inside pregMatchAll'); // for testing only
-    mqlProperties.matches = new Array(); // DO WE WANT TO START A NEW ARRAY EACH TIME, OR ADD TO AN EXISTING ONE??
 
-    var regexp = new RegExp(mqlProperties.propertyPattern);
-    if (regexp.test(mqlProperties.propertyKey)) {
-        debug("found a match for: " + mqlProperties.propertyKey);
-        mqlProperties.matches.push(mqlProperties.propertyKey);
+    // DON'T CREATE A NEW matches ARRAY HERE, ONE IS ALREADY PROVIDED BY THE CALLING FUNCTION
+    //    mqlProperties.matches = new Array(); // DO WE WANT TO START A NEW ARRAY EACH TIME, OR ADD TO AN EXISTING ONE??
 
-        //TEMP SOLUTION by wvh: pushing the domain and type into matches
-        if (mqlProperties.mql_node) {
-            mqlProperties.matches.push(mqlProperties.mql_node.schema.domain);
-            debug('mqlProperties.mql_node.schema.domain:'); // for testing only
-            debug(mqlProperties.mql_node.schema.domain); // for testing only 
-            mqlProperties.matches.push(mqlProperties.mql_node.schema.type);
-            debug('mqlProperties.mql_node.schema.type:'); // for testing only
-            debug(mqlProperties.mql_node.schema.type); // for testing only 
-        }
+    var regexp = new RegExp(pattern);
+    if (regexp.test(key)) {
+        debug("found a match for: " + key);
+        //mqlProperties.matches.push(key);
+        
+        // CUSTOM ASSIGNMENT BY wvh
+        switch(pattern){
+            case 'domain': mqlProperties.matches[1] = value;
+                break;
+            case 'type': mqlProperties.matches[2] = value;
+                break;
+            case 'prefix': mqlProperties.matches[3] = value;
+                break;
+            case 'qualified': mqlProperties.matches[5] = value; 
+                break;
+            case 'qualifier':  mqlProperties.matches[6] = value;
+                break;
+            case 'name': mqlProperties.matches[7] = value;
+                break;
+            case 'operator': mqlProperties.matches[8] = value;
+                break;
+        }     
+        
+// THE BELOW IS HANDLED INSIDE analyzeType, not here !!
+//        //TEMP SOLUTION by wvh: pushing the domain and type into matches
+//        if (mqlProperties.mql_node) {
+//            mqlProperties.matches[1] = mqlProperties.mql_node.schema.domain; // Should be set explicitely at index 1
+//            debug('mqlProperties.mql_node.schema.domain:'); // for testing only
+//            debug(mqlProperties.mql_node.schema.domain); // for testing only 
+//            mqlProperties.matches[2] = mqlProperties.mql_node.schema.type; // Should be set explicitely at index 2
+//            debug('mqlProperties.mql_node.schema.type:'); // for testing only
+//            debug(mqlProperties.mql_node.schema.type); // for testing only 
+//        }
 
     }
     else {
-        debug("found no match for: " + mqlProperties.propertyKey);
+        debug("found no match for: " + key);
     }
 
     debug('mqlProperties.matches:'); // for testing only
@@ -623,8 +647,16 @@ function analyzeType(mqlProperties){
     // Explanation:
     // The (\w+) grouping looks for word characters, as denoted by the \w. 
     // The + indicates that one or more word characters must appear (not necessarily the same one)
-    // The $ is a literal character. The second (\w+) grouping must be followed by a literal $ character.    
-    mqlProperties = pregMatchAll(mqlProperties);
+    // The $ is a literal character. The second (\w+) grouping must be followed by a literal $ character.
+    
+    debug ('----------------- ANALYZING TYPE: ' + mqlProperties.type + ' : '+ 'WHAT GOES HERE??' + ' HERE ---------------------------');
+    
+    mqlProperties.matches = []; // resets the matches array
+    mqlProperties = pregMatchAll(mqlProperties, mqlProperties.type_pattern, mqlProperties.type, 'WHAT GOES HERE??'); // TO DO: provide right parameter here
+    
+    debug('mqlProperties.matches:');
+    debug(mqlProperties.matches);
+    
     if (mqlProperties.matches) {
         debug('mqlProperties.matches[1]:'); // for testing only
         debug(mqlProperties.matches[1]); // for testing only
@@ -810,21 +842,26 @@ function analyzeProperty(mqlProperties) {
     //ORIGINAL '/^(((\w+):)?(((\/\w+\/\w+)\/)?(\w+|\*))(=|<=?|>=?|~=|!=|\|=|!\|=|\?=|!\?=)?)$/';
     debug('mqlProperties.propertyPattern:'); // for testing only
     debug(mqlProperties.propertyPattern); // for testing only
+    
+    debug('mqlProperties.propertyValue:'); // for testing only
+    debug(mqlProperties.propertyValue); // for testing only 
+    
+    debug ('----------------- ANALYZING PROPERTY: ' + mqlProperties.propertyKey + ' : '+ mqlProperties.propertyValue + ' HERE ---------------------------');
 
-    mqlProperties = pregMatchAll(mqlProperties); // using the non-call back pregMatchAll() // SEEMS TO WORK!!
+    mqlProperties.matches = []; // resets the matches array
+
+    mqlProperties = pregMatchAll(mqlProperties, mqlProperties.propertyPattern, mqlProperties.propertyKey, mqlProperties.propertyValue); // using the non-call back pregMatchAll() // SEEMS TO WORK!!
     
-    
-    
-    debug('------------------- WHAT SHOULD HAVE BEEN SET IN THE mqlProperties.matches :-------------------------');
+    debug('mqlProperties.matches:');
     debug(mqlProperties.matches);
-    
-    
     
     if (mqlProperties.matches) {
         debug('property does match'); // for testing only
 
         mqlProperties = isFilterProperty(mqlProperties); // using the non-call back isFilterProperty()
-
+        
+        // NOTE below array does not contain: domain (e.g. 'core') and type (e.g. '/core/person')
+        // THESE ARE SET IN analyzeType AS mqlProperties.type
         mqlProperties.analyzedProperty = new Array({
             'prefix': mqlProperties.matches[3],
             'qualifier': mqlProperties.matches[6],
@@ -925,9 +962,9 @@ function analyzeProperty(mqlProperties) {
 //helper for getParentType
 function getTypeFromSchema(mqlProperties, cb) {
     debug('>>> inside getTypeFromSchema'); // for testing only
-    mqlProperties.callBackParentType = cb;
-    debug('mqlProperties.callBackParentType:'); // for testing only
-    debug(mqlProperties.callBackParentType); // for testing only
+    mqlProperties.callBackGetParentType = cb;
+    debug('mqlProperties.callBackGetParentType:'); // for testing only
+    debug(mqlProperties.callBackGetParentType); // for testing only
     var domain = mqlProperties.parent.schema.domain;
     debug('domain:'); // for testing only
     debug(domain); // for testing only
@@ -961,14 +998,14 @@ function getTypeFromSchema(mqlProperties, cb) {
             debug('mqlProperties.parentSchemaType:'); // for testing only
             debug(mqlProperties.parentSchemaType); // for testing only			
             debug('>>> leaving getTypeFromSchema'); // for testing only		
-            mqlProperties.callBackParentType(null, mqlProperties);
+            mqlProperties.callBackGetParentType(null, mqlProperties);
         }
         else { // type does not exist in schema
             debug('type \'' + type + '\' does not exist in schema'); // for testing only
             debug('>>> leaving getTypeFromSchema with error'); // for testing only
             var err = new Error('type \'' + type + '\' does not exist in schema');
             mqlProperties.err = err;
-            mqlProperties.callBackParentType(err, mqlProperties);
+            mqlProperties.callBackGetParentType(err, mqlProperties);
         }
     }
     else { // domain does not exist in schema
@@ -976,7 +1013,7 @@ function getTypeFromSchema(mqlProperties, cb) {
         debug('>>> leaving getTypeFromSchema with error'); // for testing only
         var err = new Error('domain \'' + domain + '\' does not exist in schema');
         mqlProperties.err = err;
-        mqlProperties.callBackParentType(err, mqlProperties);
+        mqlProperties.callBackGetParentType(err, mqlProperties);
     }
 }//eof getTypeFromSchema
 
@@ -1032,7 +1069,7 @@ function getParentType(mqlProperties, cb) {
         mqlProperties.callBackProcessMQLObject(err, mqlProperties); //TEMP
     }
 }//eof getParentType
-//helper for process_mql_object
+//helper for processMQLObject
 function checkTypes(mqlProperties, cb) {
     debug('>>> inside checkTypes'); // for testing only   NOTE properties = mqlProperties.parent['properties']
     mqlProperties.callBackProcessMQLObject = cb;
@@ -1041,10 +1078,11 @@ function checkTypes(mqlProperties, cb) {
     if (typeof(mqlProperties.types) !== 'undefined') {
         switch (Object.keys(mqlProperties.types).length) {
             case 0:
-                debug('Could not find a type. Currently we rely on a known type');
                 debug('>>> leaving checkTypes with error'); // for testing only
                 var err = new Error('Could not find a type. Currently we rely on a known type');
                 mqlProperties.err = err;
+                debug('>>> leaving checkTypes with error:'); // for testing only               
+                debug(err.message);
                 mqlProperties.callBackProcessMQLObject(err, mqlProperties); //TEMP
             case 1:
                 //assigning the contents of the array to the type variable.
@@ -1067,14 +1105,15 @@ function checkTypes(mqlProperties, cb) {
                 mqlProperties.types = checked_types;
                 debug('mqlProperties.types:'); // for testing only
                 debug(mqlProperties.types); // for testing only
-                debug('>>> leaving checkTypes'); // for testing only
-                mqlProperties.callBackProcessMQLObject(null, mqlProperties); //TEMP
+                //debug('>>> leaving checkTypes'); // for testing only
+                //mqlProperties.callBackProcessMQLObject(null, mqlProperties); // WE SHOULD NOT BE CALLING BACK FROM HERE
                 break;
             default:
-                debug('Found more than one type. Currently we can handle only one type.');
                 debug('>>> leaving checkTypes with error'); // for testing only
                 var err = new Error('Found more than one type. Currently we can handle only one type.');
                 mqlProperties.err = err;
+                debug('>>> leaving checkTypes with error:'); // for testing only               
+                debug(err.message);                
                 mqlProperties.callBackProcessMQLObject(err, mqlProperties); //TEMP
         }
         debug('>>> leaving checkTypes'); // for testing only
@@ -1084,17 +1123,13 @@ function checkTypes(mqlProperties, cb) {
     else {
         debug('types is not an object:');// for testing only
         debug(mqlProperties.types);// for testing only	
-        debug('>>> leaving checkTypes with error'); // for testing only
         var err = new Error('types is not an object');
         mqlProperties.err = err;
+        debug('>>> leaving checkTypes with error:'); // for testing only
+        debug(err.message);
         mqlProperties.callBackProcessMQLObject(err, mqlProperties); //TEMP
     }
 }//eof checkTypes
-
-
-
-
-
 
 
 //helper for process_mql_object
@@ -1125,7 +1160,7 @@ function expand_star(source_properties, target_properties) {
 function forAnalyzeProperty(mqlProperties, item, index) {
     debug('>>> inside forAnalyzeProperty'); // for testing only
     mqlProperties.analyze_property = item;
-    debug('mqlProperties.analyze_property: *********************************************');
+    debug('mqlProperties.analyze_property:');
     debug(mqlProperties.analyze_property);
 
 
@@ -1332,12 +1367,7 @@ function forAnalyzeProperty(mqlProperties, item, index) {
 */            
             
             
-            
-            
-            
-            
-            
-            
+ 
             
         }//eof if            
         mqlProperties.parent.properties[mqlProperties.propertyKey] = mqlProperties.analyzedProperty;
@@ -1353,12 +1383,6 @@ function forAnalyzeProperty(mqlProperties, item, index) {
         debug('>>> leaving forAnalyzeProperty with error'); // for testing only
         return mqlProperties;
     }//eof else
-
-
-
-
-
-
 
 
 
@@ -1518,20 +1542,16 @@ function forAnalyzeProperty(mqlProperties, item, index) {
      mqlProperties.callBackPreProcessProperties(err, mqlProperties);
      }//eof else
      });//eof analyzeProperty
+      
      
-     
-     
-     
-     */
-
-
+*/
 
 }//eof forAnalyzeProperty
 
-//helper for process_mql_object
+//helper for processMQLObject
 function preProcessProperties(mqlProperties, cb) {
     debug('>>> inside preProcessProperties'); // for testing only	
-    mqlProperties.callBackPreProcessProperties = cb;
+    mqlProperties.callBackProcessMQLObject = cb;
     debug('Object.keys(mqlProperties.objectVars).length:'); // for testing only
     debug(Object.keys(mqlProperties.objectVars).length); // for testing only
     for (var i = 0; i < Object.keys(mqlProperties.objectVars).length; i++) {
@@ -1550,11 +1570,11 @@ function preProcessProperties(mqlProperties, cb) {
     debug(mqlProperties.parent.properties); // for testing only
     if (mqlProperties.err) {
         debug('>>> leaving preProcessProperties with error'); // for testing only    
-        mqlProperties.callBackPreProcessProperties(mqlProperties.err, mqlProperties);
+        mqlProperties.callBackProcessMQLObject(mqlProperties.err, mqlProperties);
     }
     else {
         debug('>>> leaving preProcessProperties'); // for testing only    
-        mqlProperties.callBackPreProcessProperties(null, mqlProperties);
+        mqlProperties.callBackProcessMQLObject(null, mqlProperties);
     }
 }//eof preProcessProperties
 
@@ -1585,17 +1605,17 @@ function forProcessQML(mqlProperties, item, index) {
 //function processProperties(&$properties, $type_name, $type) {
 function processProperties(mqlProperties, cb) {
     debug('>>> inside processProperties');
-    mqlProperties.callBackPreProcessProperties = cb;
+    //mqlProperties.callBackPreProcessProperties = cb;  // SHOULD THIS INSTEAD BE mqlProperties.callBackProcessProperties = cb; ???
+    mqlProperties.callBackProcessMQLObject = cb;
     // NOTE properties = mqlProperties.analyzedProperty
     debug('Object.keys(mqlProperties.analyzedProperty).length:');
     debug(Object.keys(mqlProperties.analyzedProperty).length);
-    
     
     // NOTE it is more likely that we need to loop through mqlProperties.parent.properties
     // instead of through mqlProperties.analyzedProperty
     debug('Object.keys(mqlProperties.parent.properties).length:');
     debug(Object.keys(mqlProperties.parent.properties).length);
-    
+    mqlProperties.analyzedProperties = [];
     
     // PERHAPS WE SHOULD THUS USE mqlProperties.parent.properties BELOW AS WELL
 //OLD    for (var i = 0; i < Object.keys(mqlProperties.analyzedProperty).length; i++) {	/// DOUBLE CHECK: should it be mqlProperties.analyzedProperty[0] ???
@@ -1623,21 +1643,45 @@ function processProperties(mqlProperties, cb) {
                 continue;
             case '':  /// MOST LIKELY THIS SHOULD ALSO BE USED IF 'UNDEFINED'
                 
-                debug("mqlProperties.parent['properties']:");
-                debug(mqlProperties.parent['properties']);
+                debug("mqlProperties.parentSchemaType['properties']:"); // HAS THIS PROPERTY ALREADY BEEN DEFINED HERE????... IT HAS !
+                debug(mqlProperties.parentSchemaType['properties']);
                 
                 // NOTE BELOW mqlProperties.type['properties'] DEPENDS ON IT BEING SET EARLIER ON IN preProcessProperties > forAnalyzeProperty > analyzeType > get_type_from_schema ... SO FIX IT THERE !!
                 
-                var schema_property = mqlProperties.type['properties'][mqlProperties.analyzedPropertyValue['name']];
+                debug("Object.keys(mqlProperties.parent.properties)[i]:");
+                debug(Object.keys(mqlProperties.parent.properties)[i]);
+                
+                // TEMP WORK AROUND TO AVOID SETTING schema_property TO type PROPERTIES
+                if(Object.keys(mqlProperties.parent.properties)[i] === 'type'){
+                  break;    
+                }
+                else {
+                  var schema_property = mqlProperties.parentSchemaType['properties'][Object.keys(mqlProperties.parent.properties)[i]]; 
+                }
+                
                 debug('schema_property:');
                 debug(schema_property);
+
+                debug("WOW ................ WE HAVE A SCHEMA PROPERTY " + JSON.stringify(schema_property) + " TO PROCESS !!!!!!!!!!: ");
+
                 if (schema_property) {
                     mqlProperties.analyzedPropertyValue['qualifier'] = mqlProperties.typeName;
+                    debug("mqlProperties.analyzedPropertyValue['qualifier']:");
+                    debug(mqlProperties.analyzedPropertyValue['qualifier']);
                     mqlProperties.analyzedPropertyValue['schema'] = schema_property;
+                    debug("mqlProperties.analyzedPropertyValue['schema']:");
+                    debug(mqlProperties.analyzedPropertyValue['schema']);
                     if (typeof(schema_property['join_condition']) !== 'undefined') {
+                        debug("schema_property['join_condition']:");
+                        debug(schema_property['join_condition']);
                         mqlProperties.analyzedPropertyValue['types'] = [schema_property['type']];
+                        debug("mqlProperties.analyzedPropertyValue['types']:");
+                        debug(mqlProperties.analyzedPropertyValue['types']);
                         mqlProperties.propertyValue = mqlProperties.analyzedPropertyValue['value'];
+                        debug("mqlProperties.propertyValue:");
+                        debug(mqlProperties.propertyValue);
                         if (isObject(mqlProperties.propertyValue) || isArray(mqlProperties.propertyValue)) {
+                            debug("WE ARE GOING TO forProcessMQL");
                             // AS WE ARE INSIDE A FOR LOOP WE NEED TO USE THE FOR-ENABLED FUNCTION forProcessMQL
 //OLD                       forProcessMQL(mqlProperties, Object.keys(mqlProperties.analyzedProperty)[i], i); // call the for-enabled function to callback to processMQL
                             forProcessMQL(mqlProperties, Object.keys(mqlProperties.parent.properties)[i], i); // call the for-enabled function to callback to processMQL
@@ -1647,7 +1691,10 @@ function processProperties(mqlProperties, cb) {
                 else {
                     var err = new Error('No property "' + mqlProperties.analyzedPropertyValue['name'] + '" in type "' + mqlProperties.typeName + '".');
                     mqlProperties.err = err;
-                    exit;
+                    debug('>>> leaving processProperties with error:'); // for testing only
+                    //mqlProperties.callBackPreProcessProperties(err, mqlProperties);  // SHOULD THIS INSTEAD BE mqlProperties.callBackProcessProperties(err, mqlProperties); ???
+                    debug(err.message);
+                    mqlProperties.callBackProcessMQLObject(err, mqlProperties);
                 }
                 break;
             default:
@@ -1655,14 +1702,26 @@ function processProperties(mqlProperties, cb) {
                     var err = new Error('Property "' + mqlProperties.analyzedPropertyValue['qualifier'] + '/' + mqlProperties.analyzedPropertyValue['name']
                             + '" does not belong to the type "' + mqlProperties.typeName + '". This feature is not supported yet.');
                     mqlProperties.err = err;
-                    exit;
+                    debug('>>> leaving processProperties with error:'); // for testing only
+                    //mqlProperties.callBackPreProcessProperties(err, mqlProperties);  // SHOULD THIS INSTEAD BE mqlProperties.callBackProcessProperties(err, mqlProperties); ???
+                    debug(err.message);
+                    mqlProperties.callBackProcessMQLObject(err, mqlProperties);
                 }//eof default
         }//eof switch
+        // WHAT DO WE DO AFTER HAVING CREATED ALL THE analyzedProperties ??... LOOSE THEM.. NO.. SO WE CREATED AN OBJECT BELOW CALLED mqlProperties.analyzedProperties:
+        var analyzedProperty = {}; // This will be used to store the modified analyzedProperty
+        analyzedProperty[mqlProperties.analyzedPropertyKey] = mqlProperties.analyzedPropertyValue;
+        mqlProperties.analyzedProperties.push(analyzedProperty); 
         debug('processProperties: end of Round i=' + i); // for testing only
-    }//eof for
-    // no need for a cb here
+    }//eof for   
+    debug('mqlProperties.analyzedProperties:'); // mqlProperties.analyzedProperties should now hold all analyzedProperties; 
+    // NOTE: these properties and more are also stored in mqlProperties.mql_node, so it is recommended to use mqlProperties.mql_node instead
+    debug(mqlProperties.analyzedProperties);
+    debug('>>> leaving processProperties'); // for testing only
+    mqlProperties.callBackProcessMQLObject(null, mqlProperties);
 }//eof processProperties
 
+// helper of processMQL
 function processMQLObject(mqlProperties, cb) {
     debug('>>> inside processMQLObject'); // for testing only
     mqlProperties.callBackProcessMQL = cb;
@@ -1684,14 +1743,16 @@ function processMQLObject(mqlProperties, cb) {
         debug('>>> back inside processMQLObject from getParentType'); // for testing only
         if (err) {
             mqlProperties.err = err;
-            debug('>>> leaving processMQLObject with error'); // for testing only
+            debug('>>> leaving processMQLObject with error:'); // for testing only
+            debug(err.message);
             mqlProperties.callBackProcessMQL(err, mqlProperties);
         }
         getObjectVars(mqlProperties, function(err, mqlProperties) {
             debug('>>> back inside processMQLObject from getObjectVars'); // for testing only
             if (err) {
                 mqlProperties.err = err;
-                debug('>>> leaving processMQLObject with error'); // for testing only
+                debug('>>> leaving processMQLObject with error:'); // for testing only
+                debug(err.message);
                 mqlProperties.callBackProcessMQL(err, mqlProperties);
             }
             mqlProperties.starProperty = false;
@@ -1699,15 +1760,17 @@ function processMQLObject(mqlProperties, cb) {
                 debug('>>> back inside processMQLObject from preProcessProperties'); // for testing only
                 if (err) {
                     mqlProperties.err = err;
-                    debug('>>> leaving processMQLObject with error'); // for testing only
+                    debug('>>> leaving processMQLObject with error:'); // for testing only
+                    debug(err.message);
                     mqlProperties.callBackProcessMQL(err, mqlProperties);
                 }
-                debug('WE DID: preProcessProperties ... '); // for testing only
+                debug('§§§§§§§§§§§§§§§ WE DID: preProcessProperties ... '); // for testing only
                 checkTypes(mqlProperties, function(err, mqlProperties) {
                     debug('>>> back inside processMQLObject from checkTypes'); // for testing only
                     if (err) {
-                        debug('>>> leaving processMQLObject error'); // for testing only
-                        mqlProperties.err = err;
+                        mqlProperties.err = err;                        
+                        debug('>>> leaving processMQLObject with error:'); // for testing only
+                        debug(err.message);
                         mqlProperties.callBackProcessMQL(err, mqlProperties);
                     }
                     mqlProperties.typeName = [];
@@ -1719,20 +1782,20 @@ function processMQLObject(mqlProperties, cb) {
                     if (mqlProperties.starProperty === true) {
                         //  expand_star(type['properties'], pre_processed_properties ); // TO DO: Make this work
                     }
-                    debug('WE DID: checkTypes ... '); // for testing only				
+                    debug('§§§§§§§§§§§§§§§ WE DID: checkTypes ... '); // for testing only				
                     processProperties(mqlProperties, function(err, mqlProperties) {
                         debug('>>> back inside processMQLObject from processProperties'); // for testing only
                         if (err) {
                             debug('>>> leaving processMQLObject with error');
                             mqlProperties.err = err;
-                            mqlProperties.callBackProcessMQL(err, mqlProperties);
+                            mqlProperties.callBackProcessMQL(err, mqlProperties); // this is the right callback !!!
                         }
-                        //debug('processed_properties:'); // for testing only
-                        //debug(processed_properties); // for testing only
+                        debug('mqlProperties.analyzedProperties:'); // mqlProperties.analyzedProperties should now hold all analyzed properties
+                        debug(mqlProperties.analyzedProperties);
                         debug('>>> leaving processMQLObject');
-                        debug('WE DID: processProperties ... '); // for testing only						
+                        debug('§§§§§§§§§§§§§§§ WE DID: processProperties ... +++++++++++++++++++++++++++++++++++++++++++'); // for testing only						
                         //return processed_properties; // TEMP
-                        mqlProperties.callBackProcessMQL(null, mqlProperties);
+                        mqlProperties.callBackProcessMQL(null, mqlProperties); // this is the right callback !!!
                     });//eof processProperties
                 });//eof checkTypes
             });//eof preProcessProperties
@@ -1766,10 +1829,13 @@ function processMQLArray(mqlProperties, cb) {
             debug('Expected a dictionary or a list with one element in a read (were you trying to write?)');
             var err = new Error('Expected a dictionary or a list with one element in a read (were you trying to write?)');
             mqlProperties.err = err;
-            exit;
+            debug('>>> leaving processMQLArray with error:');
+            debug(err.message);
+            mqlProperties.callBackProcessMQL(err, mqlProperties);
     }
     if (mqlProperties.err) {
-        debug('>>> leaving processMQLArray with error');
+        debug('>>> leaving processMQLArray with error:');
+        debug(err.message);
         mqlProperties.callBackProcessMQL(mqlProperties.err, mqlProperties); //TEMPORARY PLACEHOLDER TO FORCE CONTINUATION		
     }
     else {
@@ -1778,6 +1844,7 @@ function processMQLArray(mqlProperties, cb) {
     }
 }//eof processMQLArray
 
+// helper function of handleQuery
 function processMQL(mqlProperties, cb) {
     debug('>>> inside processMQL'); // for testing only
     mqlProperties.callBackHandleQuery = cb;
@@ -1790,27 +1857,38 @@ function processMQL(mqlProperties, cb) {
         debug('>>> leaving processMQL with error'); // for testing only
         var err = new Error('mqlProperties.queryOrQueries[0] is null');
         mqlProperties.err = err;
+        debug('>>> leaving processMQL with error:');
+        debug(err.message);
         mqlProperties.callBackHandleQuery(err, mqlProperties);
     }
     else if (isObject(mqlProperties.queryOrQueries[0])) {
         debug('mqlProperties.queryOrQueries[0] is an object:'); // for testing only
         debug(mqlProperties.queryOrQueries[0]); // for testing only		
-        processMQLObject(mqlProperties, function(err, mqlProperties) {       ///  WE ARE HERE !!!!!!!!!!
+        processMQLObject(mqlProperties, function(err, mqlProperties) {
             debug('>>> back inside processMQL from processMQLObject');	// for testing only
-
-
-
-            mqlProperties.err = err;
-            debug('>>> leaving processMQL');	// for testing only
-            mqlProperties.callBackHandleQuery(null, mqlProperties);
+            if(err){
+                mqlProperties.err = err;
+                debug('>>> leaving processMQL with error:');
+                debug(err.message);
+                mqlProperties.callBackHandleQuery(err, mqlProperties);
+            }
+            debug('§§§§§§§§§§§§§§§ WE DID: processMQL ... '); // for testing only
+            debug('>>> leaving processMQL');	// for testing only  ///  WE ARE HERE !!!!!!!!!!
+            mqlProperties.callBackHandleQuery(null, mqlProperties);  // <------------------------ THIS CALL BACK SEEMS TO JUMP TO THE WRONG SECTION INSIDE handleQuery !!!: FIX IT
         });
     }
     else if (isArray(mqlProperties.queryOrQueries[0])) {
         debug('mqlProperties.queryOrQueries[0] is an array:'); // for testing only
         debug(mqlProperties.queryOrQueries[0]); // for testing only	
         processMQLArray(mqlProperties, function(err, mqlProperties) {
-
-            mqlProperties.err = err;
+            debug('>>> back inside processMQL from processMQLArray');	// for testing only
+            if(err){
+                mqlProperties.err = err;
+                debug('>>> leaving processMQL with error:');
+                debug(err.message);
+                mqlProperties.callBackHandleQuery(err, mqlProperties);
+            }
+            debug('§§§§§§§§§§§§§§§ WE DID: processMQL ... '); // for testing only
             debug('>>> leaving processMQL');	// for testing only
             mqlProperties.callBackHandleQuery(null, mqlProperties);
         });
@@ -1820,6 +1898,8 @@ function processMQL(mqlProperties, cb) {
         debug('>>> leaving processMQL with error'); // for testing only
         var err = new Error('mql query must be an object or an array, not "' + gettype(mqlProperties.queryOrQueries[0]) + '"');
         mqlProperties.err = err;
+        debug('>>> leaving processMQL with error:');
+        debug(err.message);
         mqlProperties.callBackHandleQuery(err, mqlProperties);
     }
 }//eof processMQL
@@ -3171,13 +3251,14 @@ function handleQuery(mqlProperties, cb) {
         processMQL(mqlProperties, function(err, mqlProperties) {
             debug('>>> back inside handleQuery from processMQL'); // for testing only 			
             if (err) {
-                debug('>>> leaving handleQuery with error');
                 mqlProperties.err = err;
+                debug('>>> leaving handleQuery with error:');
+                debug(err.message);
                 mqlProperties.callBackHandleQueries(err, mqlQueries);
             }
             mqlProperties.sqlQueries = null;
             debug('mqlProperties.sqlQueries:'); // for testing only	
-            debug(mqlProperties.sqlQueries); // for testing only
+            debug(mqlProperties.sqlQueries); // for testing only            
             generateSQL(mqlProperties, function(err, mqlProperties) {
                 debug('>>> back inside handleQuery from generateSQL'); // for testing only 				
                 if (err) {
