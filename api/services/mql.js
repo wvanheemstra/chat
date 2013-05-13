@@ -2315,12 +2315,12 @@ function mapMQLTypeToJavaScriptType(mqlProperties){
             mqlProperties.javascript_type = Boolean;
             break;
         case '/type/content':
-            mqlProperties.javascript_type = Lob; // DOES THIS WORK??
+            mqlProperties.javascript_type = String; // // There's no LOB in JavaScript, use String instead.
             break;
         case '/type/datetime':
         case '/type/text': 
         case '/type/float': //this feels so wrong, but PDO doesn't seem t support any decimal/float type :(
-            mqlProperties.javascript_type = Float;
+            mqlProperties.javascript_type = Number; // There's no Float in JavaScript, just Number.
             break;
         case '/type/int':
             mqlProperties.javascript_type = Number; // There's no Integer in JavaScript, just Number.
@@ -2572,7 +2572,7 @@ function handleFilterProperty(mqlProperties){
 
 //helper for generateSQL
 function handleNonFilterProperty(mqlProperties){
-    debug('>>> inside handleNonFilterProperty');
+    debug('>>> inside handleNonFilterProperty ++++++++++++++++++++++DID WE GET IN HERE.. PLEASE+++++++++++++');
     debug('mqlProperties.query_index:');
     debug(mqlProperties.query_index);  // RETURNS UNDEFINED
     
@@ -2701,9 +2701,9 @@ function generateSQL(mqlProperties, cb) {
         debug(mqlProperties.queries[mqlProperties.queryKey]); // for testing only      
     }
 
-    mqlProperties.select = mqlProperties.query[0]['select'];
-    debug('mqlProperties.select:'); // for testing only
-    debug(mqlProperties.select); // for testing only
+    mqlProperties.select = mqlProperties.query[0]['select'];  // IN THE ORIGINAL CODE THIS IS A 'passing-by-reference'
+    debug('mqlProperties.select:'); // for testing only       // BEFORE LAEVING THE FUNCTION
+    debug(mqlProperties.select); // for testing only          // MAKE SURE TO REASSIGN BACK TO THE query
     mqlProperties.from = mqlProperties.query[0]['from'];
     debug('mqlProperties.from:'); // for testing only
     debug(mqlProperties.from); // for testing only
@@ -2853,20 +2853,28 @@ function generateSQL(mqlProperties, cb) {
             debug(mqlProperties.schema);
             
             // THIS IS NOT IN THE ORIGINAL CODE !! BUT IS USED TO SET THE COLUMN NAME FOR LATER REFERENCE
-            if(typeof(mqlProperties.column_name) === 'undefined'){
-                mqlProperties.column_name = mqlProperties.schema_type.properties[Object.keys(mqlProperties.properties)[i]].column_name;
-                // WE MAY AS WELL ADD THE mqlProperties.column_name TO THE COLLECTION OF THE QUERY              //////  HAVE A LOOK AT handleNonFilterProperty TO MAKE SURE WE ARE NOT DUPLICATING CODE
-                //if(typeof(mqlProperties.query.columns) === 'undefined'){ mqlProperties.query.columns = [];}
-                //mqlProperties.query.columns.push(mqlProperties.column_name);
-                //
-            }
+//            if(typeof(mqlProperties.column_name) === 'undefined'){
+//                mqlProperties.column_name = mqlProperties.schema_type.properties[Object.keys(mqlProperties.properties)[i]].column_name;
+//                // WE MAY AS WELL ADD THE mqlProperties.column_name TO THE COLLECTION OF THE QUERY              //////  HAVE A LOOK AT handleNonFilterProperty TO MAKE SURE WE ARE NOT DUPLICATING CODE
+//                //if(typeof(mqlProperties.query.columns) === 'undefined'){ mqlProperties.query.columns = [];}
+//                //mqlProperties.query.columns.push(mqlProperties.column_name);
+//                //
+//            }
             //
             
-            debug("mqlProperties.column_name:");            
-            debug(mqlProperties.column_name);                       
+            // ATTEMPT TO FIX BELOW MISTAKE HERE, REPLACES THE ABOVE COMMENTED CODE!! WORKS AS HOPED FOR !!
+            mqlProperties.column_name = mqlProperties.schema_type.properties[Object.keys(mqlProperties.properties)[i]].column_name;
             
-            debug("mqlProperties.schema['column_name']:");            
+            
+            // START OF BIG CHECK AREA HERE !!!!!  TURNS OUT NOW IT WORKS AS DESIGNED
+            debug('==================================== START OF: BIG CHECK AREA ====================================');
+            debug('mqlProperties.column_name:');
+            debug(mqlProperties.column_name);
+            debug('SHOULD MATCH WITH');
+            debug("mqlProperties.schema['column_name']:");
             debug(mqlProperties.schema['column_name']);
+            debug('==================================== END OF: BIG CHECK AREA ====================================');
+            // END OF BIG CHECK AREA !!!!
             
             if (typeof(mqlProperties.schema['direction']) !== 'undefined') {
                 mqlProperties.direction = mqlProperties.schema['direction'];
