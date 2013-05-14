@@ -1438,7 +1438,7 @@ function processMQLArray(mqlProperties, cb) {
             break;
         case 1:
             mqlProperties.parent['entries'] = new Array();
-            if (array_key_exists('schema', mqlProperties.parent)) {								// TO DO
+            if (arrayKeyExists('schema', mqlProperties.parent)) {								// TO DO
                 mqlProperties.parent['entries']['schema'] = mqlProperties.parent['schema'];
             }
             processMQL(mqlProperties.mqlArray[0], mqlProperties.parent['entries']); // TO DO
@@ -2637,8 +2637,14 @@ function executeSQL(mqlProperties, cb) {
         debug("db_connection_created:"); // for testing only
         debug(db_connection_created); // for testing only      
 
-//        //FOR TESTING ONLY
-//        mqlProperties.statement_handle.sql = 'SELECT * FROM core.tbl_person LIMIT 0,2';
+
+
+//      // FOR TESTING ONLY: THIS OVERWRITES THE GENERATED SQL
+//        mqlProperties.statement_handle.sql = 'SELECT  t1.kp_PersonID AS t1c1\n, t1.PersonFirstName AS t1c2\n, t1.PersonLastName AS t1c3\nFROM core.tbl_person t1\nWHERE t1.kf_GenderID = 1 LIMIT 0,6';
+
+        
+        
+        
 
         debug('parameters:');
         debug(parameters);
@@ -3118,8 +3124,7 @@ function executeSQLQueries(mqlProperties, cb) {
         debug('mqlProperties.sql_query:');
         debug(mqlProperties.sql_query);
 
-//      REPLACES      
-//        
+//      REPLACES         
 //      $result = &$sql_query['results'];
 
         executeSQLQuery(mqlProperties, function(err, mqlProperties) {
