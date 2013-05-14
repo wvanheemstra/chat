@@ -790,12 +790,18 @@ function isFilterProperty(mqlProperties) {
 
     if (mqlProperties.propertyValue === null) {
         debug('mqlProperties.propertyValue is null'); // for testing only
+        mqlProperties.is_filter_property = false; // use underscore notation, otherwise it gets confussed with the function
+        debug('mqlProperties.is_filter_property:'); // for testing only
+        debug(mqlProperties.is_filter_property); // for testing only          
         debug('>>> leaving isFilterProperty'); // for testing only 
         return mqlProperties;
     }
     // uses a new function countObjectVars() added property count_of_object_vars
     else if (isObject(mqlProperties.propertyValue) && mqlProperties.count_of_object_vars === 0)
     {
+        mqlProperties.is_filter_property = false; // use underscore notation, otherwise it gets confussed with the function
+        debug('mqlProperties.is_filter_property:'); // for testing only
+        debug(mqlProperties.is_filter_property); // for testing only          
         debug('>>> leaving isFilterProperty'); // for testing only 
         return mqlProperties;
     }//eof else if
@@ -803,15 +809,18 @@ function isFilterProperty(mqlProperties) {
             Object.keys(mqlProperties.propertyValue).length === 0
             )
     {
-        mqlProperties.isFilterProperty = false;
+        mqlProperties.is_filter_property = false; // use underscore notation, otherwise it gets confussed with the function
         debug('Object.keys(mqlProperties.propertyValue).length:'); // for testing only
         debug(Object.keys(mqlProperties.propertyValue).length); // for testing only
+        debug('mqlProperties.is_filter_property:'); // for testing only
+        debug(mqlProperties.is_filter_property); // for testing only        
         debug('>>> leaving isFilterProperty'); // for testing only 
         return mqlProperties;
     }
     else {
-        mqlProperties.isFilterProperty = true;
-        debug('mqlProperties.propertyValue is filter property'); // for testing only
+        mqlProperties.is_filter_property = true; // use underscore notation, otherwise it gets confussed with the function
+        debug('mqlProperties.is_filter_property:'); // for testing only
+        debug(mqlProperties.is_filter_property); // for testing only  
         debug('>>> leaving isFilterProperty'); // for testing only 		
         return mqlProperties;
     }
@@ -901,7 +910,7 @@ function analyzeProperty(mqlProperties) {
             'operator': mqlProperties.matches[8] = typeof mqlProperties.matches[8] !== 'undefined' ? mqlProperties.matches[8] : null,
             'qualified': mqlProperties.matches[5] = typeof mqlProperties.matches[5] !== 'undefined' ? true : false,
             'value': mqlProperties.propertyValue,
-            'is_filter': mqlProperties.isFilterProperty,
+            'is_filter': mqlProperties.is_filter_property,
             'is_directive': false,
             'schema': null
         });
@@ -2065,7 +2074,7 @@ function isOptional(mqlProperties) {
 
 }
 
-function arrayUnshift(array) {
+function arrayUnshift(mqlProperties, array) {
     // http://kevin.vanzonneveld.net
     // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
     // +   improved by: Martijn Wieringa
@@ -2073,13 +2082,14 @@ function arrayUnshift(array) {
     // %        note 1: Currently does not handle objects
     // *     example 1: array_unshift(['van', 'Zonneveld'], 'Kevin');
     // *     returns 1: 3
-    var i = arguments.length;
+    debug('>>> inside arrayUnshift'); // for testing only 
+    var i = array.length;
 
     while (--i !== 0) {
-        arguments[0].unshift(arguments[i]);
+        array[0].unshift(array[i]);
     }
-
-    return arguments[0].length;
+    debug('>>> leaving arrayUnshift'); // for testing only     
+    return mqlProperties;
 }
 
 function arrayKeyExists(key, search) {
@@ -2089,9 +2099,11 @@ function arrayKeyExists(key, search) {
     // *     example 1: array_key_exists('kevin', {'kevin': 'van Zonneveld'});
     // *     returns 1: true
     // input sanitation
+    debug('>>> inside arrayKeyExists'); // for testing only     
     if (!search || (search.constructor !== Array && search.constructor !== Object)) {
         return false;
     }
+    debug('>>> leaving arrayKeyExists'); // for testing only     
     return key in search;
 }
 
@@ -2271,10 +2283,10 @@ function getFromClause(mqlProperties) {
         }//eof for
     }//eof if
     if (typeof(mqlProperties.schema_name) !== 'undefined') {
-        mqlProperties.from_line = mqlProperties.schema_name + '.' + mqlProperties.table_name;
+        mqlProperties.from_line['table'] = mqlProperties.schema_name + '.' + mqlProperties.table_name;
     }
     else {
-        mqlProperties.from_line = '' + mqlProperties.table_name;
+        mqlProperties.from_line['table'] = '' + mqlProperties.table_name;
     }
     debug('mqlProperties.from_line:');
     debug(mqlProperties.from_line);
@@ -2474,17 +2486,32 @@ function handleFilterProperty(mqlProperties){
     
     debug('mqlProperties.filter_property_value:');
     debug(mqlProperties.filter_property_value);
+    
+    debug("Object.keys(mqlProperties.query[0].from):");
+    debug(Object.keys(mqlProperties.query[0].from));
 
-    if(Object.keys(mqlProperties.query[0].from).length > 1){
+    if(Object.keys(mqlProperties.query[0].from).length > 1){ 
+        // WE ARE DEALING WITH MORE THAN ONE TABLE
         mqlProperties.from_line = mqlProperties.query[0].from[Object.keys(mqlProperties.query[0].from).length -1];
+        
+        debug('-----------------------------------------FROM LINE-----------------------------------------');
         debug('mqlProperties.from_line:');
         debug(mqlProperties.from_line);
+        debug('-------------------------------------------------------------------------------------------');
+        
         mqlProperties.from_or_where = mqlProperties.from_line['join_condition'];
         mqlProperties.from_or_where += "\n"+'AND'+' '+Object.keys(mqlProperties.query[0].from)[Object.keys(mqlProperties.query[0].from).length -1]+'.'+mqlProperties.column_name;// USES " TO ASSURE THE ESCAPE
         debug('mqlProperties.from_or_where:');
         debug(mqlProperties.from_or_where);
     }//eof if
     else{
+        // WE ARE DEALING WITH ONE TABLE ONLY
+        
+        debug('-----------------------------------------FROM LINE-----------------------------------------');
+        debug('mqlProperties.from_line:');
+        debug(mqlProperties.from_line);
+        debug('-------------------------------------------------------------------------------------------');        
+        
         mqlProperties.from_or_where = mqlProperties.query[0].where;
         debug('mqlProperties.from_or_where:');
         debug(mqlProperties.from_or_where);
@@ -2544,6 +2571,12 @@ function handleFilterProperty(mqlProperties){
         //the comparison is automatically with equals.
         mqlProperties.from_or_where += ' = ';
     }//eof else
+    //
+      
+    // WE ATTEMPT TO SET THE from_or_where TO query[0].where
+    // NOTE: THIS IS NOT IN THE ORIGINAL CODE
+    mqlProperties.query[0].where = mqlProperties.from_or_where; // WORKS!!
+        
     //prepare the right hand side of the comparison expression
     mqlProperties.property_for_parameter_to_add = mqlProperties.filter_property_value;
     debug('mqlProperties.property_for_parameter_to_add:');
@@ -2554,9 +2587,7 @@ function handleFilterProperty(mqlProperties){
     }//eof if
     else if (mqlProperties.add_closing_escape_clause) {
         mqlProperties.from_or_where += " ESCAPE '\\'";
-    }//eof else
-    debug('mqlProperties.from_or_where:');
-    debug(mqlProperties.from_or_where);    
+    }//eof else   
     
     // SURELY WE HAVE TO ADD THE NEWLY MODIFIED from_or_where ARRAY
     // TO THE mqlProperties.query[0].where
@@ -2564,6 +2595,11 @@ function handleFilterProperty(mqlProperties){
 //    mqlProperties.query[0].where = mqlProperties.from_or_where;
 //    debug('mqlProperties.query[0].where:');
 //    debug(mqlProperties.query[0].where);    
+    
+    debug('---------------------------------------FROM OR WHERE---------------------------------------');
+    debug('mqlProperties.from_or_where:');
+    debug(mqlProperties.from_or_where);
+    debug('-------------------------------------------------------------------------------------------');
     
     debug('>>> leaving handleFilterProperty');
     return mqlProperties;
@@ -2604,8 +2640,8 @@ function handleNonFilterProperty(mqlProperties){
     debug(mqlProperties.column_ref); 
 
     mqlProperties.query[0].select[mqlProperties.column_ref] = mqlProperties.cAlias;
-    debug('mqlProperties[0].query.select[mqlProperties.column_ref]:');
-    debug(mqlProperties[0].query.select[mqlProperties.column_ref]); 
+    debug('mqlProperties.query[0].select[mqlProperties.column_ref]:');
+    debug(mqlProperties.query[0].select[mqlProperties.column_ref]); 
     
     mqlProperties.non_filter_property_value['alias'] = mqlProperties.cAlias;
     debug("mqlProperties.non_filter_property_value['alias']:");
@@ -3187,90 +3223,123 @@ function getQuerySQL(mqlProperties) {
     mqlProperties.sql = 'SELECT';
     debug('mqlProperties.sql:');
     debug(mqlProperties.sql);
-
-
-
-
-
-
-    // HERE IS WHERE WE SET THE COLUMNS FOR THE SELECT STATEMENT
+    // THESE WERE SET BEFORE, SUCCESSFULLY
     debug('mqlProperties.select_columns:');
     debug(mqlProperties.select_columns);
-    
-    
-    
-
+    debug("mqlProperties.select_columns === mqlProperties.sql_query['select']");
+    debug(mqlProperties.select_columns === mqlProperties.sql_query['select']);  
 
     if (mqlProperties.select_columns === mqlProperties.sql_query['select']) {
-        for (i = 0; i < mqlProperties.select_columns.length; i++) {
+        
+        debug('mqlProperties.select_columns.length:');
+        debug(mqlProperties.select_columns.length);
+        
+        debug('Object.keys(mqlProperties.select_columns).length:');
+        debug(Object.keys(mqlProperties.select_columns).length);        
+
+        for (i = 0; i < Object.keys(mqlProperties.select_columns).length; i++) {
             if (mqlProperties.sql === 'SELECT') {
                 mqlProperties.sql = mqlProperties.sql
                         + '  '
-                        + mqlProperties.select_columns[i].key
+                        + Object.keys(mqlProperties.select_columns)[i]
                         + ' AS '
-                        + mqlProperties.select_columns[i].value;
+                        + mqlProperties.select_columns[Object.keys(mqlProperties.select_columns)[i]];
             }//eof if
             else {
                 mqlProperties.sql = mqlProperties.sql
                         + "\n" + ', '// USES " TO ASSURE THE ESCAPE
-                        + mqlProperties.select_columns[i].key
+                        + Object.keys(mqlProperties.select_columns)[i]
                         + ' AS '
-                        + mqlProperties.select_columns[i].value;
+                        + mqlProperties.select_columns[Object.keys(mqlProperties.select_columns)[i]];
             }//eof else
         }//eof for 
     }//eof if
     else {
-        mqlProperties.sql = mqlProperties.sql + ' NULL';
-    }//eof else
+        mqlProperties.sql += ' NULL';
+    }//eof else    
     debug('mqlProperties.sql:');
     debug(mqlProperties.sql);
     mqlProperties.optionality_groups = [];
     debug('mqlProperties.optionality_groups:');
     debug(mqlProperties.optionality_groups);
-    for (i = 0; i < mqlProperties.sql_query['from'].length; i++) {
-        if (typeof(mqlProperties.sql_query['from'][i].value['optionality_group']) !== 'undefined') {
-            mqlProperties.optionality_group_name = mqlProperties.sql_query['from'][i].value['optionality_group'];
+    
+    for (i = 0; i < Object.keys(mqlProperties.sql_query['from']).length; i++) {
+        debug("mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]:");
+        debug(mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]);
+        
+//OLD        if (typeof(mqlProperties.sql_query['from'][i].value['optionality_group']) !== 'undefined') {
+        if (typeof(mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['optionality_group']) !== 'undefined') {    
+            
+            mqlProperties.optionality_group_name = mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['optionality_group'];
             debug('mqlProperties.optionality_group_name:');
             debug(mqlProperties.optionality_group_name);
             if (!arrayKeyExists(mqlProperties.optionality_group_name, mqlProperties.optionality_groups)) {
                 mqlProperties.optionality_groups[mqlProperties.optionality_group_name] = [];
             }//eof if
             mqlProperties.optionality_group = mqlProperties.optionality_groups[mqlProperties.optionality_group_name];
-            mqlProperties.optionality_group[0] = mqlProperties.sql_query['from'][i].value['optionality_group_column'];
+            mqlProperties.optionality_group[0] = mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['optionality_group_column'];
             debug('mqlProperties.optionality_group:');
             debug(mqlProperties.optionality_group);
         }//eof if 
-        mqlProperties.from_or_join = mqlProperties.sql_query['from'][i].key && (typeof(mqlProperties.sql_query['from'][i].value['join_type']) !== 'undefined');
+        
+        
+        
+        // CHECK IF WE GET THE WHERE SET SOMEWHERE... (PUN NOT INTENDED ;o)
+        
+        
+        
+        mqlProperties.from_or_join = Object.keys(mqlProperties.sql_query['from'])[i] && (typeof(mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_type']) !== 'undefined');
         debug('mqlProperties.from_or_join:');
         debug(mqlProperties.from_or_join);
+        
+        debug("mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]:");
+        debug(mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]);
+        
+        debug("mqlProperties.sql_query['from']:");
+        debug(mqlProperties.sql_query['from']);
+        
+        debug("arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]])");
+        debug(arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]));
+        
+        
         if (mqlProperties.from_or_join) {
             mqlProperties.sql = mqlProperties.sql
                     + "\n"  // USES " TO ASSURE THE ESCAPE
-                    + mqlProperties.sql_query['from'][i].value['join_type']
+                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_type']
                     + ' JOIN '
-                    + mqlProperties.sql_query['from'][i].value['table']
+                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['table']
                     + ' '
-                    + mqlProperties.sql_query['from'][i].value['alias']
+                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['alias']
                     + "\n"  // USES " TO ASSURE THE ESCAPE
-                    + mqlProperties.sql_query['from'][i].value['join_condition'];
+                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_condition'];
         }//eof if
-        else if (arrayKeyExists('table', mqlProperties.sql_query['from'][i].value)) {
+        
+        
+        // SURELY WE WILL HAVE TO BE GOING INTO THE NEXT else if STATEMENT
+        
+        else if (arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]])) {
             mqlProperties.sql = mqlProperties.sql
                     + "\n"+'FROM '  // USES " TO ASSURE THE ESCAPE
-                    + mqlProperties.sql_query['from'][i].value['table']
+                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['table']
                     + ' '
-                    + mqlProperties.sql_query['from'][i].value['alias'];
+                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['alias'];
         }//eof else if
-        else if (mqlProperties.sql_query['from'][i].value['join_condition']) {
+        else if (mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_condition']) {
             //these are filter condition but we write them in the join
             //this is required to handle outer joins. 
             mqlProperties.sql = mqlProperties.sql
                     + "\n"  // USES " TO ASSURE THE ESCAPE
-                    + mqlProperties.sql_query['from'][i].value['join_condition'];
+                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_condition'];
         }//eof else if
         debug('mqlProperties.sql:');
         debug(mqlProperties.sql);
-    }//eof for     
+    }//eof for  
+    
+    debug('----------------------------------------WHERE--------------------------------------------------------');
+    debug("mqlProperties.sql_query['where']:");
+    debug(mqlProperties.sql_query['where']);
+    debug('-----------------------------------------------------------------------------------------------------');    
+    
     mqlProperties.where = mqlProperties.sql_query['where'];
     debug('mqlProperties.where:');
     debug(mqlProperties.where);
@@ -3426,7 +3495,11 @@ function executeSQLQueries(mqlProperties, cb) {
     debug('mqlProperties.queries:'); // for testing only
     debug(mqlProperties.queries); // for testing only 
     mqlProperties.sql_queries = mqlProperties.queries;
-    for (i = 0; i < mqlProperties.sql_queries.length; i++) {
+    
+    debug('mqlProperties.sql_queries.length:');    
+    debug(mqlProperties.sql_queries.length);
+    
+    for (i = 0; i < mqlProperties.sql_queries.length; i++) {  /// DOES THE length WORK HERE ???? YES IT DOES!
         // REPLACES foreach($sql_queries as $sql_query_index => &$sql_query){
         debug('i:'); // for testing only
         debug(i); // for testing only   
@@ -3444,6 +3517,20 @@ function executeSQLQueries(mqlProperties, cb) {
         mqlProperties.result_object = mqlProperties.mql_node['result_object'];
         debug('mqlProperties.result_object:'); // for testing only
         debug(mqlProperties.result_object); // for testing only 
+        
+        // THIS IS TO MAKE SURE select_columns GETS SET: WORKS AS DESIGNED !!!
+        // NOTE: THIS IS NOT PART OF THE ORIGINAL CODE
+        if(typeof(mqlProperties.select_columns) === 'undefined'){
+            mqlProperties.select_columns = mqlProperties.sql_queries[i]['select'];
+            debug('mqlProperties.select_columns:'); // for testing only
+            debug(mqlProperties.select_columns); // for testing only
+        }//eof if
+        
+        debug('mqlProperties.merge_into:');
+        debug(mqlProperties.merge_into); 
+        
+        debug("mqlProperties.sql_queries[i]['merge_into']:");
+        debug(mqlProperties.sql_queries[i]['merge_into']);
 
         if (mqlProperties.merge_into === mqlProperties.sql_queries[i]['merge_into']) {
             mqlProperties.merge_into_columns = mqlProperties.merge_into['columns'];
@@ -3480,8 +3567,11 @@ function executeSQLQueries(mqlProperties, cb) {
                 'table': mqlProperties.index['inline_table'],
                 'alias': mqlProperties.index_name
             });
+            
+            debug('-----------------------------------------------EXTRA FROM LINE-----------------------------------------------');
             debug('mqlProperties.extra_from_line:'); // for testing only
             debug(mqlProperties.extra_from_line); // for testing only 
+            debug('-------------------------------------------------------------------------------------------------------------');
 
             mqlProperties.join_condition = '';
             debug('mqlProperties.join_condition:'); // for testing only
@@ -3528,7 +3618,7 @@ function executeSQLQueries(mqlProperties, cb) {
 //    }
 //    $first_from_line['join_condition'] = $join_condition;
 //    $first_from_line['join_type'] = 'INNER';
-            arrayUnshift(mqlProperties.from, mqlProperties.extra_from_line);
+            mqlProperties = arrayUnshift(mqlProperties, [mqlProperties.from, mqlProperties.extra_from_line]);
 //    // REPLACES
 //    array_unshift($from, $extra_from_line);
         }//eof if
