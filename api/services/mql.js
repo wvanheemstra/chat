@@ -72,7 +72,7 @@ exports.read = function(req, res) {
         this.callBackHandleRequest = null;
         this.result = null;  // we are in need of both result and results
         this.results = null;
-        this.queryKey = null;
+        this.query_index = null;
         this.callBackHandleQueries = null;
         this.parent = null;
         this.callBackHandleQuery = null;
@@ -335,9 +335,9 @@ function handleRequest(mqlProperties, cb) {
             mqlProperties.queryOrQueries = mqlProperties.args.mql.query;
             debug('mqlProperties.queryOrQueries:'); // for testing only	
             debug(mqlProperties.queryOrQueries); // for testing only
-            mqlProperties.queryKey = 0; // we have only one result with index 0
-            debug('mqlProperties.queryKey:'); // for testing only	
-            debug(mqlProperties.queryKey); // for testing only
+            mqlProperties.query_index = 0; // we have only one result with index 0
+            debug('mqlProperties.query_index:'); // for testing only	
+            debug(mqlProperties.query_index); // for testing only
             // NOTE: WE ROUTE QUERY AND QUERIES BOTH THROUGH HANDLEQUERIES, WHICH IN TURN ROUTES IT THROUGH HANDLEQUERY
             handleQueries(mqlProperties, function(err, mqlProperties) {
                 debug('>>> back inside handleRequest from handleQueries');// for testing only 				
@@ -2225,7 +2225,7 @@ function generateSQL(mqlProperties, cb) {
     }//eof if
 
     if (typeof(mqlProperties.parent['query_index']) === 'undefined') {
-        mqlProperties.parent['query_index'] = mqlProperties.queryKey;//WAS $query_index TEMPORARY SET TO mqlProperties.queryKey
+        mqlProperties.parent['query_index'] = mqlProperties.query_index;//WAS $query_index TEMPORARY SET TO mqlProperties.query_index
         debug("mqlProperties.parent['query_index']:"); // for testing only
         debug(mqlProperties.parent['query_index']); // for testing only
     }
@@ -2233,8 +2233,8 @@ function generateSQL(mqlProperties, cb) {
     if (typeof(mqlProperties.queries) !== 'undefined' && mqlProperties.queries !== null) {
         debug('mqlProperties.queries:');
         debug(mqlProperties.queries);
-        if (typeof(mqlProperties.queries[mqlProperties.queryKey]) !== 'undefined') {
-            mqlProperties.query = mqlProperties.queries[mqlProperties.queryKey];
+        if (typeof(mqlProperties.queries[mqlProperties.query_index]) !== 'undefined') {
+            mqlProperties.query = mqlProperties.queries[mqlProperties.query_index];
             debug('mqlProperties.query:');
             debug(mqlProperties.query);
         }//eof if 
@@ -2267,9 +2267,9 @@ function generateSQL(mqlProperties, cb) {
             'merge_into': mqlProperties.mergeInto,
             'results': []
         });
-        mqlProperties.queries[mqlProperties.queryKey] = mqlProperties.query[0];
-        debug('mqlProperties.queries[mqlProperties.queryKey]:'); // for testing only
-        debug(mqlProperties.queries[mqlProperties.queryKey]); // for testing only      
+        mqlProperties.queries[mqlProperties.query_index] = mqlProperties.query[0];
+        debug('mqlProperties.queries[mqlProperties.query_index]:'); // for testing only
+        debug(mqlProperties.queries[mqlProperties.query_index]); // for testing only      
     }
 
     mqlProperties.select = mqlProperties.query[0]['select'];  // IN THE ORIGINAL CODE THIS IS A 'passing-by-reference'
@@ -2640,7 +2640,7 @@ function executeSQL(mqlProperties, cb) {
 
 
 //      // FOR TESTING ONLY: THIS OVERWRITES THE GENERATED SQL
-//        mqlProperties.statement_handle.sql = 'SELECT  t1.kp_PersonID AS t1c1\n, t1.PersonFirstName AS t1c2\n, t1.PersonLastName AS t1c3\nFROM core.tbl_person t1\nWHERE t1.kf_GenderID = 1 LIMIT 0,6';
+        mqlProperties.statement_handle.sql = 'SELECT  t1.kp_PersonID AS t1c1\n, t1.PersonFirstName AS t1c2\n, t1.PersonLastName AS t1c3\nFROM core.tbl_person t1\nWHERE t1.kf_GenderID = 1 LIMIT 0,6';
 
         
         
@@ -2704,13 +2704,13 @@ function executeSQL(mqlProperties, cb) {
             mqlProperties.callBackExecuteSQLQuery(null, mqlProperties);
         }//eof else 
     }//eof try
-    catch (ex) {
-        debug(ex.message
+    catch (err) {
+        debug(err.message
                 + ' Offending statement: '
                 + mqlProperties.sql);
-        mqlProperties.err = ex;
-        debug('>>> leaving executeSQL with exception');
-        mqlProperties.callBackExecuteSQLQuery(ex, mqlProperties);
+        mqlProperties.err = err;
+        debug('>>> leaving executeSQL with exception: '+ err.message);
+        mqlProperties.callBackExecuteSQLQuery(err, mqlProperties);
     }//eof catch
 }//eof executeSQL
 
@@ -2946,7 +2946,14 @@ function executeSQLQuery(mqlProperties, cb) {
 // helper for executeSQLQueries: NOT a callback function
 function getResultObject(mqlProperties, index, object, key) {
     debug('>>> inside getResultObject'); // for testing only
-    if (mqlProperties.mql_node['query_index'] !== index) {
+    
+    debug("mqlProperties.mql_node['query_index']:^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+    debug(mqlProperties.mql_node['query_index']);
+    
+    debug("index:");
+    debug(index); 
+    
+    if (parseInt(mqlProperties.mql_node['query_index']) !== index) {
         debug('>>> leaving getResultObject');
         return;
     }//eof if
@@ -2958,7 +2965,7 @@ function getResultObject(mqlProperties, index, object, key) {
         mqlProperties.result_object = mqlProperties.object;
     }//eof else
     if (typeof(mqlProperties.mql_node['entries']) !== 'undefined') {
-        getResultObject(mqlProperties, index, mqlProperties.object, 0);
+        mqlProperties = getResultObject(mqlProperties, index, mqlProperties.object, 0);
     }//eof if
     else if (typeof(mqlProperties.mql_node['properties']) !== 'undefined') {
         // TO DO
@@ -2970,7 +2977,7 @@ function getResultObject(mqlProperties, index, object, key) {
             debug('mqlProperties.value:');
             debug(mqlProperties.value);
             if (mqlProperties.value instanceof Object || mqlProperties.value instanceof Array) {
-                getResultObject(mqlProperties, index, mqlProperties.object, mqlProperties.mql_node['properties'][i].key);
+                mqlProperties = getResultObject(mqlProperties, index, mqlProperties.object, mqlProperties.mql_node['properties'][i].key);
             }//eof if
             else {
                 mqlProperties.object[mqlProperties.mql_node['properties'][i].key] = mqlProperties.value;
@@ -2978,9 +2985,128 @@ function getResultObject(mqlProperties, index, object, key) {
         }//eof for     
     }//eof else if
     mqlProperties.mql_node['result_object'] = mqlProperties.object;
+    debug("mqlProperties.mql_node['result_object']:");
+    debug(mqlProperties.mql_node['result_object']);
+    mqlProperties.result_object = mqlProperties.object;
+    debug("mqlProperties.result_object:");
+    debug(mqlProperties.result_object);    
     debug('>>> leaving getResultObject');
-    return mqlProperties.object;
+    return mqlProperties;
 }//eof getResultObject
+
+
+// helper for executeSQLQueries
+function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_object){
+    debug('>>> inside fillResultObject'); // for testing only  
+    debug('mqlProperties.row:');
+    debug(mqlProperties.row);
+    debug("mql_node:");
+    debug(mql_node);
+
+    debug('sql_query_index:');
+    debug(sql_query_index);
+    
+    // THIS SETTING OF THE mql_node['query_index'] IS REQUIRED 
+    // WHEN mql_node IS REPLACED WITH mqlProperties.entrees
+    // FURTHER DOWN THIS FUNCTION
+    if(typeof(mql_node['query_index']) === 'undefined'){
+        mql_node['query_index'] = sql_query_index;
+    }//eof if
+    
+    if(mql_node['query_index'] !== sql_query_index){
+        debug("NOTE: mql_node['query_index'] is NOT equal to sql_query_index");
+        debug('>>> leaving fillResultObject'); // for testing only
+        return mqlProperties;
+    }//eof if
+
+    debug('mqlProperties.entrees:');
+    debug(mqlProperties.entrees); 
+    
+    debug("mql_node['entrees']:");
+    debug(mql_node['entrees']);
+    
+    debug('mqlProperties.properties:');
+    debug(mqlProperties.properties);
+    
+    debug("mql_node['properties']:");
+    debug(mql_node['properties']);
+    
+    if(typeof(mqlProperties.entrees) !== 'undefined' && mqlProperties.entrees === mql_node['entrees']){
+        if(typeof(mqlProperties.result_object)==='undefined'){
+            mqlProperties.result_object = [];
+        }
+        debug('mqlProperties.result_object:');
+        debug(mqlProperties.result_object);
+        mqlProperties = fillResultObject(mqlProperties, mqlProperties.entrees, sql_query_index, row, mqlProperties.result_object[0]); // Calls itself
+// REPLACES
+//        fill_result_object($entries, $query_index, $data, $result_object[0]);
+        
+    }//eof if
+    else if(mqlProperties.properties === mql_node['properties']){
+        debug("NOTE: mqlProperties.properties is equal to mql_node['properties']");
+        debug('mqlProperties.result_object:');
+        debug(mqlProperties.result_object);
+        for(i=0;i<Object.keys(result_object).length;i++){ 
+            debug('Start of Round i: '+i);
+         
+            // STILL TO DO !!!!!!!!!!!!
+         
+// REPLACES
+//        foreach ($result_object as $key => $value) {
+//            $property = $properties[$key];
+//            if (is_object($value) || is_array($value)){
+//                fill_result_object($property, $query_index, $data, $result_object[$key]);
+//            }
+//            else
+//            if (isset($property['alias'])) {
+//                                $alias = $property['alias'];
+//                if ($explicit_type_conversion) {
+//                    if (!is_null($data[$alias])) {
+//                        settype($data[$alias], map_mql_to_php_type($property['schema']['type']));
+//                    }
+//                }
+//                $result_object[$key] = $data[$alias];
+//            }
+//        }
+            debug('End of Round i: '+i);
+        }//eof for
+    }//eof else if
+    
+    
+// REPLACES    
+//function fill_result_object(&$mql_node, $query_index, $data, &$result_object){
+//    global $explicit_type_conversion;
+//    if($mql_node['query_index']!==$query_index){
+//        return;
+//    }
+//
+//    if ($entries = &$mql_node['entries']) {
+//        fill_result_object($entries, $query_index, $data, $result_object[0]);
+//    }
+//    else
+//    if ($properties = &$mql_node['properties']) {
+//        foreach ($result_object as $key => $value) {
+//            $property = $properties[$key];
+//            if (is_object($value) || is_array($value)){
+//                fill_result_object($property, $query_index, $data, $result_object[$key]);
+//            }
+//            else
+//            if (isset($property['alias'])) {
+//                                $alias = $property['alias'];
+//                if ($explicit_type_conversion) {
+//                    if (!is_null($data[$alias])) {
+//                        settype($data[$alias], map_mql_to_php_type($property['schema']['type']));
+//                    }
+//                }
+//                $result_object[$key] = $data[$alias];
+//            }
+//        }
+//    }
+//        
+//}
+    debug('>>> leaving fillResultObject'); // for testing only 
+    return mqlProperties;
+}//eof fillResultObject
 
 // helper for handleQuery
 function executeSQLQueries(mqlProperties, cb) {
@@ -2996,7 +3122,10 @@ function executeSQLQueries(mqlProperties, cb) {
     for (i = 0; i < mqlProperties.sql_queries.length; i++) {  /// DOES THE length WORK HERE ???? YES IT DOES!
         // REPLACES foreach($sql_queries as $sql_query_index => &$sql_query){
         debug('i:'); // for testing only
-        debug(i); // for testing only   
+        debug(i); // for testing only  
+        mqlProperties.sql_query_index = parseInt(Object.keys(mqlProperties.sql_queries)[i]);
+        debug('mqlProperties.sql_query_index:'); // for testing only
+        debug(mqlProperties.sql_query_index); // for testing only 
 
         mqlProperties.indexes = mqlProperties.sql_queries[i]['indexes'];
         debug('mqlProperties.indexes:'); // for testing only
@@ -3006,7 +3135,7 @@ function executeSQLQueries(mqlProperties, cb) {
         debug('mqlProperties.mql_node:'); // for testing only
         debug(mqlProperties.mql_node); // for testing only 
 
-        getResultObject(mqlProperties, i); // NOT a callback function
+        mqlProperties = getResultObject(mqlProperties, i);
 
         mqlProperties.result_object = mqlProperties.mql_node['result_object'];
         debug('mqlProperties.result_object:'); // for testing only
@@ -3158,7 +3287,12 @@ function executeSQLQueries(mqlProperties, cb) {
                     }//eof if 
                     mqlProperties.merge_into_values_old = mqlProperties.merge_into_values_new;
                 }//eof if
-                mqlProperties = fillResultObject(mqlProperties); // TO DO: implement function fillResultObject()
+                mqlProperties.row = mqlProperties.rows[m];
+//OLD                mqlProperties = fillResultObject(mqlProperties); // TO DO: implement function fillResultObject()
+                
+                mqlProperties = fillResultObject(mqlProperties, mqlProperties.mql_node, mqlProperties.sql_query_index, mqlProperties.row, mqlProperties.result_object);
+                
+                
                 mqlProperties.result[mqlProperties.rows[m].key] = mqlProperties.result_object;
                 mqlProperties = addEntryToIndexes(mqlProperties, mqlProperties.rows[m].key, mqlProperties.rows[m]); // TO DO: implement function addEntryTo Indexes()            
             }
@@ -3227,7 +3361,7 @@ function handleQuery(mqlProperties, cb) {
     if (typeof(mqlProperties.args.debug_info) !== 'undefined') {
         var unixtime_ms = new Date().getTime();
         var sec = parseInt(unixtime_ms / 1000);
-        var name = 'begin query #' + mqlProperties.queryKey;
+        var name = 'begin query #' + mqlProperties.query_index;
         var microtime = (unixtime_ms - (sec * 1000)) / 1000 + ' ' + sec;
         mqlProperties.callStack.push({"name": name, "microtime": microtime});
         debug('mqlProperties.callStack:'); // for testing only
@@ -3348,7 +3482,7 @@ function handleQuery(mqlProperties, cb) {
                     args['sql'] = sql_statements;
                     var unixtime_ms = new Date().getTime();
                     var sec = parseInt(unixtime_ms / 1000);
-                    var name = 'end query #' + mqlProperties.queryKey;
+                    var name = 'end query #' + mqlProperties.query_index;
                     var microtime = (unixtime_ms - (sec * 1000)) / 1000 + ' ' + sec;
                     mqlProperties.callStack.push({"name": name, "microtime": microtime});
                     debug('mqlProperties.callStack:'); // for testing only
@@ -3375,9 +3509,9 @@ function forHandleQuery(mqlProperties, item, index) {
     debug(mqlProperties.handle_query);
     handleQuery(mqlProperties, function(err, mqlProperties) {
         debug('>>> back inside forHandleQuery from handleQuery'); // for testing only			
-        mqlProperties.results[mqlProperties.queryKey] = mqlProperties.result;
-        debug('mqlProperties.results[mqlProperties.queryKey]:');// for testing only
-        debug(mqlProperties.results[mqlProperties.queryKey]);// for testing only	
+        mqlProperties.results[mqlProperties.query_index] = mqlProperties.result;
+        debug('mqlProperties.results[mqlProperties.query_index]:');// for testing only
+        debug(mqlProperties.results[mqlProperties.query_index]);// for testing only	
         // THIS SHOULD INCLUDE THE FOLLOWING SURELY		
         debug('>>> leaving handleQuery from forHandleQuery'); // for testing only
         mqlProperties.callBackHandleRequest(null, mqlProperties);
@@ -3388,12 +3522,12 @@ function handleQueries(mqlProperties) {
     debug('>>> inside handleQueries'); // for testing only
     mqlProperties.results = [];
     mqlProperties.results.push({'code': '/api/status/ok'});
-    for (var queryKey = 0; queryKey < mqlProperties.queryOrQueries.length; queryKey++) { // TO DO: we do not know for sure that this mqlProperties.queryOrQueries.length is working
-        debug('handleQueries: start of Round i=' + queryKey);
-        mqlProperties.queryKey = queryKey;
-        debug('mqlProperties.queryKey:');// for testing only
-        debug(mqlProperties.queryKey);// for testing only
+    for (var query_index = 0; query_index < mqlProperties.queryOrQueries.length; query_index++) { // TO DO: we do not know for sure that this mqlProperties.queryOrQueries.length is working
+        debug('handleQueries: start of Round i=' + query_index);
+        mqlProperties.query_index = query_index;
+        debug('mqlProperties.query_index:');// for testing only
+        debug(mqlProperties.query_index);// for testing only
         // AS WE ARE INSIDE A FOR LOOP WE NEED TO USE THE FOR-ENABLED FUNCTION forHandleQuery
-        forHandleQuery(mqlProperties, mqlProperties.queryOrQueries[queryKey], queryKey); // call the for-enabled function to callback to processMQL       
+        forHandleQuery(mqlProperties, mqlProperties.queryOrQueries[query_index], query_index); // call the for-enabled function to callback to processMQL       
     }//eof for
 }// eof handleQueries
