@@ -10,6 +10,11 @@
                             "nullable": false, 
                             "type": "/type/int"
                         },
+                        "kf_GenderID": {
+                            "column_name": "kf_GenderID", 
+                            "nullable": true,
+                            "type": "/type/int"
+                        },                                
                         "PersonFirstName": {
                             "column_name": "PersonFirstName", 
                             "nullable": false, 

@@ -189,7 +189,8 @@ exports.read = function(req, res) {
                     mql: {
                         "query": [{
                                 "type": "/core/person",
-                                "kp_PersonID": 1,
+                                "kp_PersonID": null,
+                                "kf_GenderID": 1,
                                 "PersonFirstName": null,
                                 "PersonLastName": null
                             }]
@@ -580,10 +581,6 @@ function pregMatchAll(mqlProperties, pattern, key, value) {
  }//eof pregMatchAll
  */
 
-
-
-
-
 function arrayKeys(input, search_value, argStrict) {
     debug('>>> inside arrayKeys'); // for testing only 
     // see http://phpjs.org/functions/arrayKeys/	
@@ -718,66 +715,6 @@ function analyzeType(mqlProperties){
     }//eof else
 }//eof analyzeType
 
-
-/* ORIGINAL CALL-BACK FUNCTION analyzeType
-function analyzeType(mqlProperties, cb) {
-    debug('>>> inside analyzeType'); // for testing only
-    mqlProperties.callBackAnalyzeType = cb;
-    debug('mqlProperties.type:'); // for testing only
-    debug(mqlProperties.type); // for testing only
-    debug('mqlProperties.parent_cb:'); // for testing only
-    debug(mqlProperties.parent_cb); // for testing only
-    mqlProperties.type_pattern = mqlProperties.type.toString(); // TEMP SOLUTION, ORIGINAL: '/^\/(\w+)\/(\w+)$/';
-    debug('mqlProperties.type_pattern:'); // for testing only
-    debug(mqlProperties.type_pattern); // for testing only//
-    // Explanation:
-    // The (\w+) grouping looks for word characters, as denoted by the \w. 
-    // The + indicates that one or more word characters must appear (not necessarily the same one)
-    // The $ is a literal character. The second (\w+) grouping must be followed by a literal $ character.
-//OLD	preg_match_all(type_pattern, type, metaData, objectVars, properties, types, star_property, parent_cb, function(err, matches, property_value, metaData, objectVars, properties, types, star_property, parent_cb){
-    pregMatchAll(mqlProperties, function(err, mqlProperties) {
-        debug('mqlProperties.matches:'); // for testing only
-        debug(mqlProperties.matches); // for testing only
-        debug('mqlProperties.property_value:'); // for testing only
-        debug(mqlProperties.property_value); // for testing only
-        debug('mqlProperties.metaData:'); // for testing only
-        debug(mqlProperties.metaData); // for testing only	
-        debug('mqlProperties.objectVars:'); // for testing only
-        debug(mqlProperties.objectVars); // for testing only		
-        debug("mqlProperties.parent['properties']:"); // for testing only
-        debug(mqlProperties.parent['properties']); // for testing only		
-        debug('mqlProperties.types:'); // for testing only
-        debug(mqlProperties.types); // for testing only		
-        debug('mqlProperties.star_property:'); // for testing only
-        debug(mqlProperties.star_property); // for testing only	
-        debug('mqlProperties.parent_cb:'); // for testing only
-        debug(mqlProperties.parent_cb); // for testing only	
-        if (mqlProperties.matches) {
-
-            debug('mqlProperties.matches[1]:'); // for testing only
-            debug(mqlProperties.matches[1]); // for testing only
-            debug('mqlProperties.matches[2]:'); // for testing only
-            debug(mqlProperties.matches[2]); // for testing only                
-
-            mqlProperties.type = new Array({'domain': mqlProperties.matches[1], 'type': mqlProperties.matches[2]});
-            debug('mqlProperties.type:'); // for testing only
-            debug(mqlProperties.type); // for testing only
-            //OLD cb(null, type, metaData, objectVars, properties, types, star_property, parent_cb);
-            debug('>>> leaving analyzeType'); // for testing only
-            mqlProperties.callBackAnalyzeType(null, mqlProperties);
-        }
-        else {
-            mqlProperties.type = false; // a boolean???, should be null surely
-            debug('mqlProperties.type:'); // for testing only
-            debug(mqlProperties.type); // for testing only
-            //OLD cb(null, type, metaData, objectVars, properties, types, star_property, parent_cb);
-            debug('>>> leaving analyzeType'); // for testing only
-            mqlProperties.callBackAnalyzeType(null, mqlProperties);
-        }
-    });//eof preg_match_all
-}//eof analyzeType
-*/
-
 /* NON-CALL BACK FUNCTION isFilterProperty */
 function isFilterProperty(mqlProperties) {
     debug('>>> inside isFilterProperty'); // for testing only  
@@ -825,50 +762,6 @@ function isFilterProperty(mqlProperties) {
         return mqlProperties;
     }
 }//eof isFilterProperty
-
-
-/* ORIGINAL CALL BACK FUNCTION isFilterProperty
- function isFilterProperty(mqlProperties, cb) {
- debug('>>> inside isFilterProperty'); // for testing only 
- mqlProperties.callBackIsFilterProperty = cb;
- if (mqlProperties.propertyValue === null) {
- debug('mqlProperties.propertyValue is null'); // for testing only
- debug('>>> leaving isFilterProperty'); // for testing only 
- mqlProperties.callBackIsFilterProperty(null, mqlProperties);
- }
- else if (isObject(mqlProperties.propertyValue) &&
- count(
- get_objectVars(metaData, parent, property_value, null, function(err, metaData, parent, objectVars, types) {
- debug('mqlProperties.objectVars:'); // for testing only
- debug(mqlProperties.objectVars); // for testing only
- debug('count(mqlProperties.objectVars):'); // for testing only
- debug(count(mqlProperties.objectVars)); // for testing only										
- return count(mqlProperties.objectVars);
- })
- ) === 0
- )
- {
- debug('>>> leaving isFilterProperty'); // for testing only 
- mqlProperties.callBackIsFilterProperty(null, mqlProperties);
- }
- else if (isArray(mqlProperties.propertyValue) &&
- count(mqlProperties.propertyValue) === 0
- )
- {
- mqlProperties.isFilterProperty = false;
- debug('count(mqlProperties.propertyValue):'); // for testing only
- debug(count(mqlProperties.propertyValue)); // for testing only
- debug('>>> leaving isFilterProperty'); // for testing only 
- mqlProperties.callBackIsFilterProperty(null, mqlProperties);
- }
- else {
- mqlProperties.isFilterProperty = true;
- debug('mqlProperties.propertyValue is filter property'); // for testing only
- debug('>>> leaving isFilterProperty'); // for testing only 		
- mqlProperties.callBackIsFilterProperty(null, mqlProperties);
- }
- }//eof isFilterProperty
- */
 
 /* THE NON-CALL BACK VERSION of analyzeProperty */
 function analyzeProperty(mqlProperties) {
@@ -927,78 +820,6 @@ function analyzeProperty(mqlProperties) {
         return mqlProperties;
     }//eof else    
 }//eof analyzeProperty 
-
-
-/* THE ORIGINAL analyzeProperty WHEN IT WAS STILL A CALL BACK FUNCTION
- function analyzeProperty(mqlProperties, cb) {
- debug('>>> inside analyzeProperty'); // for testing only 
- mqlProperties.callBackAnalyzeProperty = cb;
- 
- mqlProperties.propertyKey = mqlProperties.analyze_property; // ADDED by wvh
- 
- debug('mqlProperties.propertyKey:'); // for testing only
- debug(mqlProperties.propertyKey); // for testing only    
- 
- mqlProperties.propertyPattern = mqlProperties.propertyKey; //TEMPORARY FIX 
- //ORIGINAL '/^(((\w+):)?(((\/\w+\/\w+)\/)?(\w+|\*))(=|<=?|>=?|~=|!=|\|=|!\|=|\?=|!\?=)?)$/';
- debug('mqlProperties.propertyPattern:'); // for testing only
- debug(mqlProperties.propertyPattern); // for testing only
- pregMatchAll(mqlProperties, function(err, mqlProperties) {
- debug('>>> back inside analyzeProperty from pregMatchAll'); // for testing only	
- if (mqlProperties.matches) {
- debug('property does match'); // for testing only
- 
- 
- /// WE ARE HERE !!!!
- 
- 
- isFilterProperty(mqlProperties, function(err, mqlProperties) {
- debug('>>> back inside analyzeProperty from isFilterProperty'); // for testing only
- if (err) {
- mqlProperties.err = err;
- debug('>>> leaving analyzeProperty with error');
- mqlProperties.callBackAnalyzeProperty(err, mqlProperties);
- }
- mqlProperties.analyzedProperty = new Array({
- 'prefix': mqlProperties.matches[3],
- 'qualifier': mqlProperties.matches[6],
- 'name': mqlProperties.matches[7],
- 'operator': mqlProperties.matches[8] = typeof mqlProperties.matches[8] !== 'undefined' ? mqlProperties.matches[8] : null,
- 'qualified': mqlProperties.matches[5] = typeof mqlProperties.matches[5] !== 'undefined' ? true : false,
- 'value': mqlProperties.propertyValue,
- 'is_filter': mqlProperties.isFilterProperty,
- 'is_directive': false,
- 'schema': null
- });
- debug('mqlProperties.analyzedProperty:'); // for testing only
- debug(mqlProperties.analyzedProperty); // for testing only	
- debug('>>> leaving analyzeProperty');
- 
- // SO FAR SO GOOD !!!
- 
- mqlProperties.callBackAnalyzeProperty(null, mqlProperties);
- 
- });//eof isFilterProperty
- // HOW DO WE GET TO analyzed_property HERE ??			
- //var analyzed_property = new Array({}); // TEMP
- //debug('analyzed_property:'); // for testing only
- //debug(analyzed_property); // for testing only		
- debug('>>> leaving analyzeProperty');
- //parent_cb(null, metaData, parent, objectVars, properties, types, star_property, analyzed_property, property_value);
- mqlProperties.callBackAnalyzeProperty(null, mqlProperties);
- }
- else {
- debug('property does not match'); // for testing only
- debug('>>> leaving analyzeProperty with error');
- var err = new Error('property does not match');
- mqlProperties.callBackAnalyzeProperty(err, mqlProperties);
- }
- });//eof pregMatchAll
- debug('>>> leaving analyzeProperty');
- mqlProperties.callBackAnalyzeProperty(null, mqlProperties);
- }//eof analyzeProperty  
- */
-
 
 //helper for getParentType
 function getTypeFromSchema(mqlProperties, cb) {
@@ -1146,11 +967,7 @@ function checkTypes(mqlProperties, cb) {
                 mqlProperties.types = checked_types;
                 debug('mqlProperties.types:'); // for testing only
                 debug(mqlProperties.types); // for testing only
-                //
-                //
-                //
-                //debug('>>> leaving checkTypes'); // for testing only
-                //mqlProperties.callBackProcessMQLObject(null, mqlProperties); // WE SHOULD NOT BE CALLING BACK FROM HERE
+                // WE SHOULD NOT BE CALLING BACK FROM HERE
                 break;
             default:
                 debug('>>> leaving checkTypes with error'); // for testing only
@@ -1173,7 +990,6 @@ function checkTypes(mqlProperties, cb) {
         mqlProperties.callBackProcessMQLObject(err, mqlProperties); //TEMP
     }
 }//eof checkTypes
-
 
 //helper for process_mql_object
 function expand_star(source_properties, target_properties) {
@@ -1205,20 +1021,11 @@ function forAnalyzeProperty(mqlProperties, item, index) {
     mqlProperties.analyze_property = item;
     debug('mqlProperties.analyze_property:');
     debug(mqlProperties.analyze_property);
-
-
-    // FOR TESTING ONLY !!!
-    // HERE WE ARE TRYING TO MAKE analyzeProperty as a non-callback function
-
     mqlProperties = analyzeProperty(mqlProperties);
-
     if (typeof(mqlProperties.analyzedProperty) !== 'undefined') {
         debug('mqlProperties.analyzedProperty is valid.');
         debug("mqlProperties.analyzedProperty[0]['operator']:"); // for testing only
         debug(mqlProperties.analyzedProperty[0]['operator']); // for testing only			
-
-        // SO FAR SO GOOD !!!
-
         if (mqlProperties.analyzedProperty[0]['operator']) {  // We have not come into here yet with our test set       
             var operator_in = (mqlProperties.analyzedProperty[0]['operator'] === '|=') || (mqlProperties.analyzedProperty[0]['operator'] === '!|=');
             debug('operator_in:'); // for testing only
@@ -1295,7 +1102,6 @@ function forAnalyzeProperty(mqlProperties, item, index) {
             debug('mqlProperties.analyzedProperty[0]:'); // for testing only
             debug(mqlProperties.analyzedProperty[0]);
 
-            // THE NEW CALL TO NON-CALL BACK FUNCTION analyzeType
             mqlProperties = analyzeType(mqlProperties);
             
             debug('mqlProperties.type:'); // for testing only
@@ -1343,71 +1149,7 @@ function forAnalyzeProperty(mqlProperties, item, index) {
                 debug('types:'); // for testing only
                 debug(types); // for testing only
                 cb(null, types, star_property);
-            });//eof get_type_from_schema            
-            
-            
-            
-
-// BELOW analyzeType function WAS A CALL BACK FUNCTION WHICH WE DON'T WANT
-/* THE OLD CALL TO analyzeType
-            analyzeType(property_value, metaData, parent, objectVars, properties, types, star_property, function(err, type, metaData, parent, objectVars, properties, types, star_property) {
-                debug('>>> back inside forAnalyzeProperty from analyzeType'); // for testing only
-                debug('type:'); // for testing only
-                debug(type); // for testing only
-                debug('metaData:'); // for testing only
-                debug(metaData); // for testing only
-                debug('parent:'); // for testing only
-                debug(parent); // for testing only
-                debug('objectVars:'); // for testing only
-                debug(objectVars); // for testing only						
-                debug("mqlProperties.parent['properties']:"); // for testing only
-                debug(mqlProperties.parent['properties']); // for testing only						
-                debug('types:'); // for testing only
-                debug(types); // for testing only						
-                debug('star_property:'); // for testing only
-                debug(star_property); // for testing only
-                if (!type) {
-                    debug('"' + mqlProperties.analyzedProperty[0]['value'] + '" is not a valid type identifier.');
-                    var err = new Error('"' + mqlProperties.analyzedProperty[0]['value'] + '" is not a valid type identifier.');
-                    cb(err); //TEMP
-                }
-                var domain = type['domain'];
-                var domain_type = type['type'];
-
-                // HOW DO WE GET metaData ??
-
-                // BELOW get_type_from_schema function SHOULD BE A NON-CALL BACK FUNCTION
-
-                get_type_from_schema(metaData, parent, domain, domain_type, star_property, function(err, type, star_property) {
-                    debug('>>> back inside forAnalyzeProperty from get_type_from_schema'); // for testing only
-                    debug('metaData:'); // for testing only
-                    debug(metaData); // for testing only
-                    debug('parent:'); // for testing only
-                    debug(parent); // for testing only
-                    debug('domain:'); // for testing only
-                    debug(domain); // for testing only														
-                    debug('domain_type:'); // for testing only
-                    debug(domain_type); // for testing only	
-                    debug('star_property:'); // for testing only
-                    debug(star_property); // for testing only				
-                    if (!type) {
-                        debug('Type "/' + domain + '/' + domain_type + '" not found in schema.');
-                        var err = new Error('Type "/' + domain + '/' + domain_type + '" not found in schema.');
-                        cb(err); // TEMP
-                    }
-                    types['property_value'] = type;
-                    debug('types:'); // for testing only
-                    debug(types); // for testing only
-                    cb(null, types, star_property);
-
-
-                });//eof get_type_from_schema
-            });//eof analyzeType
-*/            
-            
-            
- 
-            
+            });//eof get_type_from_schema                        
         }//eof if            
         mqlProperties.parent.properties[mqlProperties.propertyKey] = mqlProperties.analyzedProperty;
         debug("mqlProperties.parent.properties[mqlProperties.propertyKey]:"); // for testing only
@@ -1422,169 +1164,6 @@ function forAnalyzeProperty(mqlProperties, item, index) {
         debug('>>> leaving forAnalyzeProperty with error'); // for testing only
         return mqlProperties;
     }//eof else
-
-
-
-
-
-    /* THIS IS THE ORIGINAL CALL BACK TO analyzeProperty
-     * TEMPORARILY COMMENTED OUT FOR ABOVE EXPERIMENT
-     
-     
-     analyzeProperty(mqlProperties, function(err, mqlProperties) {
-     debug('>>> back inside forAnalyzeProperty from analyzeProperty'); // for testing only
-     
-     if (typeof(mqlProperties.analyzedProperty) !== 'undefined') {
-     debug('mqlProperties.analyzedProperty is valid.');
-     debug("mqlProperties.analyzedProperty[0]['operator']:"); // for testing only
-     debug(mqlProperties.analyzedProperty[0]['operator']); // for testing only			
-     
-     // SO FAR SO GOOD !!!				
-     
-     if (mqlProperties.analyzedProperty[0]['operator']) {  // We have not come into here yet with our test set       
-     var operator_in = (mqlProperties.analyzedProperty[0]['operator'] === '|=') || (mqlProperties.analyzedProperty[0]['operator'] === '!|=');
-     debug('operator_in:'); // for testing only
-     debug(operator_in); // for testing only
-     debug("mqlProperties.analyzedProperty[0]['value']:"); // for testing only
-     debug(mqlProperties.analyzedProperty[0]['value']); // for testing only
-     if (mqlProperties.analyzedProperty[0]['value'] === null
-     || isObject(mqlProperties.analyzedProperty[0]['value'])
-     || (operator_in && isArray(mqlProperties.analyzedProperty[0]['value']) && count(mqlProperties.analyzedProperty[0]['value']) === 0)
-     ) {
-     debug("Operator " + mqlProperties.analyzedProperty[0]['operator'] + ' '
-     + ((mqlProperties.analyzedProperty[0]['operator'] === '|=' || mqlProperties.analyzedProperty[0]['operator'] === '!|=')
-     ? 'takes a non-empty list of values'
-     : 'takes a single value (not an object or an array)')
-     );
-     var err = new Error("Operator " + mqlProperties.analyzedProperty[0]['operator'] + ' '
-     + ((mqlProperties.analyzedProperty[0]['operator'] === '|=' || mqlProperties.analyzedProperty[0]['operator'] === '!|=')
-     ? 'takes a non-empty list of values'
-     : 'takes a single value (not an object or an array)'));
-     mqlProperties.callBackPreProcessProperties(err, mqlProperties);
-     }//eof if value
-     }//eof if operator
-     
-     debug("mqlProperties.analyzedProperty[0]['qualifier']:"); // for testing only
-     debug(mqlProperties.analyzedProperty[0]['qualifier']); // for testing only
-     debug("mqlProperties.analyzedProperty[0]['name']:"); // for testing only
-     debug(mqlProperties.analyzedProperty[0]['name']); // for testing only	
-     
-     switch (mqlProperties.analyzedProperty[0]['name']) {
-     case 'type':
-     case 'creator':
-     case 'guid':
-     case 'id':
-     case 'key':
-     case 'name':
-     case 'permission':
-     case 'timestamp':
-     if (mqlProperties.analyzedProperty[0]['qualifier'] === '') {
-     mqlProperties.analyzedProperty[0]['qualifier'] = '/type/object';
-     }
-     break;
-     case 'limit':
-     case 'optional':
-     case 'return':
-     case 'sort':
-     case '*':
-     if (mqlProperties.analyzedProperty[0]['qualifier'] === '') {
-     mqlProperties.analyzedProperty[0]['is_directive'] = true;
-     switch (property_name) {
-     case 'optional':
-     mqlProperties.parent['optional'] = (mqlProperties.analyzedProperty[0]['value'] === true || mqlProperties.analyzedProperty[0]['value'] === 'optional');
-     break;
-     case '*':
-     mqlProperties.starProperty = true;
-     break;
-     }
-     }
-     default: // e.g. when property_name = undefined
-     if (mqlProperties.analyzedProperty[0]['qualifier'] === '/type/object') {
-     debug('"' + mqlProperties.analyzedProperty[0]['name'] + '" is not a universal property, and may not have the qualifier "' + mqlProperties.analyzedProperty[0]['qualifier'] + '".');
-     var err = new Error('"' + mqlProperties.analyzedProperty[0]['name'] + '" is not a universal property, and may not have the qualifier "' + mqlProperties.analyzedProperty[0]['qualifier'] + '".');
-     mqlProperties.callBackPreProcessProperties(err, mqlProperties);
-     }
-     }//eof switch
-     if (mqlProperties.analyzedProperty[0]['qualifier'] === '/type/object'
-     && mqlProperties.analyzedProperty[0]['name'] === 'type'
-     && isObject(mqlProperties.analyzedProperty[0]['value'])
-     && !isObject(mqlProperties.types.property_value)
-     ) {
-     
-     // WE ARE HERE
-     debug('mqlProperties.analyzedProperty[0]:'); // for testing only
-     debug(mqlProperties.analyzedProperty[0]);
-     
-     analyzeType(property_value, metaData, parent, objectVars, properties, types, star_property, function(err, type, metaData, parent, objectVars, properties, types, star_property) {
-     debug('>>> back inside forAnalyzeProperty from analyzeType'); // for testing only
-     debug('type:'); // for testing only
-     debug(type); // for testing only
-     debug('metaData:'); // for testing only
-     debug(metaData); // for testing only
-     debug('parent:'); // for testing only
-     debug(parent); // for testing only
-     debug('objectVars:'); // for testing only
-     debug(objectVars); // for testing only						
-     debug("mqlProperties.parent['properties']:"); // for testing only
-     debug(mqlProperties.parent['properties']); // for testing only						
-     debug('types:'); // for testing only
-     debug(types); // for testing only						
-     debug('star_property:'); // for testing only
-     debug(star_property); // for testing only
-     if (!type) {
-     debug('"' + mqlProperties.analyzedProperty[0]['value'] + '" is not a valid type identifier.');
-     var err = new Error('"' + mqlProperties.analyzedProperty[0]['value'] + '" is not a valid type identifier.');
-     cb(err); //TEMP
-     }
-     var domain = type['domain'];
-     var domain_type = type['type'];
-     
-     // HOW DO WE GET metaData ??
-     
-     get_type_from_schema(metaData, parent, domain, domain_type, star_property, function(err, type, star_property) {
-     debug('>>> back inside forAnalyzeProperty from get_type_from_schema'); // for testing only
-     debug('metaData:'); // for testing only
-     debug(metaData); // for testing only
-     debug('parent:'); // for testing only
-     debug(parent); // for testing only
-     debug('domain:'); // for testing only
-     debug(domain); // for testing only														
-     debug('domain_type:'); // for testing only
-     debug(domain_type); // for testing only	
-     debug('star_property:'); // for testing only
-     debug(star_property); // for testing only				
-     if (!type) {
-     debug('Type "/' + domain + '/' + domain_type + '" not found in schema.');
-     var err = new Error('Type "/' + domain + '/' + domain_type + '" not found in schema.');
-     cb(err); // TEMP
-     }
-     types['property_value'] = type;
-     debug('types:'); // for testing only
-     debug(types); // for testing only
-     cb(null, types, star_property);
-     
-     
-     });//eof get_type_from_schema
-     });//eof analyzeType					
-     }//eof if            
-     mqlProperties.parent.properties['property_key'] = mqlProperties.analyzedProperty;
-     debug("mqlProperties.parent.properties['property_key']:"); // for testing only
-     debug(mqlProperties.parent.properties['property_key']); // for testing only
-     debug('>>> leaving forAnalyzeProperty'); // for testing only
-     mqlProperties.callBackPreProcessProperties(null, mqlProperties); //TEMP
-     }//eof if
-     else {
-     debug('property is not valid.');
-     var err = new Error('property is not valid.');
-     mqlProperties.err = err;
-     debug('>>> leaving forAnalyzeProperty with error'); // for testing only
-     mqlProperties.callBackPreProcessProperties(err, mqlProperties);
-     }//eof else
-     });//eof analyzeProperty
-      
-     
-*/
-
 }//eof forAnalyzeProperty
 
 //helper for processMQLObject
@@ -1701,7 +1280,7 @@ function processProperties(mqlProperties, cb) {
                 debug('schema_property:');
                 debug(schema_property);
 
-                debug("WOW ................ WE HAVE A SCHEMA PROPERTY " + JSON.stringify(schema_property) + " TO PROCESS !!!!!!!!!!: ");
+                debug("................ WE HAVE A SCHEMA PROPERTY " + JSON.stringify(schema_property) + " TO PROCESS !!!!!!!!!!: ");
 
                 if (schema_property) {
                     mqlProperties.analyzedPropertyValue['qualifier'] = mqlProperties.typeName;
@@ -2032,46 +1611,6 @@ function isOptional(mqlProperties) {
     debug(mqlProperties.optional);
     debug('>>> leaving isOptional');
     return mqlProperties.optional;
-
-// REPLACES
-//    $optional = FALSE;
-//    if (is_array($mql_node)) {
-//        if (array_key_exists('properties', $mql_node)){
-//            $properties = $mql_node['properties'];
-//            if (count($properties)===0){
-//                $optional = TRUE;
-//            }
-//            else 
-//            if (isset($properties['optional'])) {
-//                $optional_property = $properties['optional'];
-//                $value = $optional_property['value'];
-//                switch ($value) {
-//                    case TRUE:
-//                    case 'optional':
-//                        $optional = TRUE;
-//                }
-//            }
-//        }
-//        else 
-//        if (array_key_exists('entries', $mql_node)){
-//            $entries = $mql_node['entries'];
-//            if (count($entries)===NULL){
-//                $optional = TRUE;
-//            }
-//        }
-//        else 
-//        if (array_key_exists('value', $mql_node)) {
-//            $value = $mql_node['value'];
-//            if ($value===NULL) {  
-//                $optional = TRUE;
-//            }
-//        }
-//    }
-//    else {
-//        print_r("\ntype is ".gettype($mql_node)."\n");
-//    }
-//    return $optional; 
-
 }
 
 function arrayUnshift(mqlProperties, array) {
@@ -2570,9 +2109,7 @@ function handleFilterProperty(mqlProperties){
         //If no operator is specified, 
         //the comparison is automatically with equals.
         mqlProperties.from_or_where += ' = ';
-    }//eof else
-    //
-      
+    }//eof else  
     // WE ATTEMPT TO SET THE from_or_where TO query[0].where
     // NOTE: THIS IS NOT IN THE ORIGINAL CODE
     mqlProperties.query[0].where = mqlProperties.from_or_where; // WORKS!!
@@ -2608,7 +2145,7 @@ function handleFilterProperty(mqlProperties){
 
 //helper for generateSQL
 function handleNonFilterProperty(mqlProperties){
-    debug('>>> inside handleNonFilterProperty ++++++++++++++++++++++DID WE GET IN HERE.. PLEASE+++++++++++++');
+    debug('>>> inside handleNonFilterProperty');
     debug('mqlProperties.query_index:');
     debug(mqlProperties.query_index);  // RETURNS UNDEFINED
     
@@ -2658,8 +2195,6 @@ function handleNonFilterProperty(mqlProperties){
     debug('>>> leaving handleNonFilterProperty');
     return mqlProperties;
 }//eof handleNonFilterProperty
-
-
 
 //function generateSQL(metaData, mql_node, queries, query_index, child_tAlias, merge_into) { // child_tAlias and merge_into are optional
 
@@ -2888,19 +2423,8 @@ function generateSQL(mqlProperties, cb) {
             debug('mqlProperties.schema:');
             debug(mqlProperties.schema);
             
-            // THIS IS NOT IN THE ORIGINAL CODE !! BUT IS USED TO SET THE COLUMN NAME FOR LATER REFERENCE
-//            if(typeof(mqlProperties.column_name) === 'undefined'){
-//                mqlProperties.column_name = mqlProperties.schema_type.properties[Object.keys(mqlProperties.properties)[i]].column_name;
-//                // WE MAY AS WELL ADD THE mqlProperties.column_name TO THE COLLECTION OF THE QUERY              //////  HAVE A LOOK AT handleNonFilterProperty TO MAKE SURE WE ARE NOT DUPLICATING CODE
-//                //if(typeof(mqlProperties.query.columns) === 'undefined'){ mqlProperties.query.columns = [];}
-//                //mqlProperties.query.columns.push(mqlProperties.column_name);
-//                //
-//            }
-            //
-            
-            // ATTEMPT TO FIX BELOW MISTAKE HERE, REPLACES THE ABOVE COMMENTED CODE!! WORKS AS HOPED FOR !!
+            // ATTEMPT TO FIX BELOW MISTAKE HERE. WORKS AS HOPED FOR !!
             mqlProperties.column_name = mqlProperties.schema_type.properties[Object.keys(mqlProperties.properties)[i]].column_name;
-            
             
             // START OF BIG CHECK AREA HERE !!!!!  TURNS OUT NOW IT WORKS AS DESIGNED
             debug('==================================== START OF: BIG CHECK AREA ====================================');
@@ -2976,7 +2500,6 @@ function generateSQL(mqlProperties, cb) {
                     // REPLACES handle_filter_property($queries, $query_index, $tAlias, $column_name, $property);
                 }//eof if
                 else {
-                    debug('SURELY WE SHOULD BE GOING IN HERE FOR AT LEAST SOME OF THE COLUMNS *******************************')
                     mqlProperties.non_filter_property_key = Object.keys(mqlProperties.properties)[i];
                     mqlProperties.non_filter_property_value = mqlProperties.properties[Object.keys(mqlProperties.properties)[i]];
                     mqlProperties = handleNonFilterProperty(mqlProperties);                  
@@ -3007,7 +2530,6 @@ function generateSQL(mqlProperties, cb) {
             // REPLACES handle_filter_property($where, $params, $tAlias, $column_name, $property);              
         }//eof if        
         else {
-            debug('SURELY WE SHOULD BE GOING IN HERE FOR AT LEAST SOME OF THE COLUMNS *******************************')
             mqlProperties.non_filter_property_key = Object.keys(mqlProperties.property)[0]; // IS THIS THE RIGHT WAY TO HAND THE key??
             mqlProperties.non_filter_property_value = mqlProperties.property.value; // IS THIS THE RIGHT WAY TO HAND THE value??
             mqlProperties = handleNonFilterProperty(mqlProperties);  
@@ -3025,7 +2547,7 @@ function generateSQL(mqlProperties, cb) {
 function prepareSQLStatement(mqlProperties) {
     debug('>>> inside prepareSQLStatement'); // for testing only
 
-    if (typeof(mqlProperties.statement_cache) == 'undefined') {
+    if (typeof(mqlProperties.statement_cache) === 'undefined') {
         mqlProperties.statement_cache = [];
         debug('mqlProperties.statement_cache:');
         debug(mqlProperties.statement_cache);
@@ -3053,7 +2575,6 @@ function prepareSQLStatement(mqlProperties) {
             // handle the exception here
         }//eof catch
     }//eof else
-
 
 // REPLACES
 //function prepare_sql_statement($statement_text){
@@ -3252,8 +2773,7 @@ function getQuerySQL(mqlProperties) {
     for (i = 0; i < Object.keys(mqlProperties.sql_query['from']).length; i++) {
         debug("mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]:");
         debug(mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]);
-        
-//OLD        if (typeof(mqlProperties.sql_query['from'][i].value['optionality_group']) !== 'undefined') {
+
         if (typeof(mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['optionality_group']) !== 'undefined') {    
             
             mqlProperties.optionality_group_name = mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['optionality_group'];
@@ -3268,12 +2788,6 @@ function getQuerySQL(mqlProperties) {
             debug(mqlProperties.optionality_group);
         }//eof if 
         
-        
-        
-        // CHECK IF WE GET THE WHERE SET SOMEWHERE... (PUN NOT INTENDED ;o)
-        
-        
-        
         mqlProperties.from_or_join = Object.keys(mqlProperties.sql_query['from'])[i] && (typeof(mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_type']) !== 'undefined');
         debug('mqlProperties.from_or_join:');
         debug(mqlProperties.from_or_join);
@@ -3287,7 +2801,6 @@ function getQuerySQL(mqlProperties) {
         debug("arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]])");
         debug(arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]));
         
-        
         if (mqlProperties.from_or_join) {
             mqlProperties.sql = mqlProperties.sql
                     + "\n"  // USES " TO ASSURE THE ESCAPE
@@ -3299,9 +2812,6 @@ function getQuerySQL(mqlProperties) {
                     + "\n"  // USES " TO ASSURE THE ESCAPE
                     + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_condition'];
         }//eof if
-        
-        
-        // SURELY WE WILL HAVE TO BE GOING INTO THE NEXT else if STATEMENT
         
         else if (arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]])) {
             mqlProperties.sql = mqlProperties.sql
@@ -3419,20 +2929,12 @@ function executeSQLQuery(mqlProperties, cb) {
     mqlProperties = getQuerySQL(mqlProperties); // TO DO implement function getQuerySQL()
     mqlProperties.sql_query['sql'] = mqlProperties.sql;
 
-//OLD    return executeSQL(mqlProperties); // TO DO: implement function executeSQL
-
     executeSQL(mqlProperties, function(err, mqlProperties) {
         debug('>>> back inside executeSQLQuery from executeSQL');
-
-
         // TO DO
-
-
         debug('>>> leaving executeSQLQuery');
         mqlProperties.callBackExecuteSQLQueries(null, mqlProperties);
     });
-//  REPLACES
-//  return execute_sql($sql, $sql_query['params'], $limit);
 }//eof executeSQLQuery
 
 // helper for executeSQLQueries: NOT a callback function
@@ -3636,7 +3138,7 @@ function executeSQLQueries(mqlProperties, cb) {
 
             // WE ARE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE
 
-            debug('++++++++++++++++++ WE ARE NEAR LINE 2520 +++++++++++++++++++');
+            debug('++++++++++++++++++ WE ARE NEAR LINE 3141 +++++++++++++++++++');
 
 
 
