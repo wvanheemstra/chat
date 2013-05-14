@@ -3071,6 +3071,14 @@ function prepareSQLStatement(mqlProperties) {
     return mqlProperties;
 }//eof prepareSQLStatement
 
+// helper for executeSQL
+function pushToParametersArray(parameters, key, value) {
+   debug('>>> inside pushToParametersArray');
+   parameters[key] = value;
+   debug('>>> leaving pushToParametersArray');
+   return parameters;
+}
+
 // helper for executeSQLQuery: a callback function
 function executeSQL(mqlProperties, cb) {
     debug('>>> inside executeSQL'); // for testing only
@@ -3094,49 +3102,16 @@ function executeSQL(mqlProperties, cb) {
 
     try {
         mqlProperties = prepareSQLStatement(mqlProperties);
-        // TO DO
-        var parameters = {};        
-        // NOW THAT WE HAVE params LETS USE THEM!!
+        var parameters = {};
         debug("mqlProperties.sql_query['params'].length:");
         debug(mqlProperties.sql_query['params'].length);
 
         for (i = 0; i < mqlProperties.sql_query['params'].length; i++) {
-            // REPLACES
-//        foreach($params as $param_key => $param){
-//            $statement_handle->bindValue(                 //TO DO: THIS STILL NEEDS TO BE DONE !!!
-//                $param['name']
-//            ,   $param['value']
-//            ,   $param['type']
-//            );
-//            
-            // THIS IS BASICALLY A FIND AND REPLACE WITHIN mqlProperties.statement_handle.sql
-            // WHERE WE REPLACE THE OCCURENECES OF PARAMETERS (e.g. :p1) WITH THEIR REAL VALUES (e.g. 1)
-            // NOTE: THIS IS MOSTLY FOR 'WHERE' STATEMENTS, NOT THE SELECT COLUMNS
-            
-            mqlProperties.statement_handle.sql = mqlProperties.statement_handle.sql.replace(':'+mqlProperties.sql_query['params'][i]['name'], 'pk_PersonID');
-
-            
-            debug('mqlProperties.statement_handle:');
-            debug(mqlProperties.statement_handle);
-            
-            //var post  = {id: 1, title: 'Hello MySQL'}; 
-            parameters[i] = new Array(
-                    mqlProperties.sql_query['params'][i]['name'],
-                    mqlProperties.sql_query['params'][i]['value'],
-                    mqlProperties.sql_query['params'][i]['type']
-                    );
-            debug('parameters:');
-            debug(parameters);
-//        }
-//
+            var param_key = [mqlProperties.sql_query['params'][i]['name']];
+            var param_value = [mqlProperties.sql_query['params'][i]['value']][0]; // THE [0] REMOVES THE []
+            parameters = pushToParametersArray(parameters, param_key, param_value);
         }//eof for
-
-//      var query = mqlProperties.db_connection.createQuery('INSERT INTO foo SET ?', parameters, function(err, result) {
-//          // Neat!
-//      });
-//      debug('query.sql:');
-//      debug(query.sql); // INSERT INTO posts SET `id` = 1, `title` = 'Hello MySQL' 
-
+       
         var db_connection_created = mqlProperties.db_connection.createConnection(mqlProperties.db_connection_string);
         debug("db_connection_created:"); // for testing only
         debug(db_connection_created); // for testing only      
@@ -3144,12 +3119,23 @@ function executeSQL(mqlProperties, cb) {
 //        //FOR TESTING ONLY
 //        mqlProperties.statement_handle.sql = 'SELECT * FROM core.tbl_person LIMIT 0,2';
 
+        debug('parameters:');
+        debug(parameters);
+
+        mqlProperties.statement_handle = mqlProperties.db_connection.createQuery(mqlProperties.statement_handle.sql, parameters, function(err, result){ 
+            if(err) throw err;
+            // do nothing;
+        });   
+        debug('mqlProperties.statement_handle:');
+        debug(mqlProperties.statement_handle);
+
         if (mqlProperties.limit === -1) {
 
             db_connection_created.query(mqlProperties.statement_handle.sql, function(err, rows) {
                 if (err) {
-                    debug('>>> leaving executeSQL from if with error');
                     mqlProperties.err = err;
+                    debug('>>> leaving executeSQL from if with error:');
+                    debug(err.message);
                     mqlProperties.callBackExecuteSQLQuery(err, mqlProperties);
                 }
 
