@@ -1863,21 +1863,25 @@ function mapMQLTypeToJavaScriptType(mqlProperties){
     
     switch(mqlProperties.mql_type){
         case '/type/boolean':
-            mqlProperties.javascript_type = Boolean;
+            mqlProperties.javascript_type = 'Boolean';
             break;
         case '/type/content':
-            mqlProperties.javascript_type = String; // // There's no LOB in JavaScript, use String instead.
+            mqlProperties.javascript_type = 'String';
             break;
         case '/type/datetime':
+            mqlProperties.javascript_type = 'DateTime';
+            break;
         case '/type/text': 
-        case '/type/float': //this feels so wrong, but PDO doesn't seem t support any decimal/float type :(
-            mqlProperties.javascript_type = Number; // There's no Float in JavaScript, just Number.
+            mqlProperties.javascript_type = 'String';
+            break;
+        case '/type/float': //this feels so wrong, but PDO doesn't seem to support any decimal/float type :(
+            mqlProperties.javascript_type = 'Float';
             break;
         case '/type/int':
-            mqlProperties.javascript_type = Number; // There's no Integer in JavaScript, just Number.
+            mqlProperties.javascript_type = 'Integer';
             break;            
         case '/type/rawstring':
-            mqlProperties.javascript_type = String;
+            mqlProperties.javascript_type = 'String';
             break;            
     }//eof switch
 
@@ -2944,44 +2948,68 @@ function executeSQLQuery(mqlProperties, cb) {
 }//eof executeSQLQuery
 
 // helper for executeSQLQueries: NOT a callback function
-function getResultObject(mqlProperties, index, object, key) {
+function getResultObject(mqlProperties, index, result_object, key) {
     debug('>>> inside getResultObject'); // for testing only
     
-    debug("mqlProperties.mql_node['query_index']:^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+    debug("mqlProperties.mql_node['query_index']:");
     debug(mqlProperties.mql_node['query_index']);
     
     debug("index:");
     debug(index); 
+    
+    if(typeof(result_object) === 'undefined'){
+        result_object = null;
+    }//eof if
     
     if (parseInt(mqlProperties.mql_node['query_index']) !== index) {
         debug('>>> leaving getResultObject');
         return;
     }//eof if
     mqlProperties.object = [];
-    if (mqlProperties.result_object instanceof Array) {
-        mqlProperties.result_object[mqlProperties.key] = mqlProperties.object;
+    if (result_object instanceof Array) {
+        result_object[key] = mqlProperties.object;
     }//eof if
     else {
-        mqlProperties.result_object = mqlProperties.object;
+        result_object = mqlProperties.object;
     }//eof else
+    
+    debug('result_object:');
+    debug(result_object);
+    
     if (typeof(mqlProperties.mql_node['entries']) !== 'undefined') {
-        mqlProperties = getResultObject(mqlProperties, index, mqlProperties.object, 0);
+        mqlProperties = getResultObject(mqlProperties.mql_node['entries'], index, mqlProperties.object, 0);
     }//eof if
     else if (typeof(mqlProperties.mql_node['properties']) !== 'undefined') {
         // TO DO
-        for (i = 0; i < mqlProperties.mql_node['properties'].length; i++) {
-            if (mqlProperties.mql_node['properties'][i]['operator'] || mqlProperties.mql_node['properties'][i]['is_directive']) {
+        
+        debug("mqlProperties.mql_node['properties'].length:");
+        debug(mqlProperties.mql_node['properties'].length);
+        
+        debug("Object.keys(mqlProperties.mql_node['properties']).length:");
+        debug(Object.keys(mqlProperties.mql_node['properties']).length);
+        
+//OLD        for (i = 0; i < mqlProperties.mql_node['properties'].length; i++) {
+        for (n = 0; n < Object.keys(mqlProperties.mql_node['properties']).length; n++) { // USE n AS THE ITERATOR, BECASUE i IS ALREADY USED IN THE PARENT FOR LOOP           
+            debug('Start of Round n:'+n);
+            
+            debug("mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]:");
+            debug(mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]);
+            
+            if (mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]][0]['operator'] || mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]][0]['is_directive']) {
                 continue;
             }//eof if
-            mqlProperties.value = mqlProperties.mql_node['properties'][i]['value'];
+            mqlProperties.value = mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]][0]['value'];
             debug('mqlProperties.value:');
             debug(mqlProperties.value);
             if (mqlProperties.value instanceof Object || mqlProperties.value instanceof Array) {
-                mqlProperties = getResultObject(mqlProperties, index, mqlProperties.object, mqlProperties.mql_node['properties'][i].key);
+                mqlProperties = getResultObject(mqlProperties, index, mqlProperties.object, Object.keys(mqlProperties.mql_node['properties'])[n]);
             }//eof if
             else {
-                mqlProperties.object[mqlProperties.mql_node['properties'][i].key] = mqlProperties.value;
+                mqlProperties.object[Object.keys(mqlProperties.mql_node['properties'])[n]] = mqlProperties.value;
+                debug('mqlProperties.object:');
+                debug(mqlProperties.object);
             }//eof else
+            debug('End of Round n:'+n);
         }//eof for     
     }//eof else if
     mqlProperties.mql_node['result_object'] = mqlProperties.object;
@@ -2994,6 +3022,31 @@ function getResultObject(mqlProperties, index, object, key) {
     return mqlProperties;
 }//eof getResultObject
 
+// helper for fillResultObject
+function setType(mqlProperties){
+    debug('>>> inside setType');
+    debug('mqlProperties.set_type_from:');
+    debug(mqlProperties.set_type_from);
+    debug('mqlProperties.set_type_to:');
+    debug(mqlProperties.set_type_to);
+    
+    switch(mqlProperties.set_type_to){
+        case 'Boolean': mqlProperties.set_type = Boolean(mqlProperties.set_type_from);
+            break;
+        case 'Integer': mqlProperties.set_type = parseInt(mqlProperties.set_type_from);
+            break;
+        case 'String': mqlProperties.set_type = mqlProperties.set_type_from.toString();
+            break;
+        case 'Float': mqlProperties.set_type = parseFloat(mqlProperties.set_type_from);
+            break;    
+        case 'DateTime': mqlProperties.set_type = new Date(mqlProperties.set_type_from);
+            break;
+    }//eof switch
+    debug('mqlProperties.set_type:');
+    debug(mqlProperties.set_type);
+    debug('>>> leaving setType');
+    return mqlProperties;
+}//eof setType
 
 // helper for executeSQLQueries
 function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_object){
@@ -3005,6 +3058,9 @@ function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_
 
     debug('sql_query_index:');
     debug(sql_query_index);
+    
+    debug('result_object:');
+    debug(result_object);
     
     // THIS SETTING OF THE mql_node['query_index'] IS REQUIRED 
     // WHEN mql_node IS REPLACED WITH mqlProperties.entrees
@@ -3046,10 +3102,35 @@ function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_
         debug("NOTE: mqlProperties.properties is equal to mql_node['properties']");
         debug('mqlProperties.result_object:');
         debug(mqlProperties.result_object);
-        for(i=0;i<Object.keys(result_object).length;i++){ 
-            debug('Start of Round i: '+i);
+        for(m=0;m<Object.keys(result_object).length;m++){  // USE m AS THE ITERATOR, BECASUE i IS ALREADY USED IN THE PARENT FOR LOOP
+            debug('Start of Round m: '+m);
          
-            // STILL TO DO !!!!!!!!!!!!
+            mqlProperties.property = mqlProperties.properties[Object.keys(result_object)[m]];
+            debug('mqlProperties.property:');
+            debug(mqlProperties.property);
+            if(mqlProperties.properties[Object.keys(result_object)[m]]['value'] instanceof Object || mqlProperties.properties[Object.keys(result_object)[m]]['value'] instanceof Array){
+                mqlProperties = fillResultObject(mqlProperties, mqlProperties.property, sql_query_index, row, mqlProperties.result_object[Object.keys(result_object)[m]]);
+            }//eof if
+            else if(typeof(mqlProperties.property['alias']) !== 'undefined'){
+                mqlProperties.alias = mqlProperties.property['alias'];
+                debug("mqlProperties.alias:");
+                debug(mqlProperties.alias);
+                debug("mqlProperties.explicit_type_conversion:");
+                debug(mqlProperties.explicit_type_conversion);                
+                debug("row[mqlProperties.alias]:");
+                debug(row[mqlProperties.alias]);                
+                if(mqlProperties.explicit_type_conversion){
+                    if(row[mqlProperties.alias] !== null){
+                        mqlProperties.mql_type = mqlProperties.property['schema']['type'];
+                        mqlProperties = mapMQLTypeToJavaScriptType(mqlProperties);
+                        mqlProperties.set_type_from = row[mqlProperties.alias];
+                        mqlProperties.set_type_to = mqlProperties.javascript_type;
+                        mqlProperties = setType(mqlProperties);
+                        row[mqlProperties.alias] = mqlProperties.set_type;
+                    }//eof if
+                }//eof if
+                mqlProperties.result_object[Object.keys(result_object)[m]] = row[mqlProperties.alias];
+            }//eof else if
          
 // REPLACES
 //        foreach ($result_object as $key => $value) {
@@ -3068,10 +3149,9 @@ function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_
 //                $result_object[$key] = $data[$alias];
 //            }
 //        }
-            debug('End of Round i: '+i);
+            debug('End of Round m: '+m);
         }//eof for
     }//eof else if
-    
     
 // REPLACES    
 //function fill_result_object(&$mql_node, $query_index, $data, &$result_object){
@@ -3104,9 +3184,335 @@ function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_
 //    }
 //        
 //}
+    debug('mqlProperties.result_object:');
+    debug(mqlProperties.result_object);
     debug('>>> leaving fillResultObject'); // for testing only 
     return mqlProperties;
 }//eof fillResultObject
+
+// helper for executeSQLQueries
+function addEntryToIndexes(mqlProperties, row_index, row){
+    debug('>>> inside addEntryToIndexes'); // for testing only
+ 
+    debug("mqlProperties.indexes:");
+    debug(mqlProperties.indexes);
+    
+    debug("mqlProperties.indexes.length:");
+    debug(mqlProperties.indexes.length);
+    for(k=0;k<mqlProperties.indexes.length;k++){
+        debug('Start of Round k:'+k);
+        mqlProperties.entries = mqlProperties.indexes[k]['entries'];
+        mqlProperties.cols = mqlProperties.indexes[k]['columns'];
+        mqlProperties.colcount = Object.keys(mqlProperties.cols).length - 1;
+        for(w=0;w<mqlProperties.colcount;w++){
+            mqlProperties.col = mqlProperties.cols[w];
+            mqlProperties.sub_entries = mqlProperties.entrees[row[mqlProperties.col]];
+            if(!mqlProperties.sub_entries){
+                mqlProperties.sub_entries = [];
+                mqlProperties.entries[row[mqlProperties.col]] = mqlProperties.sub_entries;
+            }//eof if
+            mqlProperties.entries = mqlProperties.sub_entries;
+        }//eof for
+        mqlProperties.entries[row[mqlProperties.cols[k]]] = row_index;
+        debug('End of Round k:'+k);
+    }//eof for
+
+// REPLACES
+//function add_entry_to_indexes(&$indexes, $row_index, &$row) {
+//    foreach($indexes as $index_name => &$index) {
+//        $entries = &$index['entries'];
+//        $cols = $index['columns'];
+//        $colcount = count($cols) - 1;
+//        for ($i=0; $i<$colcount; $i++){
+//            $col = $cols[$i];
+//            $sub_entries = &$entries[$row[$col]];
+//            if (!$sub_entries) {
+//                $sub_entries = array();
+//                $entries[$row[$col]] = &$sub_entries;                
+//            }
+//            $entries = &$sub_entries;
+//        }
+//        $entries[$row[$cols[$i]]] = $row_index;
+//    }
+//    
+//}
+    debug('>>> leaving addEntryToIndexes'); // for testing only 
+    return mqlProperties;
+}//eof addEntryToIndexes
+
+//helper for mergeResults
+function getEntryFromIndex(mqlProperties){
+    debug('>>> inside getEntryFormIndex');
+    debug('mqlProperties.target_query:');
+    debug(mqlProperties.target_query);
+    debug('mqlProperties.index_name:');
+    debug(mqlProperties.index_name);
+    debug('mqlProperties.merge_into_values_old'); // key
+    debug(mqlProperties.merge_into_values_old);
+    mqlProperties.index = mqlProperties.target_query['indexes'][mqlProperties.index_name]['entries'];
+    debug('mqlProperties.index:');
+    debug(mqlProperties.index);
+    for(s=0;s<Object.keys(mqlProperties.merge_into_values_old).length;s++){
+        mqlProperties.index = [Object.keys(mqlProperties.merge_into_values_old)[s]];
+        debug('mqlProperties.index:');
+        debug(mqlProperties.index);
+    }//eof for
+    mqlProperties.results = mqlProperties.target_query['results'];
+    debug('mqlProperties.results:');
+    debug(mqlProperties.results);     
+    mqlProperties.merge_target = mqlProperties.results[mqlProperties.index];
+    debug('mqlProperties.merge_target:');
+    debug(mqlProperties.merge_target);            
+    debug('>>> leaving getEntryFromIndex');
+    return mqlProperties;
+}//eof getEntryFromIndex
+
+//helper for mergeResults
+function mergeResultObject(mqlProperties){
+    debug('>>> inside mergeResultObject');
+    debug("mqlProperties.target_query['mql_node']:");
+    debug(mqlProperties.target_query['mql_node']); //mql_node
+    debug('mqlProperties.merge_target:');
+    debug(mqlProperties.merge_target); // result_object
+    debug('mqlProperties.sql_query_index:');
+    debug(mqlProperties.sql_query_index);  // query_index
+    debug("mqlProperties.query['results']:");
+    debug(mqlProperties.query['results']);  // data
+    debug('mqlProperties.offset:');
+    debug(mqlProperties.offset);  // from
+    debug('mqlProperties.row_index:');
+    debug(mqlProperties.row_index); // to
+    if(typeof(mqlProperties.target_query['mql_node']['entries']) !== 'undefined'){
+        mqlProperties.target_query['mql_node'] = mqlProperties.target_query['mql_node']['entries'];
+        mqlProperties.merge_target = mqlProperties.merge_target[0];
+        mqlProperties = mergeResultObject(mqlProperties); // Calls itself
+    }//eof if
+    else if(typeof(mqlProperties.target_query['mql_node']['properties']) !== 'undefined'){
+        mqlProperties.properties = mqlProperties.target_query['mql_node']['properties'];
+        for(t=0;t<Object.keys(mqlProperties.properties).length;t++){
+            debug('Start of Round t:'+t);
+            if(mqlProperties.properties[Object.keys(mqlProperties.properties)[t]]['operator']){
+                continue;
+            }
+            if(typeof(mqlProperties.properties[Object.keys(mqlProperties.properties)[t]]['query_index']) !== 'undefined' 
+                    && (mqlProperties.properties[Object.keys(mqlProperties.properties)[t]]['query_index']===mqlProperties.sql_query_index)){
+                mqlProperties.merge_target[Object.keys(mqlProperties.properties)[t]] = [];
+                mqlProperties.target = mqlProperties.merge_target[Object.keys(mqlProperties.properties)[t]];
+                for(b=mqlProperties.offset;b<=mqlProperties.row_index;b++){
+                    mqlProperties.target[0] = mqlProperties.query['results'][b];
+                }//eof for
+            }//eof if
+            else{
+                mqlProperties.value = mqlProperties.properties[Object.keys(mqlProperties.properties)[t]]['value'];
+                if(mqlProperties.value instanceof Object || mqlProperties.value instanceof Array){
+                    mqlProperties.target_query['mql_node'] = mqlProperties.properties[Object.keys(mqlProperties.properties)[t]];
+                    mqlProperties.merge_target = mqlProperties.merge_target[Object.keys(mqlProperties.properties)[t]];
+                    mqlProperties = mergeResultObject(mqlProperties);
+                }//eof if
+            }//eof else
+            debug('End of Round t:'+t);
+        }//eof for
+    }//eof else if
+//
+//REPLACES
+//function merge_result_object(&$mql_node, &$result_object, $query_index, &$data, $from, $to){
+//    if (isset($mql_node['entries'])) {
+//        merge_result_object($mql_node['entries'], $result_object[0], $query_index, $data, $from, $to);
+//    }
+//    else
+//    if (isset($mql_node['properties'])) {
+//        $properties = $mql_node['properties'];
+//        foreach ($properties as $property_key => $property) {
+//            if ($property['operator']) {
+//                continue;
+//            }
+//            if (isset($property['query_index']) && ($property['query_index']===$query_index)) {
+//                $result_object[$property_key] = array();
+//                $target = &$result_object[$property_key];
+//                for ($i=$from; $i<=$to; $i++){
+//                    $target[] = &$data[$i];
+//                }
+//            }
+//            else {
+//                $value = $property['value'];
+//                if (is_object($value) || is_array($value)){
+//                    merge_result_object($property, $result_object[$property_key], $query_index, $data, $from, $to);
+//                }
+//            }
+//        }
+//    }
+//}
+    debug('mqlProperties.merge_target:');
+    debug(mqlProperties.merge_target);
+    debug('>>> leaving mergeResultObject');
+    return mqlProperties;
+}//eof mergeResultObject
+
+//helper for executeSQLQueries
+function mergeResults(mqlProperties){
+    debug('>>> inside mergeResults');
+    debug('mqlProperties.sql_queries:');
+    debug(mqlProperties.sql_queries);    
+    debug('mqlProperties.sql_query_index:');
+    debug(mqlProperties.sql_query_index);    
+    debug('mqlProperties.merge_into_values_old:'); //key
+    debug(mqlProperties.merge_into_values_old);    
+    debug('mqlProperties.offset:');// from
+    debug(mqlProperties.offset);
+    debug('mqlProperties.row_index:'); //to    
+    debug(mqlProperties.row_index);
+    if(mqlProperties.offset === -1){
+        return mqlProperties;
+    }//eof if
+    mqlProperties.query = mqlProperties.sql_queries[mqlProperties.sql_query_index];
+    mqlProperties.merge_into = mqlProperties.query['merge_into'];
+    mqlProperties.target_query_index = mqlProperties.merge_into['query_index'];
+    mqlProperties.target_query = mqlProperties.sql_queries[mqlProperties.target_query_index];
+    mqlProperties.index_name = mqlProperties.merge_into['index'];
+    mqlProperties = getEntryFromIndex(mqlProperties);
+    debug('mqlProperties.merge_target:');
+    debug(mqlProperties.merge_target);
+    mqlProperties = mergeResultObject(mqlProperties); // TO DO implement this function
+//
+// REPLACES
+//function merge_results(&$queries, $query_index, $key, $from, $to){
+//    if ($from===-1){
+//        return;
+//    }
+//    $query = &$queries[$query_index];
+//    $merge_into = $query['merge_into'];
+//    $target_query_index = $merge_into['query_index'];
+//    $target_query = &$queries[$target_query_index];
+//    $index_name = $merge_into['index'];
+//    $merge_target = &get_entry_from_index($target_query, $index_name, $key);    
+//    merge_result_object($target_query['mql_node'], $merge_target, $query_index, $query['results'], $from, $to);
+//}  
+    debug('>>> leaving mergeResults');
+    return mqlProperties;
+}//eof mergeResults
+
+//helper for createInlineTableForIndex
+function createInlineTableForIndexEntry(mqlProperties){
+    debug('>>> inside createInlineTableForIndexEntry');
+    debug("mqlProperties.index['entries']:");
+    debug(mqlProperties.index['entries']);
+    debug("mqlProperties.index['columns']:");
+    debug(mqlProperties.index['columns']);
+    debug('mqlProperties.column_index:');
+    debug(mqlProperties.column_index);
+    debug('mqlProperties.statement:');
+    debug(mqlProperties.statement);
+    debug('mqlProperties.row:');
+    debug(mqlProperties.row);
+    mqlProperties.single_row_from_clause = mqlProperties.sql_dialect['single_row_from_clause'];
+    debug('mqlProperties.single_row_from_clause:');
+    debug(mqlProperties.single_row_from_clause);
+    for(z=0;z<Object.keys(mqlProperties.entries).length;z++){
+        if(mqlProperties.row === ''){
+            mqlProperties.row += 'SELECT ';
+        }//eof if
+        else{
+            mqlProperties.row += ', ';
+        }//eof else
+        if(Object.keys(mqlProperties.entries)[z] instanceof String){
+            mqlProperties.row += '`' + Object.keys(mqlProperties.entries)[z] + '`';
+        }//eof if
+        else{
+            mqlProperties.row += Object.keys(mqlProperties.entries)[z];
+        }//eof else
+        if(mqlProperties.statement === ''){
+            mqlProperties.row += ' AS '+mqlProperties.index['columns'][mqlProperties.column_index];
+        }//eof if
+        else{
+            mqlProperties.row += ' ';
+        }//eof else        
+        if(mqlProperties.entries[Object.keys(mqlProperties.entries)[z]] instanceof Array){
+            mqlProperties.entries = mqlProperties.entries[Object.keys(mqlProperties.entries)[z]];
+            mqlProperties.column_index = mqlProperties.column_index + 1;
+            mqlProperties = createInlineTableForIndex_Entry(mqlProperties);
+        }//eof if
+        else if(mqlProperties.entries[Object.keys(mqlProperties.entries)[z]] instanceof Number){
+            if(mqlProperties.statement === ''){
+                mqlProperties.statement += mqlProperties.row + mqlProperties.single_row_from_clause;;
+            }
+            else{
+                mqlProperties.statement += "\nUNION ALL\n" + mqlProperties.row + mqlProperties.single_row_from_clause;
+            }
+            mqlProperties.row = '';
+        }//eof else
+    }//eof for  
+//    
+//REPLACES
+//function create_inline_table_for_index_entry(&$entries, $columns, $column_index, &$statement, &$row){
+//    global $pdo, $sql_dialect;
+//    $single_row_from_clause = $sql_dialect['single_row_from_clause'];
+//    foreach ($entries as $key => $value) {
+//        $row    .=  ($row === ''? 'SELECT ' : ', ')
+//                .   (is_string($key)? $pdo->quote($key) : $key)
+//                .   ($statement === '' ? ' AS '.$columns[$column_index] : '')
+//                ;
+//
+//        if (is_array($value)){
+//            create_inline_table_for_index_entry($value, $columns, $column_index+1, $statement, $row);
+//        }
+//        else
+//        if (is_int($value)) {
+//            $statement .= ($statement==='' ? '' : "\nUNION ALL\n").$row.$single_row_from_clause;
+//            $row = '';
+//        }
+//    }    
+//}
+    debug('>>> leaving createInlineTableForIndexEntry');
+    return mqlProperties;
+}//eof 
+
+// helper for createInlineTablesForIndexes
+function createInlineTableForIndex(mqlProperties){
+    debug('>>> inside createInlineTableForIndex');
+    debug('mqlProperties.index:');
+    debug(mqlProperties.index);
+    mqlProperties.statement = '';
+    mqlProperties.row = '';
+    mqlProperties.column_index = 0;
+    mqlProperties = createInlineTableForIndexEntry(mqlProperties);
+    mqlProperties.statement = "(\n" + mqlProperties.statement + "\n)";
+    mqlProperties.index['inline_table'] = mqlProperties.statement; 
+    debug("mqlProperties.index['inline_table']:");
+    debug(mqlProperties.index['inline_table']);
+//
+//REPLACES
+//function create_inline_table_for_index(&$index){
+//    $statement = '';
+//    $row = '';
+//    create_inline_table_for_index_entry($index['entries'], $index['columns'], 0, $statement, $row);
+//    $statement = "(\n".$statement."\n)";
+//    $index['inline_table'] = $statement;
+//}
+    debug('>>> leaving createInlineTableForIndex');
+    return mqlProperties;
+}//eof createIndexTableForIndex
+
+//helper for executeSQLQueries
+function createInlineTablesForIndexes(mqlProperties) {
+    debug('>>> inside createInlineTablesForIndexes');
+    debug('mqlProperties.indexes:');
+    debug(mqlProperties.indexes);
+    for(v=0;v<Object.keys(mqlProperties.indexes).length;v++){
+        mqlProperties.index = mqlProperties.indexes[Object.keys(mqlProperties.indexes)[v]];
+        debug('mqlProperties.index:');
+        debug(mqlProperties.index);
+        mqlProperties = createInlineTableForIndex(mqlProperties);
+    }//eof for
+//
+//REPLACES
+//function create_inline_tables_for_indexes(&$indexes){
+//    foreach ($indexes as &$index) {
+//        create_inline_table_for_index($index);
+//    }
+//}
+    debug('>>> leaving createInlineTablesForIndexes');
+    return mqlProperties;
+}//eof createInlineTablesForIndexes
 
 // helper for handleQuery
 function executeSQLQueries(mqlProperties, cb) {
@@ -3118,11 +3524,13 @@ function executeSQLQueries(mqlProperties, cb) {
     
     debug('mqlProperties.sql_queries.length:');    
     debug(mqlProperties.sql_queries.length);
+
+    debug('Object.keys(mqlProperties.sql_queries).length:');    
+    debug(Object.keys(mqlProperties.sql_queries).length);
     
     for (i = 0; i < mqlProperties.sql_queries.length; i++) {  /// DOES THE length WORK HERE ???? YES IT DOES!
         // REPLACES foreach($sql_queries as $sql_query_index => &$sql_query){
-        debug('i:'); // for testing only
-        debug(i); // for testing only  
+        debug('Start of Round i:'+i); // for testing only 
         mqlProperties.sql_query_index = parseInt(Object.keys(mqlProperties.sql_queries)[i]);
         debug('mqlProperties.sql_query_index:'); // for testing only
         debug(mqlProperties.sql_query_index); // for testing only 
@@ -3131,19 +3539,32 @@ function executeSQLQueries(mqlProperties, cb) {
         debug('mqlProperties.indexes:'); // for testing only
         debug(mqlProperties.indexes); // for testing only 
 
+        debug('mqlProperties.query:'); // for testing only
+        debug(mqlProperties.query); // for testing only 
+        
+        debug('++++++++++++++++++++++++++++SQL Query+++++++++++++++++++++++++++++++++++++++++');
+        debug("mqlProperties.sql_queries[i]:");
+        debug(mqlProperties.sql_queries[i]);
+        debug('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
+        
+
         mqlProperties.mql_node = mqlProperties.sql_queries[i]['mql_node'];
         debug('mqlProperties.mql_node:'); // for testing only
         debug(mqlProperties.mql_node); // for testing only 
 
         mqlProperties = getResultObject(mqlProperties, i);
 
-        mqlProperties.result_object = mqlProperties.mql_node['result_object'];
+        //mqlProperties.result_object = mqlProperties.mql_node['result_object']; // THIS IS SUPERFLUOUS
         debug('mqlProperties.result_object:'); // for testing only
         debug(mqlProperties.result_object); // for testing only 
         
         // THIS IS TO MAKE SURE select_columns GETS SET: WORKS AS DESIGNED !!!
         // NOTE: THIS IS NOT PART OF THE ORIGINAL CODE
         if(typeof(mqlProperties.select_columns) === 'undefined'){
+            
+            debug("mqlProperties.sql_queries[i]:");
+            debug(mqlProperties.sql_queries[i]);
+            
             mqlProperties.select_columns = mqlProperties.sql_queries[i]['select'];
             debug('mqlProperties.select_columns:'); // for testing only
             debug(mqlProperties.select_columns); // for testing only
@@ -3266,35 +3687,24 @@ function executeSQLQueries(mqlProperties, cb) {
             debug('mqlProperties.rows:');
             debug(mqlProperties.rows);
 
-
-
-
-
-            // WE ARE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE HERE
-
-            debug('++++++++++++++++++ WE ARE NEAR LINE 3141 +++++++++++++++++++');
-
-
-
             for (m = 0; m < mqlProperties.rows.length; m++) {
                 if (mqlProperties.merge_into) {
                     for (k = 0; k < mqlProperties.merge_into_columns.length; k++) {
                         mqlProperties.merge_into_values_new[mqlProperties.merge_into_columns[k].key] = mqlProperties.rows[m][mqlProperties.merge_into_columns[k].value];
                     }//eof for 
                     if (mqlProperties.merge_into_values_new !== mqlProperties.merge_into_values_old) {
-                        mqlProperties = mergeResults('WHAT GOES HERE ????');// TO DO: implement function mergeResults()  
+                        mqlProperties = mergeResults(mqlProperties);  
                         mqlProperties.offset = mqlProperties.rows[m].key;
                     }//eof if 
                     mqlProperties.merge_into_values_old = mqlProperties.merge_into_values_new;
                 }//eof if
                 mqlProperties.row = mqlProperties.rows[m];
-//OLD                mqlProperties = fillResultObject(mqlProperties); // TO DO: implement function fillResultObject()
-                
                 mqlProperties = fillResultObject(mqlProperties, mqlProperties.mql_node, mqlProperties.sql_query_index, mqlProperties.row, mqlProperties.result_object);
                 
-                
                 mqlProperties.result[mqlProperties.rows[m].key] = mqlProperties.result_object;
-                mqlProperties = addEntryToIndexes(mqlProperties, mqlProperties.rows[m].key, mqlProperties.rows[m]); // TO DO: implement function addEntryTo Indexes()            
+                debug("mqlProperties.result[mqlProperties.rows[m].key]:");
+                debug(mqlProperties.result[mqlProperties.rows[m].key]);
+                mqlProperties = addEntryToIndexes(mqlProperties, mqlProperties.rows[m].key, mqlProperties.rows[m]);            
             }
             ;//eof for            
 //          REPLACES  
@@ -3313,10 +3723,11 @@ function executeSQLQueries(mqlProperties, cb) {
 //                    fill_result_object($mql_node, $sql_query_index, $row, $result_object);
 //                    $result[$row_index] = $result_object;
 //                    add_entry_to_indexes($indexes, $row_index, $row);
-//          }                    
+//          }    
+//
             mqlProperties = createInlineTablesForIndexes(mqlProperties); // TO DO: implement function createInlineTablesForIndexes()
             if (typeof(mqlProperties.merge_into_values_old) !== 'undefined' && Object.keys(mqlProperties.merge_into_values_old).length) {
-                mqlProperties = mergeResults('WHAT GOES HERE ????');// TO DO: implement function mergeResults()
+                mqlProperties = mergeResults(mqlProperties);// TO DO: implement function mergeResults()
             }//eof if          
 //          REPLACES
 //                    
@@ -3328,7 +3739,8 @@ function executeSQLQueries(mqlProperties, cb) {
             mqlProperties.callBackHandleQuery(null, mqlProperties);
         });//eof executeSQLQuery               
 //      REPLACES        
-//      $rows = execute_sql_query($sql_query);     
+//      $rows = execute_sql_query($sql_query); 
+        debug('End of Round i:'+i);
     }//eof for
 }//eof executeSQLQueries
 /*****************************************************************************
@@ -3446,8 +3858,12 @@ function handleQuery(mqlProperties, cb) {
                         mqlProperties.callBackHandleQueries(err, mqlProperties);
                     }//eof if
 
+                    debug('mqlProperties.merge_target:');
+                    debug(mqlProperties.merge_target);
+                    
+                    debug('mqlProperties.result_object:');
+                    debug(mqlProperties.result_object);
 
-
                     // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
                     // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
                     // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
@@ -3462,9 +3878,9 @@ function handleQuery(mqlProperties, cb) {
                     // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
                     // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
                     // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......
-                    // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......                                       
-
-
+                    // WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......WE ARE HERE ......                      
+                    debug('WE ARE HERE ......WE ARE HERE ......NEAR LINE 3882 ......WE ARE HERE ......WE ARE HERE ...... ');
+                    
 
                     debug('executed_sql_queries:'); // for testing only //   THIS WILL MOST LIKELY BE A DIFFERENT NAME, CHECK WITH executeSQLQueries	
                     debug(executed_sql_queries); // for testing only	
