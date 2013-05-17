@@ -170,36 +170,36 @@ exports.read = function(req, res) {
     debug(mqlProperties.req.method); // for testing only
 
     // FOR TESTING PURPOSES ONLY, IN CASE WE DO NOT RECEIVE THE MESSAGE BODY
-    if (typeof(mqlProperties.req.body.length) === 'undefined') {
-        debug('NOTE: We use our own request body, as there was not one provided....');
-        var temp_req_body = new Array(
-                {
-                    pagination: {
-                        "page": 0,
-                        "limit": 10,
-                        "sort": 'PersonLastName',
-                        "dir": 'ASC'
-                    },
-                    basicInfo: {
-                        "ccoId": 'remoteUser',
-                        "prefLang": "eng_GB",
-                        "requestStartDate": (new Date()).toISOString(),
-                        "requesterApp": 'appName'
-                    },
-                    mql: {
-                        "query": [{
-                                "type": "/core/person",
-                                "kp_PersonID": null,
-                                "kf_GenderID": 1,
-                                "PersonFirstName": null,
-                                "PersonLastName": null
-                            }]
-                    },
-                    debug_info: {
-                    }
-                });
-        mqlProperties.req.body = temp_req_body[0];// removes the []
-    }//eof if
+//    if (typeof(mqlProperties.req.body.length) === 'undefined') {
+//        debug('NOTE: We use our own request body, as there was not one provided....');
+//        var temp_req_body = new Array(
+//                {
+//                    pagination: {
+//                        "page": 0,
+//                        "limit": 10,
+//                        "sort": 'PersonLastName',
+//                        "dir": 'ASC'
+//                    },
+//                    basicInfo: {
+//                        "ccoId": 'remoteUser',
+//                        "prefLang": "eng_GB",
+//                        "requestStartDate": (new Date()).toISOString(),
+//                        "requesterApp": 'appName'
+//                    },
+//                    mql: {
+//                        "query": [{
+//                                "type": "/core/person",
+//                                "kp_PersonID": null,
+//                                "kf_GenderID": 1,
+//                                "PersonFirstName": null,
+//                                "PersonLastName": null
+//                            }]
+//                    },
+//                    debug_info: {
+//                    }
+//                });
+//        mqlProperties.req.body = temp_req_body[0];// removes the []
+//    }//eof if
 
     switch (mqlProperties.req.method) {
         case 'GET':

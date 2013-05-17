@@ -16,7 +16,7 @@ Ext.onReady(function() {
     // Create a 'Person' model.
     Ext.define('core.model.Person', {
 		extend: 'Ext.data.Model',
-        fields: [
+                fields: [
 			{ name: 'kp_PersonID', type: 'int'}, 
 			{ name: 'PersonFirstName', type: 'string'}, 
 			{ name: 'PersonLastName', type: 'string'},
@@ -69,7 +69,7 @@ Ext.onReady(function() {
 					callback		: this.createRequestCallback(request, operation, callback, scope), 
 					method			: 'POST', //this.getMethod(request), 
 					jsonData		: this.jsonData, 
-					disableCaching	: false // explicitely set it to false, ServerProxy handles caching 
+					disableCaching          : false // explicitely set it to false, ServerProxy handles caching 
 				});
 				Ext.Ajax.request(request); 
 				return request;
@@ -120,7 +120,8 @@ Ext.onReady(function() {
 					"mql" : {
 						"query" : [{
 							"type": "/core/person",
-							"kp_PersonID": 1,
+							"kp_PersonID": null,
+                                                        "kf_GenderID": 1,
 							"PersonFirstName": null,
 							"PersonLastName": null
 						}]
@@ -155,14 +156,14 @@ Ext.onReady(function() {
 	//Ext.define('core.grid.panel', {
 		//extend: 'Ext.grid.Panel',
         //store: 'core.store.Persons',
-		store: store,
+	store: store,
         stateful: true,
 		//autoShow: true,
         stateId: 'stateGrid',
         columns: [
             {
                 text     : 'ID',
-				width	 : 24,
+		width	 : 24,
                 sortable : true,
                 dataIndex: 'kp_PersonID'
             },
@@ -180,13 +181,13 @@ Ext.onReady(function() {
             },
 			{
                 text     : 'Gender ID',
-				width	 : 124,
+		width	 : 124,
                 sortable : true,
                 dataIndex: 'kf_GenderID'
             },
 			{
                 text     : 'Salutation ID',
-				width	 : 124,
+		width	 : 124,
                 sortable : true,
                 dataIndex: 'kf_SalutationID'
             }
