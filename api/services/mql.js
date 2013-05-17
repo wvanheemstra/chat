@@ -56,53 +56,53 @@ exports.read = function(req, res) {
         this.tAliasID = 0;
         this.cAliasID = 0;
         this.pID = 0;
-        this.childTAlias = null;
-        this.mergeInto = null;
-        this.metaDataFileName = null;
-        this.metaData = null;
-        this.connectionFileName = null;
-        this.connection = null;
-        this.sqlDialectFileName = null;
-        this.dbConnection = null;
-        this.args = null;
-        this.queryOrQueries = null;
-        this.query = null;
-        this.queries = null;
-        this.callStack = [];
-        this.callBackHandleRequest = null;
-        this.result = null;  // we are in need of both result and results
-        this.results = null;
-        this.query_index = null;
-        this.callBackHandleQueries = null;
-        this.parent = null;
-        this.callBackHandleQuery = null;
-        this.mqlObject = null;
-        this.callBackProcessMQL = null;
-        this.callBackProcessMQLObject = null;
-        this.callBackParentType = null;
-        this.parentSchemaType = null;
-        this.types = null;
-        this.callBackObjectVars = null;
-        this.objectVars = null;
-        this.starProperty = null;
-        this.callBackPreProcessProperties = null;
-        this.propertyKey = null;
-        this.propertyValue = null;
-        this.propertyPattern = null;
-        this.callBackAnalyzeProperty = null;
-        this.matches = null;
-        this.callBackPregMatchAll = null;
-        this.isFilterProperty = null;
-        this.analyzedProperty = null;
-        this.callBackIsFilterProperty = null;
-        this.typeName = null;
-        this.analyzedPropertyKey = null;
-        this.analyzedPropertyValue = null;
-        this.select = null;
-        this.from = null;
-        this.where = null;
-        this.params = null;
-        this.indexes = null;
+//        this.childTAlias = null;
+//        this.mergeInto = null;
+//        this.metaDataFileName = null;
+//        this.metaData = null;
+//        this.connectionFileName = null;
+//        this.connection = null;
+//        this.sqlDialectFileName = null;
+//        this.dbConnection = null;
+//        this.args = null;
+//        this.queryOrQueries = null;
+//        this.query = null;
+//        this.queries = null;
+//        this.callStack = [];
+//        this.callBackHandleRequest = null;
+//        this.result = null;  // we are in need of both result and results
+//        this.results = null;
+//        this.query_index = null;
+//        this.callBackHandleQueries = null;
+//        this.parent = null;
+//        this.callBackHandleQuery = null;
+//        this.mqlObject = null;
+//        this.callBackProcessMQL = null;
+//        this.callBackProcessMQLObject = null;
+//        this.callBackParentType = null;
+//        this.parentSchemaType = null;
+//        this.types = null;
+//        this.callBackObjectVars = null;
+//        this.objectVars = null;
+//        this.starProperty = null;
+//        this.callBackPreProcessProperties = null;
+//        this.propertyKey = null;
+//        this.propertyValue = null;
+//        this.propertyPattern = null;
+//        this.callBackAnalyzeProperty = null;
+//        this.matches = null;
+//        this.callBackPregMatchAll = null;
+//        this.isFilterProperty = null;
+//        this.analyzedProperty = null;
+//        this.callBackIsFilterProperty = null;
+//        this.typeName = null;
+//        this.analyzedPropertyKey = null;
+//        this.analyzedPropertyValue = null;
+//        this.select = null;
+//        this.from = null;
+//        this.where = null;
+//        this.params = null;
+//        this.indexes = null;
     }
     /*****************************************************************************
      * Main
@@ -220,6 +220,13 @@ exports.read = function(req, res) {
         default:
             debug('Must use either GET, POST, or OPTIONS');
     }
+    
+    if(typeof(mqlProperties.req.body.debug_info) !== 'undefined'){
+        mqlProperties.debug_info = true;
+    } 
+    else{
+        mqlProperties.debug_info = false;
+    }  
 
     handleRequest(mqlProperties, function(err, mqlProperties) {
         debug('>>> back inside exports.read function from handleRequest');
@@ -267,32 +274,32 @@ exports.read = function(req, res) {
         debug("mqlProperties.result: "); // for testing only
         debug(mqlProperties.result); // for testing only
         
-        output["fake_result"] = { code: '/api/status/ok',
-                                  result:
-                                   [ { kp_PersonID: 2,
-                                       kf_GenderID: 1,
-                                       PersonFirstName: 'Giuseppe',
-                                       PersonLastName: 'Cerda' },
-                                     { kp_PersonID: 3,
-                                       kf_GenderID: 1,
-                                       PersonFirstName: 'Ettiene',
-                                       PersonLastName: 'Montero' },
-                                     { kp_PersonID: 6,
-                                       kf_GenderID: 1,
-                                       PersonFirstName: 'Cesáreo',
-                                       PersonLastName: 'Almonte' },
-                                     { kp_PersonID: 7,
-                                       kf_GenderID: 1,
-                                       PersonFirstName: 'Wenzel',
-                                       PersonLastName: 'Solórzano' },
-                                     { kp_PersonID: 9,
-                                       kf_GenderID: 1,
-                                       PersonFirstName: 'Hermelando',
-                                       PersonLastName: 'Medina' },
-                                     { kp_PersonID: 12,
-                                       kf_GenderID: 1,
-                                       PersonFirstName: 'Blasco',
-                                       PersonLastName: 'Montenegro' } ] };
+//        output["fake_result"] = { code: '/api/status/ok',
+//                                  result:
+//                                   [ { kp_PersonID: 2,
+//                                       kf_GenderID: 1,
+//                                       PersonFirstName: 'Giuseppe',
+//                                       PersonLastName: 'Cerda' },
+//                                     { kp_PersonID: 3,
+//                                       kf_GenderID: 1,
+//                                       PersonFirstName: 'Ettiene',
+//                                       PersonLastName: 'Montero' },
+//                                     { kp_PersonID: 6,
+//                                       kf_GenderID: 1,
+//                                       PersonFirstName: 'Cesáreo',
+//                                       PersonLastName: 'Almonte' },
+//                                     { kp_PersonID: 7,
+//                                       kf_GenderID: 1,
+//                                       PersonFirstName: 'Wenzel',
+//                                       PersonLastName: 'Solórzano' },
+//                                     { kp_PersonID: 9,
+//                                       kf_GenderID: 1,
+//                                       PersonFirstName: 'Hermelando',
+//                                       PersonLastName: 'Medina' },
+//                                     { kp_PersonID: 12,
+//                                       kf_GenderID: 1,
+//                                       PersonFirstName: 'Blasco',
+//                                       PersonLastName: 'Montenegro' } ] };
         
         output["results"] = mqlProperties.results;
         debug("mqlProperties.results: "); // for testing only
@@ -303,6 +310,11 @@ exports.read = function(req, res) {
 
         var transaction_id = "not implemented";
         output["transaction_id"] = transaction_id;
+        
+        if(mqlProperties.debug_info){
+            var debug_info = mqlProperties.callStack;
+            output["debug_info"] = debug_info;
+        }
 
         mqlProperties.res.header("Access-Control-Allow-Origin", "*"); // to allow cross-domain, replace * with a list of domains is desired.
         mqlProperties.res.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type");
@@ -3891,6 +3903,9 @@ function handleQuery(mqlProperties, cb) {
         var sec = parseInt(unixtime_ms / 1000);
         var name = 'begin query #' + mqlProperties.query_index;
         var microtime = (unixtime_ms - (sec * 1000)) / 1000 + ' ' + sec;
+        if(typeof(mqlProperties.callStack) === 'undefined'){
+            mqlProperties.callStack = [];
+        }
         mqlProperties.callStack.push({"name": name, "microtime": microtime});
         debug('mqlProperties.callStack:'); // for testing only
         debug(mqlProperties.callStack); // for testing only
