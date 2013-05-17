@@ -265,10 +265,38 @@ exports.read = function(req, res) {
 
         output["result"] = mqlProperties.result; // are we in need of both result and results, or could we do with just results???
         debug("mqlProperties.result: "); // for testing only
-        debug(mqlProperties.result); // for testing only	
+        debug(mqlProperties.result); // for testing only
+        
+        output["fake_result"] = { code: '/api/status/ok',
+                                  result:
+                                   [ { kp_PersonID: 2,
+                                       kf_GenderID: 1,
+                                       PersonFirstName: 'Giuseppe',
+                                       PersonLastName: 'Cerda' },
+                                     { kp_PersonID: 3,
+                                       kf_GenderID: 1,
+                                       PersonFirstName: 'Ettiene',
+                                       PersonLastName: 'Montero' },
+                                     { kp_PersonID: 6,
+                                       kf_GenderID: 1,
+                                       PersonFirstName: 'Cesáreo',
+                                       PersonLastName: 'Almonte' },
+                                     { kp_PersonID: 7,
+                                       kf_GenderID: 1,
+                                       PersonFirstName: 'Wenzel',
+                                       PersonLastName: 'Solórzano' },
+                                     { kp_PersonID: 9,
+                                       kf_GenderID: 1,
+                                       PersonFirstName: 'Hermelando',
+                                       PersonLastName: 'Medina' },
+                                     { kp_PersonID: 12,
+                                       kf_GenderID: 1,
+                                       PersonFirstName: 'Blasco',
+                                       PersonLastName: 'Montenegro' } ] };
+        
         output["results"] = mqlProperties.results;
         debug("mqlProperties.results: "); // for testing only
-        debug(mqlProperties.results); // for testing only	
+        debug(mqlProperties.results); // for testing only
 
         var status = "200 OK"; // Change depending on success or failure
         output["status"] = status;
@@ -1288,11 +1316,6 @@ function processProperties(mqlProperties, cb) {
                 debug("................ WE HAVE A SCHEMA PROPERTY " + JSON.stringify(schema_property) + " TO PROCESS !!!!!!!!!!: ");
 
                 if (schema_property) {
-                    
-                    // UP TO HERE WE ARE FINE...
-                    var unknown = Unknown(); //   DELIBERATE ERROR TO STOP THE CODE HERE.                    
-                    
-                    
                     mqlProperties.analyzedPropertyValue['qualifier'] = mqlProperties.typeName;
                     debug("mqlProperties.analyzedPropertyValue['qualifier']:");
                     debug(mqlProperties.analyzedPropertyValue['qualifier']);
@@ -1309,7 +1332,7 @@ function processProperties(mqlProperties, cb) {
                         debug("mqlProperties.propertyValue:");
                         debug(mqlProperties.propertyValue);
                         if (isObject(mqlProperties.propertyValue) || isArray(mqlProperties.propertyValue)) {
-                            debug("WE ARE GOING TO forProcessMQL");
+                            debug("WE ARE GOING TO forProcessMQL");                                                      
                             // AS WE ARE INSIDE A FOR LOOP WE NEED TO USE THE FOR-ENABLED FUNCTION forProcessMQL
 //OLD                       forProcessMQL(mqlProperties, Object.keys(mqlProperties.analyzedProperty)[i], i); // call the for-enabled function to callback to processMQL
                             forProcessMQL(mqlProperties, Object.keys(mqlProperties.parent.properties)[i], i); // call the for-enabled function to callback to processMQL
@@ -1320,10 +1343,12 @@ function processProperties(mqlProperties, cb) {
                     var err = new Error('No property "' + mqlProperties.analyzedPropertyValue['name'] + '" in type "' + mqlProperties.typeName + '".');
                     mqlProperties.err = err;
                     debug('>>> leaving processProperties with error:'); // for testing only
+                    // 
+                    //
                     //mqlProperties.callBackPreProcessProperties(err, mqlProperties);  // SHOULD THIS INSTEAD BE mqlProperties.callBackProcessProperties(err, mqlProperties); ???
                     debug(err.message);
                     mqlProperties.callBackProcessMQLObject(err, mqlProperties);
-                }
+                } 
                 break;
             default:
                 if (mqlProperties.analyzedPropertyValue['qualifier'] !== mqlProperties.analyzedProperty[0].typeName) {
@@ -1340,7 +1365,9 @@ function processProperties(mqlProperties, cb) {
         var analyzedProperty = {}; // This will be used to store the modified analyzedProperty
         analyzedProperty[mqlProperties.analyzedPropertyKey] = mqlProperties.analyzedPropertyValue;
         mqlProperties.analyzedProperties.push(analyzedProperty); 
-        debug('processProperties: end of Round i=' + i); // for testing only
+        debug('mqlProperties.analyzedProperties:');
+        debug(mqlProperties.analyzedProperties);
+        debug('processProperties: end of Round i=' + i); // for testing only       
     }//eof for   
     debug('mqlProperties.analyzedProperties:'); // mqlProperties.analyzedProperties should now hold all analyzedProperties; 
     // NOTE: these properties and more are also stored in mqlProperties.mql_node, so it is recommended to use mqlProperties.mql_node instead
@@ -1421,7 +1448,7 @@ function processMQLObject(mqlProperties, cb) {
                         debug('mqlProperties.analyzedProperties:'); // mqlProperties.analyzedProperties should now hold all analyzed properties
                         debug(mqlProperties.analyzedProperties);
                         debug('>>> leaving processMQLObject');
-                        debug('§§§§§§§§§§§§§§§ WE DID: processProperties ... '); // for testing only																														
+                        debug('§§§§§§§§§§§§§§§ WE DID: processProperties ... '); // for testing only
                         mqlProperties.callBackProcessMQL(null, mqlProperties); // this is the right callback !!!
                     });//eof processProperties
                 });//eof checkTypes
@@ -1500,8 +1527,8 @@ function processMQL(mqlProperties, cb) {
                 mqlProperties.callBackHandleQuery(err, mqlProperties);
             }
             debug('§§§§§§§§§§§§§§§ WE DID: processMQL ... '); // for testing only
-            debug('>>> leaving processMQL');	// for testing only  ///  WE ARE HERE !!!!!!!!!!                    
-            mqlProperties.callBackHandleQuery(null, mqlProperties);  // <------------------------ THIS CALL BACK SEEMS TO JUMP TO THE WRONG SECTION INSIDE handleQuery !!!: FIX IT
+            debug('>>> leaving processMQL');	// for testing only  
+            mqlProperties.callBackHandleQuery(null, mqlProperties); // WORKS !!
         });
     }
     else if (isArray(mqlProperties.queryOrQueries[0])) {
@@ -2965,7 +2992,7 @@ function getResultObject(mqlProperties, index, result_object, key) {
         debug('>>> leaving getResultObject');
         return;
     }//eof if
-    mqlProperties.object = [];
+    mqlProperties.object = {};  // WE SET IT EXPLICITELY TO {} INSTEAD OF [] FOR USE WITH output
     if (result_object instanceof Array) {
         result_object[key] = mqlProperties.object;
     }//eof if
@@ -3089,7 +3116,7 @@ function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_
     
     if(typeof(mqlProperties.entrees) !== 'undefined' && mqlProperties.entrees === mql_node['entrees']){
         if(typeof(mqlProperties.result_object)==='undefined'){
-            mqlProperties.result_object = [];
+            mqlProperties.result_object = {};// WE SET IT EXPLICITELY TO {} INSTEAD OF [] FOR USE IN output
         }
         debug('mqlProperties.result_object:');
         debug(mqlProperties.result_object);
@@ -3532,6 +3559,10 @@ function executeSQLQueries(mqlProperties, cb) {
     debug('Object.keys(mqlProperties.sql_queries).length:');    
     debug(Object.keys(mqlProperties.sql_queries).length);
     
+    // SO FAR SO GOOD
+    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE 
+    
+    
     for (i = 0; i < mqlProperties.sql_queries.length; i++) {  /// DOES THE length WORK HERE ???? YES IT DOES!
         // REPLACES foreach($sql_queries as $sql_query_index => &$sql_query){
         debug('Start of Round i:'+i); // for testing only 
@@ -3551,7 +3582,6 @@ function executeSQLQueries(mqlProperties, cb) {
         debug(mqlProperties.sql_queries[i]);
         debug('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
         
-
         mqlProperties.mql_node = mqlProperties.sql_queries[i]['mql_node'];
         debug('mqlProperties.mql_node:'); // for testing only
         debug(mqlProperties.mql_node); // for testing only 
@@ -3694,26 +3724,42 @@ function executeSQLQueries(mqlProperties, cb) {
             debug('mqlProperties.sql_queries:');
             debug(mqlProperties.sql_queries);
             
-            for (m = 0; m < mqlProperties.rows.length; m++) {
+            for (e = 0; e < mqlProperties.rows.length; e++) {  // USE INTERATOR e BECAUSE SOME OTHER LETTERS HAVE ALREADY BEEN USED
+                debug('Start of Round e:'+e);
                 if (mqlProperties.merge_into) {
                     for (k = 0; k < mqlProperties.merge_into_columns.length; k++) {
-                        mqlProperties.merge_into_values_new[mqlProperties.merge_into_columns[k].key] = mqlProperties.rows[m][mqlProperties.merge_into_columns[k].value];
+                        mqlProperties.merge_into_values_new[mqlProperties.merge_into_columns[k].key] = mqlProperties.rows[e][mqlProperties.merge_into_columns[k].value];
                     }//eof for 
                     if (mqlProperties.merge_into_values_new !== mqlProperties.merge_into_values_old) {
                         mqlProperties = mergeResults(mqlProperties);  
-                        mqlProperties.offset = mqlProperties.rows[m].key;
+                        mqlProperties.offset = mqlProperties.rows[e].key;
                     }//eof if 
                     mqlProperties.merge_into_values_old = mqlProperties.merge_into_values_new;
                 }//eof if
-                mqlProperties.row = mqlProperties.rows[m];                
+                mqlProperties.row = mqlProperties.rows[e];                
                 mqlProperties = fillResultObject(mqlProperties, mqlProperties.mql_node, mqlProperties.sql_query_index, mqlProperties.row, mqlProperties.result_object);
                 
-                mqlProperties.result[mqlProperties.rows[m].key] = mqlProperties.result_object;
-                debug("mqlProperties.result[mqlProperties.rows[m].key]:");
-                debug(mqlProperties.result[mqlProperties.rows[m].key]);
+                debug('mqlProperties.result_object: is it alright? YES!');
+                debug(mqlProperties.result_object); 
                 
-                mqlProperties = addEntryToIndexes(mqlProperties, mqlProperties.rows[m].key, mqlProperties.rows[m]);
-            }//eof for      
+                debug('Object.keys(mqlProperties.rows)[e]:');
+                debug(Object.keys(mqlProperties.rows)[e]);
+
+                // WE HAVE TO FILL THE mqlProperties.result WITH THE DATA FROM mqlProperties.result_object
+                // HOWEVER, NOT AS A REFERENCE, BECAUSE A CHANCE IN mqlProperties.result_object
+                // WOULD CHANGE ALL PREVIOUSLY SET mqlProperties.result FILLS TO THAT CHANGE !!!
+
+                mqlProperties.result[Object.keys(mqlProperties.rows)[e]] = clone(mqlProperties.result_object); // WORKS !!!
+                debug("mqlProperties.result[Object.keys(mqlProperties.rows)[e]]:");
+                debug(mqlProperties.result[Object.keys(mqlProperties.rows)[e]]);
+
+                mqlProperties = addEntryToIndexes(mqlProperties, mqlProperties.rows[e].key, mqlProperties.rows[e]);
+                debug('End of Round e:'+e);               
+            }//eof for 
+
+            // SO FAR SO GOOD !!!
+            //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE     
+            //               
 //         
 //          REPLACES  
 //                    
@@ -3763,7 +3809,9 @@ function executeSQLQueries(mqlProperties, cb) {
             debug('mqlProperties.result:');
             debug(mqlProperties.result);   
             //     
-            //   
+            // SO FAR SO GOOD
+            //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE    
+            //       
             // AND SET THEIR CONTENT TO mqlProperties.sql_query.results
             // 
             if(typeof(mqlProperties.merge_results) !== 'undefined'){
@@ -3774,7 +3822,7 @@ function executeSQLQueries(mqlProperties, cb) {
             }
             // 
             if(mqlProperties.sql_query.results.length === 0){
-                mqlProperties.sql_query.results = mqlProperties.result; // THIS WORKS !!!
+                mqlProperties.sql_query.results = clone(mqlProperties.result); // THIS WORKS !!!
             }
             // 
             debug('mqlProperties.sql_query:');
@@ -3786,37 +3834,31 @@ function executeSQLQueries(mqlProperties, cb) {
             debug(mqlProperties.sql_queries);
             //
             //
-            // LASTELY SET THE CONTENT OF mqlProperties.result TO mqlProperties.return_value
-            // 
-            debug('mqlProperties.return_value');
-            debug(mqlProperties.return_value);
             //
-            mqlProperties.result = mqlProperties.return_value;
-            //
-            //
-            debug('mqlProperties.result:');
-            debug(mqlProperties.result);
-            //
-            // AND ADD THE CONTENT OF mqlProperties.result TO mqlProperties.results AT THE CURRENT INDEX i
-            // 
-            mqlProperties.results[i] = mqlProperties.result;
-            // 
-            debug('mqlProperties.results');
-            debug(mqlProperties.results); 
             // 
             debug('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
             //
-            // THROW AN ERROR FOR THE CODE TO STOP HERE
-            var unknown = Unknown();
             //
             debug('>>> leaving executeSQLQueries');
             mqlProperties.callBackHandleQuery(null, mqlProperties);
         });//eof executeSQLQuery               
 //      REPLACES        
 //      $rows = execute_sql_query($sql_query); 
-        debug('End of Round i:'+i);
+        debug('End of Round i:'+i); // DO WE EVER COME TO HERE??? I DON'T THINK WE DO
     }//eof for
 }//eof executeSQLQueries
+/*****************************************************************************
+ *   Miscellaneous
+ ******************************************************************************/
+// Custom function to clone Objects so the clone is no longer referenced but standalone
+function clone(obj) {
+    if(obj == null || typeof(obj) != 'object')
+        return obj;    
+    var cloned_obj = new obj.constructor(); 
+    for(var key in obj)
+        cloned_obj[key] = clone(obj[key]);    
+    return cloned_obj;
+}
 /*****************************************************************************
  *   Queries
  ******************************************************************************/
@@ -3904,7 +3946,11 @@ function handleQuery(mqlProperties, cb) {
         debug('mqlProperties.parent:'); // for testing only	
         debug(mqlProperties.parent); // for testing only
         processMQL(mqlProperties, function(err, mqlProperties) {
-            debug('>>> back inside handleQuery from processMQL'); // for testing only 			
+            debug('>>> back inside handleQuery from processMQL'); // for testing only 
+            
+            // SO FAR SO GOOD !!!
+            //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE
+            
             if (err) {
                 mqlProperties.err = err;
                 debug('>>> leaving handleQuery with error:');
@@ -3916,7 +3962,11 @@ function handleQuery(mqlProperties, cb) {
             debug('mqlProperties.sqlQueries:'); // for testing only	
             debug(mqlProperties.sqlQueries); // for testing only            
             generateSQL(mqlProperties, function(err, mqlProperties) {
-                debug('>>> back inside handleQuery from generateSQL'); // for testing only 				
+                debug('>>> back inside handleQuery from generateSQL'); // for testing only 
+                
+                // SO FAR SO GOOD !!!
+                //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE                
+                
                 if (err) {
                     debug('>>> leaving handleQuery with error');
                     mqlProperties.err = err;
@@ -3924,7 +3974,11 @@ function handleQuery(mqlProperties, cb) {
                     mqlProperties.callBackForHandleQuery(err, mqlProperties);
                 }
                 executeSQLQueries(mqlProperties, function(err, mqlProperties) {
-                    debug('>>> back inside handleQuery from executeSQLQueries'); // for testing only 				
+                    debug('>>> back inside handleQuery from executeSQLQueries'); // for testing only 
+                    
+                    // HERE WE SEEM TO HAVE LANDED IN A CONSTANT LOOP
+                    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE                     
+                    
                     if (err) {
                         debug('>>> leaving handleQuery with error');
                         mqlProperties.err = err;

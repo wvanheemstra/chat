@@ -89,7 +89,7 @@ Ext.onReady(function() {
 			},
 			reader: {
 				type: 'json',
-				root: 'result', // change from data to result when used with MQL
+				root: 'result.result', // change from data to result.result when used with MQL
 				totalProperty: 'total'
 			},
 			writer: {
