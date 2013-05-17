@@ -3570,11 +3570,7 @@ function executeSQLQueries(mqlProperties, cb) {
 
     debug('Object.keys(mqlProperties.sql_queries).length:');    
     debug(Object.keys(mqlProperties.sql_queries).length);
-    
-    // SO FAR SO GOOD
-    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE 
-    
-    
+
     for (i = 0; i < mqlProperties.sql_queries.length; i++) {  /// DOES THE length WORK HERE ???? YES IT DOES!
         // REPLACES foreach($sql_queries as $sql_query_index => &$sql_query){
         debug('Start of Round i:'+i); // for testing only 
@@ -3767,11 +3763,7 @@ function executeSQLQueries(mqlProperties, cb) {
 
                 mqlProperties = addEntryToIndexes(mqlProperties, mqlProperties.rows[e].key, mqlProperties.rows[e]);
                 debug('End of Round e:'+e);               
-            }//eof for 
-
-            // SO FAR SO GOOD !!!
-            //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE     
-            //               
+            }//eof for               
 //         
 //          REPLACES  
 //                    
@@ -3960,12 +3952,15 @@ function handleQuery(mqlProperties, cb) {
         mqlProperties.parent['schema'] = mqlProperties.schema;
         debug('mqlProperties.parent:'); // for testing only	
         debug(mqlProperties.parent); // for testing only
+        
+        // SHOULD WE SET THE LIMIT HERE ????
+        // NOTE: THIS IS NOT IN THE ORIGINAL CODE
+        mqlProperties.parent['pagination'] = new Array({page:1, limit:50, sort:"PersonLastName", dir:"ASC"}); // HARDCODED FOR NOW, MAKE DYNAMIC !!!!! 
+        mqlProperties.parent['limit'] = mqlProperties.parent['pagination']['limit'];
+        mqlProperties.parent['page'] = mqlProperties.parent['pagination']['page'];  
+                
         processMQL(mqlProperties, function(err, mqlProperties) {
-            debug('>>> back inside handleQuery from processMQL'); // for testing only 
-            
-            // SO FAR SO GOOD !!!
-            //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE
-            
+            debug('>>> back inside handleQuery from processMQL'); // for testing only             
             if (err) {
                 mqlProperties.err = err;
                 debug('>>> leaving handleQuery with error:');
@@ -3978,10 +3973,6 @@ function handleQuery(mqlProperties, cb) {
             debug(mqlProperties.sqlQueries); // for testing only            
             generateSQL(mqlProperties, function(err, mqlProperties) {
                 debug('>>> back inside handleQuery from generateSQL'); // for testing only 
-                
-                // SO FAR SO GOOD !!!
-                //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE                
-                
                 if (err) {
                     debug('>>> leaving handleQuery with error');
                     mqlProperties.err = err;
@@ -3990,10 +3981,6 @@ function handleQuery(mqlProperties, cb) {
                 }
                 executeSQLQueries(mqlProperties, function(err, mqlProperties) {
                     debug('>>> back inside handleQuery from executeSQLQueries'); // for testing only 
-                    
-                    // HERE WE SEEM TO HAVE LANDED IN A CONSTANT LOOP
-                    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE                     
-                    
                     if (err) {
                         debug('>>> leaving handleQuery with error');
                         mqlProperties.err = err;

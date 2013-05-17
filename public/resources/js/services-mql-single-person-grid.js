@@ -42,7 +42,7 @@ Ext.onReady(function() {
     var store = new Ext.data.Store({
 	//Ext.define('core.store.Persons', {
 	//	extend: 'Ext.data.Store',
-	//  pageSize: 50, 
+	pageSize: 50, 
         model: 'core.model.Person',
 		proxy: {
 			type: 'ajax',
