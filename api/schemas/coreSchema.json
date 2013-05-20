@@ -19,7 +19,18 @@
                             "column_name": "kf_GenderID", 
                             "nullable": true,
                             "type": "/type/int"
-                        },                                
+                        },
+                        "PersonGender": {
+                            "type": "/core/gender",
+                            "direction": "referencing->referenced",
+                            "join_condition": [
+                                {
+                                    "referencing_column": "kf_GenderID",
+                                    "referenced_column": "kp_GenderID"
+                                }
+                            ],
+                            "nullable": true
+                        },
                         "PersonFirstName": {
                             "column_name": "PersonFirstName", 
                             "nullable": false, 
@@ -38,7 +49,28 @@
                             "columns": ["kp_PersonID"]
                         }
                     }
-                }
+                },
+                "gender": {        
+                    "properties": {
+                        "kp_GenderID": {
+                            "column_name": "kp_GenderID", 
+                            "nullable": false, 
+                            "type": "/type/int"
+                        },                                
+                        "GenderName": {
+                            "column_name": "GenderName", 
+                            "nullable": false, 
+                            "type": "/type/text"
+                        }
+                    }, 
+                    "table_name": "tbl_gender",
+                    "keys": {
+                        "PRIMARY": {
+                            "type": "PRIMARY KEY",
+                            "columns": ["kp_GenderID"]
+                        }
+                    }     
+                }        
             }
         }
     }
