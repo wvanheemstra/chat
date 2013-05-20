@@ -175,7 +175,7 @@ exports.read = function(req, res) {
 //        var temp_req_body = new Array(
 //                {
 //                    pagination: {
-//                        "page": 0,
+//                        "page": 1,
 //                        "limit": 10,
 //                        "sort": 'PersonLastName',
 //                        "dir": 'ASC'
@@ -2317,6 +2317,15 @@ function generateSQL(mqlProperties, cb) {
             'merge_into': mqlProperties.mergeInto,
             'results': []
         });
+        // HANDLE limit, page, order_by, sort AND dir HERE
+        // NOTE: THIS IS NOT IN THE ORIGINAL CODE
+        if(mqlProperties.page && mqlProperties.limit){
+            var lower_limit = (mqlProperties.page * mqlProperties.limit) - mqlProperties.limit; // e.g. page=1, limit=50, lower_limit = (1*50)-50 = 0
+            mqlProperties.query[0]['limit'] = lower_limit +','+ mqlProperties.limit;
+        }//eof if
+        else if(mqlProperties.limit){
+            mqlProperties.query[0]['limit'] = '0,'+ mqlProperties.limit;
+        }//eof else if
         mqlProperties.queries[mqlProperties.query_index] = mqlProperties.query[0];
         debug('mqlProperties.queries[mqlProperties.query_index]:'); // for testing only
         debug(mqlProperties.queries[mqlProperties.query_index]); // for testing only      
@@ -2331,6 +2340,11 @@ function generateSQL(mqlProperties, cb) {
     mqlProperties.where = mqlProperties.query[0]['where'];
     debug('mqlProperties.where:'); // for testing only
     debug(mqlProperties.where); // for testing only
+    // NOTE: THIS IS NOT IN THE ORIGINAL CODE
+    mqlProperties.limit = mqlProperties.query[0]['limit'];
+    debug('mqlProperties.limit:'); // for testing only
+    debug(mqlProperties.limit); // for testing only    
+    //
     mqlProperties.params = mqlProperties.query[0]['params'];
     debug('mqlProperties.params:'); // for testing only
     debug(mqlProperties.params); // for testing only
@@ -2680,6 +2694,16 @@ function executeSQL(mqlProperties, cb) {
         for (i = 0; i < mqlProperties.sql_query['params'].length; i++) {
             var param_key = [mqlProperties.sql_query['params'][i]['name']];
             var param_value = [mqlProperties.sql_query['params'][i]['value']][0]; // THE [0] REMOVES THE []
+            // BY CURRENT LACK OF KNOWLEDGE HOW TO REPLACE THE PREPARED PARAMS WITH THEIR ACTUAL VALUE
+            // WE USE A SIMPLE FIND AND REPLACE HERE INSTEAD: 
+            //var paramValue = "1";
+            var search_for = ':'+param_key;
+            var replace_with = param_value;
+            var oldSQLString = mqlProperties.statement_handle.sql;
+            var newSQLString = oldSQLString.replace(search_for, replace_with);
+            mqlProperties.statement_handle.sql = newSQLString;
+            debug("mqlProperties.statement_handle.sql:");
+            debug(mqlProperties.statement_handle.sql);
             parameters = pushToParametersArray(parameters, param_key, param_value);
         }//eof for
        
@@ -2688,7 +2712,7 @@ function executeSQL(mqlProperties, cb) {
         debug(db_connection_created); // for testing only      
 
 //      // FOR TESTING ONLY: THIS OVERWRITES THE GENERATED SQL
-        mqlProperties.statement_handle.sql = 'SELECT  t1.kp_PersonID AS t1c1\n, t1.PersonFirstName AS t1c2\n, t1.PersonLastName AS t1c3\nFROM core.tbl_person t1\nWHERE t1.kf_GenderID = 1 LIMIT 0,6';
+//        mqlProperties.statement_handle.sql = 'SELECT  t1.kp_PersonID AS t1c1\n, t1.PersonFirstName AS t1c2\n, t1.PersonLastName AS t1c3\nFROM core.tbl_person t1\nWHERE t1.kf_GenderID = 1 LIMIT 0,10';
 
         debug('parameters:');
         debug(parameters);
@@ -2705,7 +2729,7 @@ function executeSQL(mqlProperties, cb) {
             db_connection_created.query(mqlProperties.statement_handle.sql, function(err, rows) {
                 if (err) {
                     mqlProperties.err = err;
-                    debug('>>> leaving executeSQL from if with error:');
+                    debug('>>> leaving executeSQL without limit with error:');
                     debug(err.message);
                     mqlProperties.callBackExecuteSQLQuery(err, mqlProperties);
                 }
@@ -2717,7 +2741,7 @@ function executeSQL(mqlProperties, cb) {
                 mqlProperties.rows = rows;
 
                 // Can we see this in here:
-                console.log('mqlProperties.rows inside query:');
+                console.log('mqlProperties.rows without limit inside query:');
                 console.log(mqlProperties.rows);
 
                 mqlProperties.result = mqlProperties.rows;
@@ -2727,25 +2751,33 @@ function executeSQL(mqlProperties, cb) {
                 console.log('this.sql:');
                 console.log(this.sql);
 
-                debug('>>> leaving executeSQL from if');
+                debug('>>> leaving executeSQL without limit');
                 mqlProperties.callBackExecuteSQLQuery(null, mqlProperties);
             });
         }//eof if
         else {
-            mqlProperties.result = [];
-
-            // STILL TO DO
-
+           //mqlProperties.result = [];
+           // NOTE: WE SET THE LIMIT DIRECTLY IN THE SQL STATEMENT
+           db_connection_created.query(mqlProperties.statement_handle.sql, function(err, rows) {
+                if (err) {
+                    mqlProperties.err = err;
+                    debug('>>> leaving executeSQL with limit with error:');
+                    debug(err.message);
+                    mqlProperties.callBackExecuteSQLQuery(err, mqlProperties);
+                }
 
 //         // REPLACES
 //           
 //         while ($limit-- && $row = $statement_handle->fetch(PDO::FETCH_ASSOC)) {
 //              $result[] = $row;
 //         }
-
-            mqlProperties.rows = mqlProperties.result;
-            debug('>>> leaving executeSQL from else');
-            mqlProperties.callBackExecuteSQLQuery(null, mqlProperties);
+                mqlProperties.rows = rows;
+                console.log('mqlProperties.rows with limit inside query:');
+                console.log(mqlProperties.rows);
+                mqlProperties.result = mqlProperties.rows;
+                debug('>>> leaving executeSQL with limit');
+                mqlProperties.callBackExecuteSQLQuery(null, mqlProperties);
+            });
         }//eof else 
     }//eof try
     catch (err) {
@@ -2942,10 +2974,15 @@ function getQuerySQL(mqlProperties) {
     //It works fine if applied to a top-level mql node,
     //When used for a nested mql node, it does not take into 
     //account that the limit should be applied only to the nested node
+    debug("mqlProperties.sql_query['limit']:");
+    debug(mqlProperties.sql_query['limit']);
+    debug("mqlProperties.sqlDialect['supports_limit']:");
+    debug(mqlProperties.sqlDialect['supports_limit']);
     if (mqlProperties.sql_query['limit']) {
-        if (mqlProperties.sqlDialect['supports_limits']) {
+        if (mqlProperties.sqlDialect['supports_limit']) {
             mqlProperties.sql = mqlProperties.sql
-                    + 'n\LIMIT '
+                    + "\n"
+                    + 'LIMIT '
                     + mqlProperties.sql_query['limit'];
         }//eof if  
     }//eof if
@@ -2960,7 +2997,7 @@ function executeSQLQuery(mqlProperties, cb) {
     debug('mqlProperties.sqlDialect:');
     debug(mqlProperties.sqlDialect);
 
-    if (mqlProperties.sql_query['limit'] && !mqlProperties.sqlDialect['supports_limit']) {
+    if (mqlProperties.sql_query['limit'] && mqlProperties.sqlDialect['supports_limit']) {
         //TO DO: this implementation of limit is buggy!
         //It works fine if applied to a top-level mql node,
         //When used for a nested mql node, it does not take into 
@@ -3953,12 +3990,18 @@ function handleQuery(mqlProperties, cb) {
         debug('mqlProperties.parent:'); // for testing only	
         debug(mqlProperties.parent); // for testing only
         
-        // SHOULD WE SET THE LIMIT HERE ????
+        // WE SET THE LIMIT HERE. WORKS
         // NOTE: THIS IS NOT IN THE ORIGINAL CODE
-        mqlProperties.parent['pagination'] = new Array({page:1, limit:50, sort:"PersonLastName", dir:"ASC"}); // HARDCODED FOR NOW, MAKE DYNAMIC !!!!! 
-        mqlProperties.parent['limit'] = mqlProperties.parent['pagination']['limit'];
-        mqlProperties.parent['page'] = mqlProperties.parent['pagination']['page'];  
-                
+        if(typeof(mqlProperties.args['pagination']) !== 'undefined'){
+            //mqlProperties.parent['pagination'] = new Array({page:1, limit:50, sort:"PersonLastName", dir:"ASC"}); // HARDCODED FOR NOW, MAKE DYNAMIC !!!!! 
+            debug("mqlProperties.args:['pagination']");
+            debug(mqlProperties.args['pagination']);
+            mqlProperties.limit = mqlProperties.args['pagination']['limit'];
+            mqlProperties.page = mqlProperties.args['pagination']['page'];
+            mqlProperties.sort = mqlProperties.args['pagination']['sort'];
+            mqlProperties.dir = mqlProperties.args['pagination']['dir'];
+        };
+        
         processMQL(mqlProperties, function(err, mqlProperties) {
             debug('>>> back inside handleQuery from processMQL'); // for testing only             
             if (err) {

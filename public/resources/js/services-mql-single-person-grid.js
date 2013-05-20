@@ -121,7 +121,7 @@ Ext.onReady(function() {
 						"query" : [{
 							"type": "/core/person",
 							"kp_PersonID": null,
-                                                        "kf_GenderID": 1,
+                                                        "kf_GenderID": 2,
 							"PersonFirstName": null,
 							"PersonLastName": null
 						}]
