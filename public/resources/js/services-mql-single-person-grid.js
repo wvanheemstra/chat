@@ -122,9 +122,13 @@ Ext.onReady(function() {
 							"type": "/core/person",
 							"kp_PersonID": null,
                                                         "kf_SalutationID": null,
-                                                        "kf_GenderID": 2,
+                                                        "kf_GenderID": null,
 							"PersonFirstName": null,
 							"PersonLastName": null
+//                                                        , "PersonGender": {
+//                                                                "kp_GenderID": 2,
+//                                                                "GenderName": null
+//                                                            }
 						}]
 					},
 					"debug_info" : {
