@@ -482,7 +482,7 @@ function getObjectVars(mqlProperties, cb) {
     mqlProperties.objectVars = {},
             prop = '';
     for (prop in mqlProperties.mqlObject) {
-        if (typeof mqlProperties.mqlObject[prop] !== 'function' && prop !== 'prototype' && prop !== 'type') {
+        if (typeof mqlProperties.mqlObject[prop] !== 'function' && prop !== 'prototype') { // DO NOT FILTER OUT type
             // FILTER OUT ANY KEYS 'type', WE WILL NOT STORE THEM IN objectVars
             // NOTE: THIS IS NOT PART OF THE ORIGINAL CODE
             mqlProperties.objectVars[prop] = mqlProperties.mqlObject[prop];
@@ -493,6 +493,8 @@ function getObjectVars(mqlProperties, cb) {
             mqlProperties.objectVars[prop] = mqlProperties.mqlObject.prototype[prop];
         }
     }
+    // EXPLICITELY REMOVE ANY KEY type
+    delete mqlProperties.objectVars['type']; // WORKS !!
     debug('mqlProperties.objectVars:'); // for testing only
     debug(mqlProperties.objectVars); // for testing only   
     debug('>>> leaving getObjectVars'); // for testing only
@@ -749,17 +751,22 @@ function analyzeType(mqlProperties){
         mqlProperties.type = new Array({'domain': mqlProperties.matches[1], 'type': mqlProperties.matches[2]});
         debug('mqlProperties.type:'); // for testing only
         debug(mqlProperties.type); // for testing only
+        //
+        //
+        // var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+        //
         //OLD cb(null, type, metaData, objectVars, properties, types, star_property, parent_cb);
         debug('>>> leaving analyzeType'); // for testing only
         // WE HAVE COME TO HERE SO FAR
         return mqlProperties;
     }//eof if
     else {
-        mqlProperties.type = false; // a boolean???, should be null surely
+        mqlProperties.err = new Error('Type does not match.');
         debug('mqlProperties.type:'); // for testing only
         debug(mqlProperties.type); // for testing only
         //OLD cb(null, type, metaData, objectVars, properties, types, star_property, parent_cb);
-        debug('>>> leaving analyzeType'); // for testing only
+        debug('>>> leaving analyzeType with error:'); // for testing only
+        debug('Type does not match.');
         return mqlProperties;
     }//eof else
 }//eof analyzeType
@@ -1005,10 +1012,11 @@ function checkTypes(mqlProperties, cb) {
                 debug(types_keys); // for testing only	
                 debug('Object.keys(types_keys).length:');
                 debug(Object.keys(types_keys).length);
+
                 for (var i = 0; i < Object.keys(types_keys).length; i++) {
                     var type_key = Object.keys(mqlProperties.types)[i];
                     debug('type_key:'); // for testing only
-                    debug(type_key); // for testing only
+                    debug(type_key); // for testing only                  
 
                     var type_value = Object.keys(mqlProperties.types)[i];
                     debug('type_value:'); // for testing only
@@ -1037,7 +1045,7 @@ function checkTypes(mqlProperties, cb) {
 //                debug(err.message);                
 //                mqlProperties.callBackProcessMQLObject(err, mqlProperties); //TEMP
 //    
-        }
+        }     
         debug('>>> leaving checkTypes'); // for testing only        
         mqlProperties.callBackProcessMQLObject(null, mqlProperties); //TEMP
     }
@@ -1335,7 +1343,6 @@ function processProperties(mqlProperties, cb) {
         // WE EXTEND THE USE OF THE EXISTING mqlProperties.analyzedProperties
     }//eof else
     
-    
     // PERHAPS WE SHOULD THUS USE mqlProperties.parent.properties BELOW AS WELL
 //OLD    for (var i = 0; i < Object.keys(mqlProperties.analyzedProperty).length; i++) {	/// DOUBLE CHECK: should it be mqlProperties.analyzedProperty[0] ???
     for (var i = 0; i < Object.keys(mqlProperties.parent.properties).length; i++) {
@@ -1379,7 +1386,7 @@ function processProperties(mqlProperties, cb) {
                 debug("................ WE HAVE A SCHEMA PROPERTY " + JSON.stringify(schema_property) + " TO PROCESS !!!!!!!!!!: ");
 
                 if (schema_property) {
-                    mqlProperties.analyzedPropertyValue['qualifier'] = mqlProperties.typeName[0]; // [0] REMOVES THE []
+                    mqlProperties.analyzedPropertyValue['qualifier'] = mqlProperties.analyzedPropertyValue['type'];
                     debug("mqlProperties.analyzedPropertyValue['qualifier']:");
                     debug(mqlProperties.analyzedPropertyValue['qualifier']);
                     mqlProperties.analyzedPropertyValue['schema'] = schema_property;
@@ -1396,6 +1403,12 @@ function processProperties(mqlProperties, cb) {
                         debug(mqlProperties.propertyValue);                       
                         
                         if (isObject(mqlProperties.propertyValue) || isArray(mqlProperties.propertyValue)) {
+                            // ADD CURRENT PROPERTY TO analyzedProperties BEFORE LEAVING
+                            var analyzedProperty = {}; // This will be used to store the modified analyzedProperty
+                            analyzedProperty[mqlProperties.analyzedPropertyKey] = mqlProperties.analyzedPropertyValue;
+                            mqlProperties.analyzedProperties.push(analyzedProperty); 
+                            debug('mqlProperties.analyzedProperties:');
+                            debug(mqlProperties.analyzedProperties);
                             debug(">>> leaving processProperties to go to forProcessMQL");                                                      
                             mqlProperties.process_mql_item = clone(mqlProperties.parent.properties[Object.keys(mqlProperties.parent.properties)[i]][0]); // [0] REMOVES []                           
 //OLD                       forProcessMQL(mqlProperties, Object.keys(mqlProperties.analyzedProperty)[i], i); // call the for-enabled function to callback to processMQL
@@ -1404,7 +1417,7 @@ function processProperties(mqlProperties, cb) {
                     }//eof if typeof
                 }//eof if schema_property
                 else {
-                    var err = new Error('No property "' + mqlProperties.analyzedPropertyValue['name'] + '" in type "' + mqlProperties.typeName + '".');
+                    var err = new Error('No property "' + mqlProperties.analyzedPropertyValue['name'] + '" in type "' + mqlProperties.analyzedPropertyValue['type'] + '".');
                     mqlProperties.err = err;
                     debug('>>> leaving processProperties with error:'); // for testing only
                     // 
@@ -1431,20 +1444,14 @@ function processProperties(mqlProperties, cb) {
         mqlProperties.analyzedProperties.push(analyzedProperty); 
         debug('mqlProperties.analyzedProperties:');
         debug(mqlProperties.analyzedProperties);
-        debug('processProperties: end of Round i=' + i); // for testing only       
+        debug('processProperties: end of Round i=' + i); // for testing only        
     }//eof for   
     debug('mqlProperties.analyzedProperties:'); // mqlProperties.analyzedProperties should now hold all analyzedProperties; 
     debug(mqlProperties.analyzedProperties);
     
     // REPLACE mqlProperties.parent.properties WITH mqlProperties.analyzedProperties
     mqlProperties.parent.properties = mqlProperties.analyzedProperties;
-    
     debug('>>> leaving processProperties'); // for testing only
-    
-    debug('mqlProperties.parent:');
-    debug(mqlProperties.parent);
-    //var unknown = Unknown();
-    
     mqlProperties.callBackProcessMQLObject(null, mqlProperties);
 }//eof processProperties
 
@@ -1473,7 +1480,7 @@ function processMQLObject(mqlProperties, cb) {
         mqlProperties.types = [];
     }
     debug('mqlProperties.types:'); // for testing only
-    debug(mqlProperties.types); // for testing only	
+    debug(mqlProperties.types); // for testing only
     getParentType(mqlProperties, function(err, mqlProperties) {
         debug('>>> back inside processMQLObject from getParentType'); // for testing only
         if (err) {
@@ -1489,7 +1496,7 @@ function processMQLObject(mqlProperties, cb) {
                 debug('>>> leaving processMQLObject with error:'); // for testing only
                 debug(err.message);
                 mqlProperties.callBackProcessMQL(err, mqlProperties);
-            }
+            }                      
             mqlProperties.starProperty = false;
             preProcessProperties(mqlProperties, function(err, mqlProperties) {
                 debug('>>> back inside processMQLObject from preProcessProperties'); // for testing only
@@ -1508,6 +1515,13 @@ function processMQLObject(mqlProperties, cb) {
                         debug(err.message);
                         mqlProperties.callBackProcessMQL(err, mqlProperties);
                     }
+                    debug('mqlProperties.types:');
+                    debug(mqlProperties.types);
+                    debug('mqlProperties.checked_types:');
+                    debug(mqlProperties.checked_types);  
+                    debug('mqlProperties.parent.properties:');
+                    debug(mqlProperties.parent.properties); 
+
                     mqlProperties.typeName = [];
                     for (var i = 0; i < mqlProperties.types.length; i++) { //extract the type name
                         mqlProperties.typeName[i] = mqlProperties.types[i];
@@ -1522,7 +1536,15 @@ function processMQLObject(mqlProperties, cb) {
                     debug(mqlProperties.parent);
                     debug('mqlProperties.parent.schema:');
                     debug(mqlProperties.parent.schema);
-                    debug('§§§§§§§§§§§§§§§ WE DID: checkTypes ... '); // for testing only
+                    debug('mqlProperties.types:');
+                    debug(mqlProperties.types);
+                    debug('mqlProperties.checked_types:');
+                    debug(mqlProperties.checked_types);  
+                    debug('mqlProperties.parent.properties:');
+                    debug(mqlProperties.parent.properties);                    
+                    
+                    
+                    debug('§§§§§§§§§§§§§§§ WE DID: checkTypes ... '); // for testing only                  
                     processProperties(mqlProperties, function(err, mqlProperties) {
                         debug('>>> back inside processMQLObject from processProperties'); // for testing only
                         if (err) {
@@ -1531,7 +1553,14 @@ function processMQLObject(mqlProperties, cb) {
                             mqlProperties.callBackProcessMQL(err, mqlProperties); // this is the right callback !!!
                         }
                         debug('mqlProperties.analyzedProperties:'); // mqlProperties.analyzedProperties should now hold all analyzed properties
-                        debug(mqlProperties.analyzedProperties);
+                        debug(mqlProperties.analyzedProperties); 
+                        debug('mqlProperties.types:');
+                        debug(mqlProperties.types);
+                        debug('mqlProperties.checked_types:');
+                        debug(mqlProperties.checked_types);  
+                        debug('mqlProperties.parent.properties:');
+                        debug(mqlProperties.parent.properties);                       
+                        
                         debug('>>> leaving processMQLObject');
                         debug('§§§§§§§§§§§§§§§ WE DID: processProperties ... '); // for testing only
                         mqlProperties.callBackProcessMQL(null, mqlProperties); // this is the right callback !!!
@@ -1777,6 +1806,9 @@ function getFromClause(mqlProperties) {
     }
     debug('mqlProperties.schema:');
     debug(mqlProperties.schema);
+    
+    debug('mqlProperties.query:');
+    debug(mqlProperties.query);
 
     mqlProperties.from = mqlProperties.query.from;
     //REPLACES  $from = &$query['from'];
@@ -1797,8 +1829,14 @@ function getFromClause(mqlProperties) {
     //REPLACES $join_condition = '';
     debug('mqlProperties.join_condition:');
     debug(mqlProperties.join_condition); 
+    
+    debug('mqlProperties.schema:');
+    debug(mqlProperties.schema);
+    
+    debug("mqlProperties.schema['direction']:");
+    debug(mqlProperties.schema['direction']);    
 
-    if (typeof(mqlProperties.schema['direction']) !== 'undefined') {
+    if (typeof(mqlProperties.schema['direction']) !== 'undefined') {  // SHOULD WE HAVE SET direction BEFORE, DERIVED FROM THE PROPERTY ???
         mqlProperties.direction = mqlProperties.schema['direction'];
 
         if ((mqlProperties.is_optional === isOptional(mqlProperties)) === true) {
@@ -1942,6 +1980,15 @@ function getFromClause(mqlProperties) {
             }//eof switch
         }//eof for
     }//eof if
+    
+    
+    
+    
+    
+    
+    // THE TABLE NAME SHOULD FOLLOW FROM THE mqlProperties.schema_type
+    mqlProperties.table_name = mqlProperties.schema_type.table_name;
+
     if (typeof(mqlProperties.schema_name) !== 'undefined') {
         mqlProperties.from_line['table'] = mqlProperties.schema_name + '.' + mqlProperties.table_name;
     }
@@ -1950,6 +1997,7 @@ function getFromClause(mqlProperties) {
     }
     debug('mqlProperties.from_line:');
     debug(mqlProperties.from_line);
+    
     // REPLACES $from_line['table'] = ($schema_name? $schema_name.'.' : '').$table_name;
 
     mqlProperties.from_line['alias'] = mqlProperties.tAlias;
@@ -1962,6 +2010,8 @@ function getFromClause(mqlProperties) {
     mqlProperties.from_line['type'] = mqlProperties.type_name;
     debug("mqlProperties.from_line['type']:");
     debug(mqlProperties.from_line['type']);    
+    
+    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
     
     if (mqlProperties.join_condition) {
         mqlProperties.from_line['join_condition'] = mqlProperties.join_condition;
@@ -1978,10 +2028,7 @@ function getFromClause(mqlProperties) {
     debug(mqlProperties.from[mqlProperties.tAlias]);
     //REPLACES $from[$tAlias] = $from_line; 
     
-    // SO FAR SO GOOD
-    //var unknown = Unknown(); //DELIBERATE ERROR TO STOP THE CODE HERE
-    
-    debug('>>> leaving getFromClause'); // for testing only  
+    debug('>>> leaving getFromClause'); // for testing only        
     return mqlProperties;
 }// eof getFromClause
 
@@ -2201,6 +2248,8 @@ function handleFilterProperty(mqlProperties){
         debug('-------------------------------------------------------------------------------------------');
 
 
+        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+
         // THE BELOW STATEMENT RENDERS mqlProperties.from_line['join_condition'] AS undefined
         mqlProperties.from_or_where = mqlProperties.from_line['join_condition'];  // WORK OUT WHY THIS IS !!        
         // 
@@ -2396,15 +2445,19 @@ function generateSQL(mqlProperties, cb) {
     debug(mqlProperties.mergeInto); // for testing only
     debug("mqlProperties.parent['entries']:"); // for testing only
     debug(mqlProperties.parent['entries']); // for testing only
+
     // NOTE: $mql_node = mqlProperties.parent
     if (typeof(mqlProperties.parent['entries']) !== 'undefined') {
         //generateSQL(mqlProperties.parent['entries'], $queries, $query_index, mqlProperties.childTAlias, mqlProperties.mergeInto);
-        generateSQL(mqlProperties, function(err, mqlProperties) {
-            debug('>>> back inside generateSQL from generateSQL (itself!)'); // for testing only			
-            // continue
-            debug('>>> leaving generateSQL');
-            mqlProperties.callBackHandleQuery(null, mqlProperties);
-        });//eof generateSQL... a call to itself!
+        generateSQL(mqlProperties, mqlProperties.callBackHandleQuery);
+// OLD        
+//        generateSQL(mqlProperties, function(err, mqlProperties) {
+//            debug('>>> back inside generateSQL from generateSQL (itself!)'); // for testing only			
+//            // continue
+//            debug('>>> leaving generateSQL');
+//            mqlProperties.callBackHandleQuery(null, mqlProperties);
+//        });//eof generateSQL... a call to itself!
+        
     }//eof if
     if (typeof(mqlProperties.parent['query_index']) === 'undefined') {
         mqlProperties.parent['query_index'] = mqlProperties.query_index;//WAS $query_index TEMPORARY SET TO mqlProperties.query_index
@@ -2487,118 +2540,123 @@ function generateSQL(mqlProperties, cb) {
     mqlProperties.indexes = mqlProperties.query['indexes'];
     debug('mqlProperties.indexes:'); // for testing only
     debug(mqlProperties.indexes); // for testing only
-    //
-    // WE HAVE TO REPEAT THE CODE BELOW FOR EACH type
-    // NOTE: THIS IS NOT IN THE ORIGINAL CODE
-    // 
-    // LOOPING OVER ALL EXISTING TYPES: CURRENTLY IT LOOKS LIKE NOT ALL TYPES GET SET
-    debug("Object.keys(mqlProperties.parent.schema.types):");
-    debug(Object.keys(mqlProperties.parent.schema.types));
-    debug("Object.keys(mqlProperties.mql_node.schema.types):");
-    debug(Object.keys(mqlProperties.mql_node.schema.types));
 
-    for(t=0;t<Object.keys(mqlProperties.mql_node.schema.types).length;t++){
-        debug('Start of Round t:'+t);
-        
-        debug("mqlProperties.mql_node.schema:");
-        debug(mqlProperties.mql_node.schema);
-        
-        // ORIGINAL mqlProperties.type = mqlProperties.mql_node['types'][0];
-        mqlProperties.type = mqlProperties.mql_node.schema.types[Object.keys(mqlProperties.mql_node.schema.types)[t]];
-        debug('mqlProperties.type:'); // for testing only
-        debug(mqlProperties.type); // for testing only 
-        
-        mqlProperties = analyzeType(mqlProperties);
-        debug('mqlProperties.type:'); // for testing only
-        debug(mqlProperties.type); // for testing only
+    debug("mqlProperties.mql_node.schema:");
+    debug(mqlProperties.mql_node.schema);
 
-        // ORIGINAL mqlProperties.domain_name = mqlProperties.type[0]['domain'];
-        mqlProperties.domain_name = mqlProperties.mql_node.schema.domain;
-        debug('mqlProperties.domain_name:'); // for testing only
-        debug(mqlProperties.domain_name); // for testing only
-        //REPLACES $domain_name = $type['domain'];
+    debug('mqlProperties.mql_node.schema.types:');
+    debug(mqlProperties.mql_node.schema.types);
+    
+    if(typeof(mqlProperties.type_index) !== 'undefined'){
+        mqlProperties.type_index = mqlProperties.type_index + 1;
+    }
+    else{
+        mqlProperties.type_index = 0;  // THE FIRST TIME WE SET A type
+    }
 
-        debug('mqlProperties.metaData:'); // for testing only
-        debug(mqlProperties.metaData); // for testing only
+    // ORIGINAL mqlProperties.type = mqlProperties.mql_node['types'][0];
+    mqlProperties.type = mqlProperties.mql_node.schema.types[Object.keys(mqlProperties.mql_node.schema.types)[mqlProperties.type_index]];
+    debug('mqlProperties.type:'); // for testing only
+    debug(mqlProperties.type); // for testing only   
+    
+    mqlProperties = analyzeType(mqlProperties);
+    debug('mqlProperties.type:'); // for testing only
+    debug(mqlProperties.type); // for testing only
 
-        mqlProperties.domains = mqlProperties.metaData['domains'];
-        debug('mqlProperties.domains:'); // for testing only
-        debug(mqlProperties.domains); // for testing only
-        //REPLACES $domains = $metaData['domains'];
+    // ORIGINAL mqlProperties.domain_name = mqlProperties.type[0]['domain'];
+    mqlProperties.domain_name = mqlProperties.mql_node.schema.domain;
+    debug('mqlProperties.domain_name:'); // for testing only
+    debug(mqlProperties.domain_name); // for testing only
+    //REPLACES $domain_name = $type['domain'];
 
-        mqlProperties.schema_domain = mqlProperties.domains[mqlProperties.domain_name];
-        debug('mqlProperties.schema_domain:'); // for testing only
-        debug(mqlProperties.schema_domain); // for testing only
-        //REPLACES $schema_domain = $domains[$domain_name];    
+    debug('mqlProperties.metaData:'); // for testing only
+    debug(mqlProperties.metaData); // for testing only
+
+    mqlProperties.domains = mqlProperties.metaData['domains'];
+    debug('mqlProperties.domains:'); // for testing only
+    debug(mqlProperties.domains); // for testing only
+    //REPLACES $domains = $metaData['domains'];
+
+    mqlProperties.schema_domain = mqlProperties.domains[mqlProperties.domain_name];
+    debug('mqlProperties.schema_domain:'); // for testing only
+    debug(mqlProperties.schema_domain); // for testing only
+    //REPLACES $schema_domain = $domains[$domain_name];    
+
+    mqlProperties.type_name = mqlProperties.type[0]['type']; // GETS THE FIRST AND ONLY TYPE
+    debug('mqlProperties.type_name:'); // for testing only
+    debug(mqlProperties.type_name); // for testing only    
+    //REPLACES $type_name = $type['type'];
+
+    debug("mqlProperties.schema_domain['types']:");
+    debug(mqlProperties.schema_domain['types']);
+
+    mqlProperties.schema_type = mqlProperties.schema_domain['types'][mqlProperties.type_name];
+    debug('mqlProperties.schema_type:'); // for testing only
+    debug(mqlProperties.schema_type); // for testing only     
+    //REPLACES $schema_type = $schema_domain['types'][$type_name];
+    
+    // SO FAR SO GOOD WHEN DEALING WITH gender !!!
+
+    //table_name is either explicitly specified, or we take the type name
+    if (typeof(mqlProperties.schema_type['table_name']) === 'undefined') {
+        mqlProperties.table_name = mqlProperties.type_name;
         
-        mqlProperties.type_name = mqlProperties.type[0]['type']; // GETS THE FIRST AND ONLY TYPE
-        debug('mqlProperties.type_name:'); // for testing only
-        debug(mqlProperties.type_name); // for testing only    
-        //REPLACES $type_name = $type['type'];
+        debug("mqlProperties.schema_type['table_name'] was undefined");
+        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
         
-        debug('mqlProperties.type_name:');
-        debug(mqlProperties.type_name);
-        debug("mqlProperties.schema_domain['types']:");
-        debug(mqlProperties.schema_domain['types']);
-
-        mqlProperties.schema_type = mqlProperties.schema_domain['types'][mqlProperties.type_name];
-        debug('mqlProperties.schema_type:'); // for testing only
-        debug(mqlProperties.schema_type); // for testing only     
-        //REPLACES $schema_type = $schema_domain['types'][$type_name];
+    }
+    else {
+        mqlProperties.table_name = mqlProperties.schema_type['table_name']; // WORKS !!!
         
-        debug("mqlProperties.schema_type['table_name']:");
+        debug("mqlProperties.schema_type['table_name'] was defined:");
         debug(mqlProperties.schema_type['table_name']);
-
-        //table_name is either explicitly specified, or we take the type name
-        if (typeof(mqlProperties.schema_type['table_name']) === 'undefined') {
-            mqlProperties.table_name = mqlProperties.type_name;
+        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+        
+    }
+    debug('mqlProperties.table_name:'); // for testing only
+    debug(mqlProperties.table_name); // for testing only        
+    debug("mqlProperties.schema_type['schema_name']:");     
+    debug(mqlProperties.schema_type['schema_name']);  
+    debug("mqlProperties.schema_domain['schema_name']:");
+    debug(mqlProperties.schema_domain['schema_name']);
+    //        
+    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE      
+    //     
+    //schema_name is either explicitly specified, or we take the domain name
+    if (typeof(mqlProperties.schema_type['schema_name']) === 'undefined') {
+        if (typeof(mqlProperties.schema_domain['schema_name']) === 'undefined') {
+            //schema_name not defined, settle for the domain name
+            mqlProperties.schema_name = mqlProperties.domain_name;
         }
-        else {
-            mqlProperties.table_name = mqlProperties.schema_type['table_name']; // WORKS !!!
+        else { //schema_name is defined at the domain level 
+            mqlProperties.schema_name = mqlProperties.schema_domain['schema_name'];
         }
-        debug('mqlProperties.table_name:'); // for testing only
-        debug(mqlProperties.table_name); // for testing only        
-        debug("mqlProperties.schema_type['schema_name']:");     
-        debug(mqlProperties.schema_type['schema_name']);  
-        debug("mqlProperties.schema_domain['schema_name']:");
-        debug(mqlProperties.schema_domain['schema_name']);
-        //        
-        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE      
-        //     
-        //schema_name is either explicitly specified, or we take the domain name
-        if (typeof(mqlProperties.schema_type['schema_name']) === 'undefined') {
-            if (typeof(mqlProperties.schema_domain['schema_name']) === 'undefined') {
-                //schema_name not defined, settle for the domain name
-                mqlProperties.schema_name = mqlProperties.domain_name;
-            }
-            else { //schema_name is defined at the domain level 
-                mqlProperties.schema_name = mqlProperties.schema_domain['schema_name'];
-            }
-        }
-        else { //schema_name is defined at the type level
-            mqlProperties.schema_name = mqlProperties.schema_type['schema_name'];
-        }
-        debug('mqlProperties.schema_name:'); // for testing only
-        debug(mqlProperties.schema_name); // for testing only  
-        mqlProperties = getTAlias(mqlProperties);
-        debug('mqlProperties.tAlias:'); // for testing only
-        debug(mqlProperties.tAlias); // for testing only 
-        //
-        // DOES THE TABLE ALIAS INCREASE FOR EACH NEW TYPE??? TEST IT.. WORKS !!   
-        //REPLACES $tAlias = get_tAlias();
-        mqlProperties = getFromClause(mqlProperties);
-        debug('mqlProperties.from:'); // for testing only
-        debug(mqlProperties.from); // for testing only  
-        //
-        // SO FAR SO GOOD !!!
-        //PERHAPS WE NEED TO LOOP BACK FOR THE NEXT TYPE FROM HERE: WORKS !!
-        debug('End of Round t:'+t);
-    }//eof for WE HAVE LOOPED OVER ALL EXISTING TYPES
+    }
+    else { //schema_name is defined at the type level
+        mqlProperties.schema_name = mqlProperties.schema_type['schema_name'];
+    }
+    debug('mqlProperties.schema_name:'); // for testing only
+    debug(mqlProperties.schema_name); // for testing only  
+    mqlProperties = getTAlias(mqlProperties);
+    debug('mqlProperties.tAlias:'); // for testing only
+    debug(mqlProperties.tAlias); // for testing only 
     //
+    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+    //
+    // DOES THE TABLE ALIAS INCREASE FOR EACH NEW TYPE??? TEST IT.. WORKS !! 
+    // 
+    // THIS WORKS WELL FOR THE FIRST type (i.e. person)  
+    //     
+    //         
+    //REPLACES $tAlias = get_tAlias();
+    mqlProperties = getFromClause(mqlProperties);
     debug('mqlProperties.from:'); // for testing only
     debug(mqlProperties.from); // for testing only 
     
-    //var unknown = Unkown(); // DELIBERATE ERROR TO STOP CODE HERE
+    
+    // SO FAR SO GOOD WHEN DEALING WITH gender !!!    
+    
+    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
 
     //REPLACES get_from_clause($mql_node, $tAlias, $child_tAlias, $schema_name, $table_name, $query);
     if (arrayKeyExists('properties', mqlProperties.mql_node)) {
@@ -2609,7 +2667,13 @@ function generateSQL(mqlProperties, cb) {
 
         debug('Object.keys(mqlProperties.properties).length:');
         debug(Object.keys(mqlProperties.properties).length);
-
+        
+        
+        // BY NOW WE ALREADY HAVE FILLED THE FIRST from_line (e.g. tbl_person)
+        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE        
+        
+        // WE SHOULD REALLY FILTER THIS FOR PROPERTIES OF THE type UNDER EXAMINATION ONLY!!!
+        outerloop: // THIS IS THE LABEL NAME
         for (i = 0; i < Object.keys(mqlProperties.properties).length; i++) {
             debug('Start of Round i: '+i);
             debug('Object.keys(mqlProperties.properties)[i]:');
@@ -2619,6 +2683,7 @@ function generateSQL(mqlProperties, cb) {
                 var property_key = key;
                 debug("property_key:");
                 debug(property_key);
+                break; // BREAK AFTER THE FIRST FOUND KEY
             }
 
             debug("mqlProperties.properties[Object.keys(mqlProperties.properties)[i]][property_key]['type']:");
@@ -2635,6 +2700,55 @@ function generateSQL(mqlProperties, cb) {
             
             debug("mqlProperties.properties[Object.keys(mqlProperties.properties)[i]][property_key]['is_directive']:");
             debug(mqlProperties.properties[Object.keys(mqlProperties.properties)[i]][property_key]['is_directive']);
+            
+            if(typeof(mqlProperties.previous_property_type) === 'undefined'){
+                mqlProperties.previous_property_type = property_type;
+            }
+            
+            debug('mqlProperties.previous_property_type:');
+            debug(mqlProperties.previous_property_type);
+            
+            if(typeof(mqlProperties.processed_types) === 'undefined'){
+                    mqlProperties.processed_types = [];
+            }
+            
+            if(property_type !== mqlProperties.previous_property_type){
+                mqlProperties.processed_types[mqlProperties.previous_property_type] = mqlProperties.previous_property_type;
+                debug('mqlProperties.processed_types:');
+                debug(mqlProperties.processed_types);
+                mqlProperties.previous_property_type = property_type;
+                //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+            }            
+            
+            //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+            
+            var exit_loop = false;
+            
+            debug('mqlProperties.processed_types:');
+            debug(mqlProperties.processed_types);
+            
+            
+            for (key in mqlProperties.processed_types){ // THIS DOES NOT SEEM TO WORK !!
+                debug('property_type:');
+                debug(property_type);
+                debug('key:');
+                debug(key);
+                //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+                if(property_type === key){
+                    // WE HAVE PROCESSED THIS PROPERTY BEFORE
+                    // SO PREPARE TO GO TO NEXT ITERATION OF THE LOOP
+                    exit_loop = true;
+                    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+                    break;    
+                }
+            }
+            if(exit_loop){
+                exit_loop = false; // RESET
+                debug('Early End of Round i: '+i);                
+                continue outerloop;
+            };
+
+            //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
             
             if (mqlProperties.properties[Object.keys(mqlProperties.properties)[i]][property_key]['is_directive']) { // WORKS                 
                 switch (mqlProperties.properties[Object.keys(mqlProperties.properties)[i]].key) // TO DO: Will this retrieve the key ????  Test it !!!
@@ -2687,6 +2801,8 @@ function generateSQL(mqlProperties, cb) {
             
             if (typeof(mqlProperties.schema['direction']) !== 'undefined') {
                 mqlProperties.direction = mqlProperties.schema['direction'];
+                debug('mqlProperties.direction:');
+                debug(mqlProperties.direction);
                 if (mqlProperties.direction === 'referenced<-referencing') {
                     mqlProperties.index_columns = [];
                     mqlProperties.index_columns_string = '';                    
@@ -2722,13 +2838,28 @@ function generateSQL(mqlProperties, cb) {
                     mqlProperties.new_query_index = mqlProperties.query_index;
                 }//eof else if                                          
                 mqlProperties.properties[Object.keys(mqlProperties.properties)[i]]['query_index'] = mqlProperties.new_query_index;
-                generateSQL(mqlProperties, function(err, mqlProperties) {
-                    debug('>>> back inside generateSQL from generateSQL (itself!)'); // for testing only			
-                    // TO DO			
-
-                    debug('>>> leaving generateSQL');
-                    mqlProperties.callBackHandleQuery(null, mqlProperties);
-                });//eof generateSQL... a call to itself!                 
+                
+                debug("mqlProperties.properties[Object.keys(mqlProperties.properties)[i]]['query_index']:");
+                debug(mqlProperties.properties[Object.keys(mqlProperties.properties)[i]]['query_index']);
+                
+                // ADD THE CURRENTLY PROCESSED PROPERTY type TO THE COLLECTION OF PROCESSED TYPES
+                mqlProperties.processed_types[property_type] = property_type;
+                debug('mqlProperties.processed_types:');
+                debug(mqlProperties.processed_types);
+                
+                debug('WE ARE GOING INTO generateSQL AGAIN !!!!!!!!!!!!!!!!!!!!!!!!!!!');
+                
+                //var unknown = Unkown(); // DELIBERATE ERROR TO STOP CODE HERE
+                // SO FAR SO GOOD
+                generateSQL(mqlProperties, mqlProperties.callBackHandleQuery);
+// OLD                
+//                generateSQL(mqlProperties, function(err, mqlProperties) {
+//                    debug('>>> back inside generateSQL from generateSQL (itself!)'); // for testing only			
+//                    // TO DO			
+//                    debug('>>> leaving generateSQL');                    
+//                    var unknown = Unkown(); // DELIBERATE ERROR TO STOP CODE HERE                   
+//                    mqlProperties.callBackHandleQuery(null, mqlProperties);
+//                });//eof generateSQL... a call to itself!                                  
             }//eof if
 
             // TO CHECK: SURELY WE WILL HAVE TO GO INTO UNDERNEATH ELSE TO SET THE FILTERING AND HAVE OUR COLUMN NAMES SET IN PARAMS.....
@@ -2754,11 +2885,11 @@ function generateSQL(mqlProperties, cb) {
                     mqlProperties.non_filter_property_value = mqlProperties.properties[Object.keys(mqlProperties.properties)[i]][property_key];
                     mqlProperties = handleNonFilterProperty(mqlProperties);                  
                     //  
-                    // REPLACES handle_non_filter_property($tAlias, $column_name, $select, $property);
+                    // REPLACES handle_non_filter_property($tAlias, $column_name, $select, $property);                   
                 }//eof else                    
             }//eof else if 
             debug('End of Round i: '+i);          
-        }//eof for
+        }//eof for    
     }//eof if
     else if (arrayKeyExists('default_property', mqlProperties.schema_type)) {
         mqlProperties.default_property_name = mqlProperties.schema_type['default_property'];
@@ -2782,11 +2913,11 @@ function generateSQL(mqlProperties, cb) {
         else {
             mqlProperties.non_filter_property_key = Object.keys(mqlProperties.property)[0]; // IS THIS THE RIGHT WAY TO HAND THE key??
             mqlProperties.non_filter_property_value = mqlProperties.property.value; // IS THIS THE RIGHT WAY TO HAND THE value??
-            mqlProperties = handleNonFilterProperty(mqlProperties);  
+            mqlProperties = handleNonFilterProperty(mqlProperties);             
             // REPLACES handle_non_filter_property($tAlias, $column_name, $select, $property);
         }//eof else          
     }//eof else if
-    debug('>>> leaving generateSQL');
+    debug('>>> leaving generateSQL');   
     mqlProperties.callBackHandleQuery(null, mqlProperties);
 }//eof generateSQL
 /*****************************************************************************
@@ -3212,7 +3343,10 @@ function executeSQLQuery(mqlProperties, cb) {
 // helper for executeSQLQueries: NOT a callback function
 function getResultObject(mqlProperties, index, result_object, object_key) {
     debug('>>> inside getResultObject'); // for testing only
-    
+    debug('result_object:');
+    debug(result_object);
+    debug('object_key:');
+    debug(object_key);
     debug("mqlProperties.mql_node['query_index']:");
     debug(mqlProperties.mql_node['query_index']);
     
@@ -3225,14 +3359,28 @@ function getResultObject(mqlProperties, index, result_object, object_key) {
     
     if (parseInt(mqlProperties.mql_node['query_index']) !== index) {
         debug('>>> leaving getResultObject');
-        return;
+        return mqlProperties;
     }//eof if
     // INSTANTIATE object ONLY IF NOT INSTANTIATED BEFORE
     if(typeof(mqlProperties.object) === 'undefined'){
         mqlProperties.object = {};  // WE SET IT EXPLICITELY TO {} INSTEAD OF [] FOR USE WITH output
     }
-    if (result_object instanceof Array) {
-        result_object[object_key] = clone(mqlProperties.object);
+    
+    if (result_object instanceof Array || result_object instanceof Object) {
+        
+        debug('result_object:');
+        debug(result_object);
+        debug('object_key:');
+        debug(object_key);
+        
+        //OLD result_object[object_key] = clone(mqlProperties.object);
+        mqlProperties.object[object_key] = result_object;
+        
+        debug('mqlProperties.object:');
+        debug(mqlProperties.object);
+            
+        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE        
+        
     }//eof if
     else {
         result_object = clone(mqlProperties.object);
@@ -3247,59 +3395,113 @@ function getResultObject(mqlProperties, index, result_object, object_key) {
     else if (typeof(mqlProperties.mql_node['properties']) !== 'undefined') {
         // TO DO
         
-        debug("mqlProperties.mql_node['properties'].length:");
-        debug(mqlProperties.mql_node['properties'].length);
-        
         debug("Object.keys(mqlProperties.mql_node['properties']).length:");
         debug(Object.keys(mqlProperties.mql_node['properties']).length);
         
+        outerloop: // THIS IS THE NAME OF THE LABEL
 //OLD        for (i = 0; i < mqlProperties.mql_node['properties'].length; i++) {
-        for (n = 0; n < Object.keys(mqlProperties.mql_node['properties']).length; n++) { // USE n AS THE ITERATOR, BECAUSE i IS ALREADY USED IN THE PARENT FOR LOOP           
-            debug('Start of Round n:'+n);
-            
-            for(key in mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]){
-                var property_key = key;
-                var property_value = mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]][key];
-            }
-            
-            debug('property_key:');
-            debug(property_key);
-            debug('property_value:');
-            debug(property_value);
-            
-//            debug("mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]:");
-//            debug(mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]);
+            for (n = 0; n < Object.keys(mqlProperties.mql_node['properties']).length; n++) { // USE n AS THE ITERATOR, BECAUSE i IS ALREADY USED IN THE PARENT FOR LOOP           
+                debug('Start of Round n:'+n);
 
-            //OLD
-//            if (mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]['operator'] || mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]['is_directive']) {
-//                continue;
-//            }//eof if
-            
-            if(property_value['operator'] || property_value['is_directive']){
-                continue;
-            }//eof if
+                for(key in mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]){
+                    var property_key = key;
+                    var property_value = mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]][key];
+                    break;
+                }
 
-            // OLD mqlProperties.value = mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]['value'];
-            mqlProperties.value = property_value['value'];
-            debug('mqlProperties.value:');
-            debug(mqlProperties.value);
-            
-            if (mqlProperties.value instanceof Object || mqlProperties.value instanceof Array) {
-                //OLD mqlProperties = getResultObject(mqlProperties, index, mqlProperties.object, Object.keys(mqlProperties.mql_node['properties'])[n]);
-                mqlProperties = getResultObject(mqlProperties, index, mqlProperties.object, property_key);
-            }//eof if
-            else {
-                // OLD mqlProperties.object[Object.keys(mqlProperties.mql_node['properties'])[n]] = mqlProperties.value;
-                //OLD mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]][key] = mqlProperties.value;
-                mqlProperties.object[key] = mqlProperties.value;
-                debug('mqlProperties.object:');
-                debug(mqlProperties.object);
-            }//eof else
-            debug('End of Round n:'+n);
-            
-            //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE            
-            
-        }//eof for     
+                debug('property_key:');
+                debug(property_key);
+                debug('property_value:');
+                debug(property_value);
+
+                if(typeof(mqlProperties.processed_result_object_properties) === 'undefined'){
+                    mqlProperties.processed_result_object_properties = [];
+                }
+
+                var exit_loop = false;
+                for (key in mqlProperties.processed_result_object_properties){
+                    if(property_key === key){
+                        // WE HAVE PROCESSED THIS property BEFORE
+                        exit_loop = true;
+                    }
+                    break;
+                }
+
+                if(exit_loop){
+                    exit_loop = false; // RESET
+                    debug('mqlProperties.processed_result_object_properties:');
+                    debug(mqlProperties.processed_result_object_properties);
+                    debug('mqlProperties.object:');
+                    debug(mqlProperties.object);                
+                    debug('Early End of Round n:'+n);                
+                    if(Object.keys(mqlProperties.mql_node['properties']).length === Object.keys(mqlProperties.processed_result_object_properties).length){
+                        debug('WE BREAK OFF THE LOOP');
+                        // WE HAVE PROCESSED ALL PROPERTIES
+                        n = Object.keys(mqlProperties.mql_node['properties']).length; // FORCE THE END OF THE LOOP
+                        break outerloop; // BREAK ALONE DOES NOT SEEM TO WORK HERE, HENCE WE USE SET n AS WELL
+                        
+                    }
+                    else{
+                        debug('WE CONTINUE THE LOOP');
+                        // WE HAVE NOT YET PROCESSED ALL PROPERTIES
+                        continue outerloop;
+                    }
+                }
+                else{
+                    mqlProperties.processed_result_object_properties[property_key] = property_key; // ADD TO COLLECTION 
+                    debug('mqlProperties.processed_result_object_properties:');
+                    debug(mqlProperties.processed_result_object_properties);
+                }
+
+                //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+
+
+    //            debug("mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]:");
+    //            debug(mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]);
+
+                //OLD
+    //            if (mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]['operator'] || mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]['is_directive']) {
+    //                continue;
+    //            }//eof if
+
+                if(property_value['operator'] || property_value['is_directive']){
+                    continue;
+                }//eof if
+
+                // OLD mqlProperties.value = mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]]['value'];
+                mqlProperties.value = property_value['value'];
+                debug('mqlProperties.value:');
+                debug(mqlProperties.value);
+
+                if (mqlProperties.value instanceof Object || mqlProperties.value instanceof Array) {
+                    debug('property_key:');
+                    debug(property_key);
+
+                    mqlProperties.processed_result_object_properties[property_key] = property_key; // ADD TO COLLECTION 
+                    for(key in mqlProperties.value){ // NOTE: THIS RESTRICTS US TO ONE LEVEL DEEP OF NESTED PROPERTIES
+                        mqlProperties.processed_result_object_properties[key] = key; // ADD TO COLLECTION
+                    }
+                    debug('mqlProperties.processed_result_object_properties:');
+                    debug(mqlProperties.processed_result_object_properties);
+
+                    //var unknown = Unknown(); // DELIBERATE ERRO TO STOP CODE HERE
+                    //
+                    //OLD mqlProperties = getResultObject(mqlProperties, index, mqlProperties.object, Object.keys(mqlProperties.mql_node['properties'])[n]);
+                    //OLD mqlProperties = getResultObject(mqlProperties, index, mqlProperties.object, property_key);
+                    mqlProperties = getResultObject(mqlProperties, index, mqlProperties.value, property_key);
+                }//eof if
+                else {
+                    // OLD mqlProperties.object[Object.keys(mqlProperties.mql_node['properties'])[n]] = mqlProperties.value;
+                    //OLD mqlProperties.mql_node['properties'][Object.keys(mqlProperties.mql_node['properties'])[n]][key] = mqlProperties.value;
+                    mqlProperties.object[property_key] = mqlProperties.value;
+                    debug('mqlProperties.object:');
+                    debug(mqlProperties.object);
+                }//eof else
+                debug('End of Round n:'+n);
+
+                //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE            
+
+            }//eof for     
     }//eof else if
     mqlProperties.mql_node['result_object'] = mqlProperties.object;
     debug("mqlProperties.mql_node['result_object']:");
@@ -3882,6 +4084,9 @@ function executeSQLQueries(mqlProperties, cb) {
         debug('mqlProperties.result_object:'); // for testing only
         debug(mqlProperties.result_object); // for testing only 
         
+        // SO FAR SO GOOD
+        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+        
         // THIS IS TO MAKE SURE select_columns GETS SET: WORKS AS DESIGNED !!!
         // NOTE: THIS IS NOT PART OF THE ORIGINAL CODE
         if(typeof(mqlProperties.select_columns) === 'undefined'){
@@ -3900,7 +4105,7 @@ function executeSQLQueries(mqlProperties, cb) {
         debug("mqlProperties.sql_queries[i]['merge_into']:");
         debug(mqlProperties.sql_queries[i]['merge_into']);
 
-        if (mqlProperties.merge_into === mqlProperties.sql_queries[i]['merge_into']) {
+        if (mqlProperties.merge_into === mqlProperties.sql_queries[i]['merge_into'] && mqlProperties.merge_into !== null) {  // EXTENDED WITH null CHECK
             mqlProperties.merge_into_columns = mqlProperties.merge_into['columns'];
             debug('mqlProperties.merge_into_columns:'); // for testing only
             debug(mqlProperties.merge_into_columns); // for testing only 
