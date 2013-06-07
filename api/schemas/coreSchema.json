@@ -25,8 +25,8 @@
                             "direction": "referencing->referenced",
                             "join_condition": [
                                 {
-                                    "referencing_column": "kf_GenderID",
-                                    "referenced_column": "kp_GenderID"
+                                    "referencing_column": "kp_GenderID",
+                                    "referenced_column": "kf_GenderID"
                                 }
                             ],
                             "nullable": true

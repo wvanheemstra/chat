@@ -436,7 +436,7 @@ function handleRequest(mqlProperties, cb) {
  *   Miscellaneous
  ******************************************************************************/
 function debug(message) {
-    var debug = true; // switch to log or not log messages     
+    var debug = false; // switch to log or not log messages     
     if (debug) {
         console.log(message);
     }
@@ -1347,15 +1347,34 @@ function processProperties(mqlProperties, cb) {
 //OLD    for (var i = 0; i < Object.keys(mqlProperties.analyzedProperty).length; i++) {	/// DOUBLE CHECK: should it be mqlProperties.analyzedProperty[0] ???
     for (var i = 0; i < Object.keys(mqlProperties.parent.properties).length; i++) {
         debug('processProperties: start of Round i=' + i); // for testing only
+        //
+        //
+        console.log("mqlProperties.parent.properties:");
+        console.log(mqlProperties.parent.properties);
+        //
 //OLD   mqlProperties.analyzedPropertyKey = Object.keys(mqlProperties.analyzedProperty)[i];
         mqlProperties.analyzedPropertyKey = Object.keys(mqlProperties.parent.properties)[i];
-        debug('mqlProperties.analyzedPropertyKey:'); // for testing only
-        debug(mqlProperties.analyzedPropertyKey); // for testing only
+        console.log('mqlProperties.analyzedPropertyKey:'); // for testing only
+        console.log(mqlProperties.analyzedPropertyKey); // for testing only
 //OLD   mqlProperties.analyzedPropertyValue = mqlProperties.analyzedProperty[mqlProperties.analyzedPropertyKey.toString()];
         mqlProperties.analyzedPropertyValue = mqlProperties.parent.properties[mqlProperties.analyzedPropertyKey.toString()];
         mqlProperties.analyzedPropertyValue = mqlProperties.analyzedPropertyValue[0]; // REMOVES THE []
-        debug('mqlProperties.analyzedPropertyValue:'); // for testing only
-        debug(mqlProperties.analyzedPropertyValue); // for testing only	
+        console.log('mqlProperties.analyzedPropertyValue:'); // for testing only
+        console.log(mqlProperties.analyzedPropertyValue); // for testing only	
+        
+        // ERROR TRAP, FOR TESTING ONLY
+        if(typeof(mqlProperties.analyzedPropertyValue) === 'undefined'){
+            console.log("mqlProperties.parent.properties:");
+            console.log(mqlProperties.parent.properties);
+            console.log('mqlProperties.analyzedPropertyKey:'); // for testing only
+            console.log(mqlProperties.analyzedPropertyKey);
+            console.log('mqlProperties.analyzedPropertyValue:'); // for testing only
+            console.log(mqlProperties.analyzedPropertyValue);
+            var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE
+        }
+        
+        
+        
         if (mqlProperties.analyzedPropertyValue['is_directive'] === true) {
             continue;
         }
@@ -1450,7 +1469,7 @@ function processProperties(mqlProperties, cb) {
     debug(mqlProperties.analyzedProperties);
     
     // REPLACE mqlProperties.parent.properties WITH mqlProperties.analyzedProperties
-    mqlProperties.parent.properties = mqlProperties.analyzedProperties;
+    mqlProperties.parent.properties = mqlProperties.analyzedProperties;  // THIS CAUSES PROBLEMS AS NOW THE FORMAT OF mqlProperties.parent.properties IS DIFFERENT FROM WHAT IT WAS BEFORE... FIX IT
     debug('>>> leaving processProperties'); // for testing only
     mqlProperties.callBackProcessMQLObject(null, mqlProperties);
 }//eof processProperties
@@ -1834,204 +1853,308 @@ function getFromClause(mqlProperties) {
     debug(mqlProperties.schema);
     
     debug("mqlProperties.schema['direction']:");
-    debug(mqlProperties.schema['direction']);    
+    debug(mqlProperties.schema['direction']); 
+    
+    debug('mqlProperties.schema_type.properties:');
+    debug(mqlProperties.schema_type.properties);
 
-    if (typeof(mqlProperties.schema['direction']) !== 'undefined') {  // SHOULD WE HAVE SET direction BEFORE, DERIVED FROM THE PROPERTY ???
-        mqlProperties.direction = mqlProperties.schema['direction'];
+    // UNLIKE IN THE ORIGINAL CODE WE LOOP THROUGH ALL PROPERTIES TO GET THE FROM CLAUSE //
+    
+    //////////////////////////// START OF PER PROPERTY FROM CLAUSE GETTING //////////////////////    
+    for(u=0; u < Object.keys(mqlProperties.schema_type.properties).length; u++) {
+        debug('Start of Round u:'+u);
+        
+        var property_key = Object.keys(mqlProperties.schema_type.properties)[u];
+        debug('property_key:');
+        debug(property_key);
+        
+        var property_value = mqlProperties.schema_type.properties[property_key];
+        debug('property_value');
+        debug(property_value);
+        
+        debug('mqlProperties.schema');
+        debug(mqlProperties.schema);        
+        
+        if(typeof(property_value['direction']) !== 'undefined'){
+            mqlProperties.schema['direction'] = property_value['direction'];
+        }        
+        debug('mqlProperties.schema');
+        debug(mqlProperties.schema);         
+        if (typeof(mqlProperties.schema['direction']) !== 'undefined') {         
+            
+            mqlProperties.direction = mqlProperties.schema['direction'];
 
-        if ((mqlProperties.is_optional === isOptional(mqlProperties)) === true) {
-            mqlProperties.mql_node['outer_join'] = true;
-            mqlProperties.outer_join = true;
-        }
-        else if (typeof(mqlProperties.mql_node['outer_join']) !== 'undefined') {
-            mqlProperties.outer_join = mqlProperties.mql_node['outer_join'];
-        }
-        else {
-            mqlProperties.outer_join = false;
-        }
-        debug('mqlProperties.outer_join:');
-        debug(mqlProperties.outer_join);
-
-        if (mqlProperties.outer_join) {
-            mqlProperties.from_line['join_type'] = 'LEFT';
-        }
-        else {
-            mqlProperties.from_line['join_type'] = 'INNER';
-        }
-        debug("mqlProperties.from_line['join_type']:");
-        debug(mqlProperties.from_line['join_type']);
-
-        switch (mqlProperties.direction)
-        {
-            case 'referencing->referenced': //lookup (n:1 relationship) 
-                break;
-            case 'referenced<-referencing': //lookdown (1:n relationship) - starts a separate query.
-                mqlProperties.select = mqlProperties.query['select'];
-                mqlProperties.order_by = mqlProperties.query['order_by'];
-                mqlProperties.merge_into = mqlProperties.query['merge_into'];
-                mqlProperties.merge_into_columns = mqlProperties.merge_into['columns'];
-                break;
-        }
-        // REPLACES
-        //  switch ($direction) {
-        //      case 'referencing->referenced':     //lookup (n:1 relationship)           
-        //          break;
-        //      case 'referenced<-referencing':     //lookdown (1:n relationship) - starts a separate query.
-        //          $select = &$query['select'];
-        //          $order_by = &$query['order_by'];
-        //          $merge_into = &$query['merge_into'];
-        //          $merge_into_columns = &$merge_into['columns'];
-        //          break;
-        //  }   
-        for (var i = 0; i < mqlProperties.columns.length; i++) {
-            //var arrayItem = mqlProperties.columns[i];
-            if (mqlProperties.join_condition === '') {
-                mqlProperties.join_condition = mqlProperties.join_condition + 'ON';
+            if ((mqlProperties.is_optional === isOptional(mqlProperties)) === true) {
+                mqlProperties.mql_node['outer_join'] = true;
+                mqlProperties.outer_join = true;
+            }
+            else if (typeof(mqlProperties.mql_node['outer_join']) !== 'undefined') {
+                mqlProperties.outer_join = mqlProperties.mql_node['outer_join'];
             }
             else {
-                mqlProperties.join_condition = mqlProperties.join_condition + "\n" +'AND';  // USES " TO ASSURE THE ESCAPE 
+                mqlProperties.outer_join = false;
             }
-            ;
+            debug('mqlProperties.outer_join:');
+            debug(mqlProperties.outer_join);
+
+            if (mqlProperties.outer_join) {
+                mqlProperties.from_line['join_type'] = 'LEFT';
+            }
+            else {
+                mqlProperties.from_line['join_type'] = 'INNER';
+            }
+            debug("mqlProperties.from_line['join_type']:");
+            debug(mqlProperties.from_line['join_type']);            
 
             switch (mqlProperties.direction)
             {
                 case 'referencing->referenced': //lookup (n:1 relationship) 
-                    mqlProperties.referenced_column = mqlProperties.tAlias + '.' + mqlProperties.columns[i]['referenced_column'];
-                    debug('mqlProperties.referenced_column:');
-                    debug(mqlProperties.referenced_column);
-                    // REPLACES  $referenced_column = $tAlias.'.'.$columns['referenced_column'];                  
-                    if (mqlProperties.outer_join === true && mqlProperties.join_condition === 'ON') {
-                        if (mqlProperties.optional === true) {
-                            mqlProperties.from_line['optionality_group'] = mqlProperties.tAlias;
-                        }//eof if
-                        else {
-                            if (mqlProperties.count_from) {
-                                mqlProperties.from_line['optionality_group'] = mqlProperties.from[mqlProperties.child_tAlias]['optionality_group'];
-                            }//eof if
-                            else {
-                                mqlProperties.from_line['optionality_group'] = mqlProperties.child_tAlias;
-                            }//eof else
-
-                        }//eof else
-                        mqlProperties.from_line['optionality_group_column'] = mqlProperties.referenced_column;
-                        debug('mqlProperties.from_line:');
-                        debug(mqlProperties.from_line);
-                        // REPLACES
-                        //   if ($optional===TRUE) {
-                        //       $from_line['optionality_group'] = $tAlias;
-                        //   }
-                        //   else {
-                        //       if ($count_from) {                        
-                        //           $from_line['optionality_group'] = $from[$child_tAlias]['optionality_group'];
-                        //       }
-                        //       else {
-                        //           $from_line['optionality_group'] = $child_tAlias;
-                        //       }
-                        //   }
-                        //   $from_line['optionality_group_column'] = $referenced_column;                
-                    }//eof if
-                    mqlProperties.join_condition = mqlProperties.join_condition
-                            + ' '
-                            + mqlProperties.child_tAlias
-                            + '.'
-                            + mqlProperties.columns[i]['referencing_column']
-                            + ' = '
-                            + mqlProperties.referenced_column;
-                    debug('mqlProperties.join_condition:');
-                    debug(mqlProperties.join_condition);
-                    //REPLACES  $join_condition .= ' '  .$child_tAlias.'.'.$columns['referencing_column']
-                    //                  .  ' = '.$referenced_column;                    
                     break;
                 case 'referenced<-referencing': //lookdown (1:n relationship) - starts a separate query.
-                    mqlProperties.column_ref = mqlProperties.tAlias + '.' + mqlProperties.columns[i]['referencing_column'];
-                    debug('mqlProperties.column_ref:');
-                    debug(mqlProperties.column_ref);
-                    //REPLACES  $column_ref = $tAlias.'.'.$columns['referencing_column'];
-
-                    mqlProperties = getCAlias(mqlProperties);
-                    mqlProperties.alias = mqlProperties.tAlias + mqlProperties.cAlias;
-                    debug('mqlProperties.alias:');
-                    debug(mqlProperties.alias);
-                    //REPLACES     $alias = $tAlias.get_cAlias();
-
-                    mqlProperties.merge_into_columns = [];
-                    mqlProperties.merge_into_columns[0] = mqlProperties.alias;
-                    debug('mqlProperties.merge_into_columns:');
-                    debug(mqlProperties.merge_into_columns);
-                    //REPLACES  $merge_into_columns[] = $alias;
-
-                    mqlProperties.select[mqlProperties.column_ref] = mqlProperties.alias;
-                    debug('mqlProperties.select[mqlProperties.column_ref]:');
-                    debug(mqlProperties.select[mqlProperties.column_ref]);
-                    //REPLACES  $select[$column_ref] = $alias;
-
-                    if (mqlProperties.order_by === '') {
-                        mqlProperties.order_by = mqlProperties.order_by + 'ORDER BY';
-                    }
-                    else {
-                        mqlProperties.order_by = mqlProperties.order_by + "\n" + ', ';  // USES " TO ASSURE THE ESCAPE
-                    }
-                    mqlProperties.order_by = mqlProperties.order_by + mqlProperties.alias;
-                    debug('mqlProperties.order_by:');
-                    debug(mqlProperties.order_by);
-                    //REPLACES $order_by .= ($order_by===''? 'ORDER BY ' : "\n, ");
-                    //         $order_by .= $alias;
+                    mqlProperties.select = mqlProperties.query['select'];
+                    mqlProperties.order_by = mqlProperties.query['order_by'];
+                    mqlProperties.merge_into = mqlProperties.query['merge_into'];
+                    mqlProperties.merge_into_columns = mqlProperties.merge_into['columns'];
                     break;
-            }//eof switch
+            }
+            // REPLACES
+            //  switch ($direction) {
+            //      case 'referencing->referenced':     //lookup (n:1 relationship)           
+            //          break;
+            //      case 'referenced<-referencing':     //lookdown (1:n relationship) - starts a separate query.
+            //          $select = &$query['select'];
+            //          $order_by = &$query['order_by'];
+            //          $merge_into = &$query['merge_into'];
+            //          $merge_into_columns = &$merge_into['columns'];
+            //          break;
+            //  }   
+            
+            debug('mqlProperties.columns:');
+            debug(mqlProperties.columns);
+            if(typeof(property_value['join_condition']) !== 'undefined'){
+                //OLD for (var i = 0; i < mqlProperties.columns.length; i++) {
+                mqlProperties.columns = property_value['join_condition'];
+            }
+            else{
+                mqlProperties.columns = [];  
+            }
+            for (var i = 0; i < Object.keys(mqlProperties.columns).length; i++) { 
+                debug('Start of Round i:'+i);
+
+                //var arrayItem = mqlProperties.columns[i];
+                if (mqlProperties.join_condition === '') {
+                    mqlProperties.join_condition = mqlProperties.join_condition + 'ON';
+                }
+                else {
+                    mqlProperties.join_condition = mqlProperties.join_condition + "\n" +'AND';  // USES " TO ASSURE THE ESCAPE 
+                }
+                debug('mqlProperties.join_condition:');
+                debug(mqlProperties.join_condition);
+                switch (mqlProperties.direction)
+                {
+                    case 'referencing->referenced': //lookup (n:1 relationship) 
+                        mqlProperties.referenced_column = mqlProperties.tAlias + '.' + mqlProperties.columns[i]['referenced_column'];
+                        debug('mqlProperties.referenced_column:');
+                        debug(mqlProperties.referenced_column);
+                        
+                        // WE WILL HAVE TO FIND THE child_tAlias FOR THIS RELATIONSHIP
+                        debug('property_value:');
+                        debug(property_value);
+                        
+                        debug('mqlProperties.analyzedProperties:');
+                        debug(mqlProperties.analyzedProperties);
+                        
+                        for(key in mqlProperties.analyzedProperties){
+                            debug('mqlProperties.analyzedProperties[key]:');
+                            debug(mqlProperties.analyzedProperties[key]);
+                            var analyzed_property_key = Object.keys(mqlProperties.analyzedProperties[key])[0];
+                            debug('analyzed_property_key:');
+                            debug(analyzed_property_key);
+                            var analyzed_property_value = mqlProperties.analyzedProperties[key][analyzed_property_key];
+                            debug('analyzed_property_value:');
+                            debug(analyzed_property_value);
+                            if(mqlProperties.columns[i]['referencing_column'] === analyzed_property_key){
+                                var child_tType = analyzed_property_value['type'];
+                                debug('child_tType:');
+                                debug(child_tType);
+                                // TEMPORARILY SET child_tAlias EQUAL TO child_tType 
+                                // THIS SHOULD BE FIXED FOR IT TO WORK SUCCESSFULLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                mqlProperties.child_tAlias = child_tType;
+                                debug('mqlProperties.child_tAlias:');
+                                debug(mqlProperties.child_tAlias);
+                                break;
+                            }
+                        }
+                        // REPLACES  $referenced_column = $tAlias.'.'.$columns['referenced_column'];                  
+                        if (mqlProperties.outer_join === true && mqlProperties.join_condition === 'ON') {
+                            if (mqlProperties.optional === true) {
+                                mqlProperties.from_line['optionality_group'] = mqlProperties.tAlias;
+                            }//eof if
+                            else {
+                                if (mqlProperties.count_from) {
+                                    mqlProperties.from_line['optionality_group'] = mqlProperties.from[mqlProperties.child_tAlias]['optionality_group'];
+                                }//eof if
+                                else {
+                                    mqlProperties.from_line['optionality_group'] = mqlProperties.child_tAlias;
+                                }//eof else
+
+                            }//eof else
+                            mqlProperties.from_line['optionality_group_column'] = mqlProperties.referenced_column;
+                            debug('mqlProperties.from_line:');
+                            debug(mqlProperties.from_line);
+                            // REPLACES
+                            //   if ($optional===TRUE) {
+                            //       $from_line['optionality_group'] = $tAlias;
+                            //   }
+                            //   else {
+                            //       if ($count_from) {                        
+                            //           $from_line['optionality_group'] = $from[$child_tAlias]['optionality_group'];
+                            //       }
+                            //       else {
+                            //           $from_line['optionality_group'] = $child_tAlias;
+                            //       }
+                            //   }
+                            //   $from_line['optionality_group_column'] = $referenced_column;                
+                        }//eof if
+
+                        mqlProperties.join_condition = mqlProperties.join_condition
+                                + ' '
+                                + mqlProperties.child_tAlias
+                                + '.'
+                                + mqlProperties.columns[i]['referencing_column']
+                                + ' = '
+                                + mqlProperties.referenced_column;
+                        debug('mqlProperties.join_condition:');
+                        debug(mqlProperties.join_condition);
+                        //                        
+                        //REPLACES  $join_condition .= ' '  .$child_tAlias.'.'.$columns['referencing_column']
+                        //                  .  ' = '.$referenced_column;                    
+                        break;
+                    case 'referenced<-referencing': //lookdown (1:n relationship) - starts a separate query.
+                        mqlProperties.column_ref = mqlProperties.tAlias + '.' + mqlProperties.columns[i]['referencing_column'];
+                        debug('mqlProperties.column_ref:');
+                        debug(mqlProperties.column_ref);
+                        //REPLACES  $column_ref = $tAlias.'.'.$columns['referencing_column'];
+
+                        mqlProperties = getCAlias(mqlProperties);
+                        mqlProperties.alias = mqlProperties.tAlias + mqlProperties.cAlias;
+                        debug('mqlProperties.alias:');
+                        debug(mqlProperties.alias);
+                        //REPLACES     $alias = $tAlias.get_cAlias();
+
+                        mqlProperties.merge_into_columns = [];
+                        mqlProperties.merge_into_columns[0] = mqlProperties.alias;
+                        debug('mqlProperties.merge_into_columns:');
+                        debug(mqlProperties.merge_into_columns);
+                        //REPLACES  $merge_into_columns[] = $alias;
+
+                        mqlProperties.select[mqlProperties.column_ref] = mqlProperties.alias;
+                        debug('mqlProperties.select[mqlProperties.column_ref]:');
+                        debug(mqlProperties.select[mqlProperties.column_ref]);
+                        //REPLACES  $select[$column_ref] = $alias;
+
+                        if (mqlProperties.order_by === '') {
+                            mqlProperties.order_by = mqlProperties.order_by + 'ORDER BY';
+                        }
+                        else {
+                            mqlProperties.order_by = mqlProperties.order_by + "\n" + ', ';  // USES " TO ASSURE THE ESCAPE
+                        }
+                        mqlProperties.order_by = mqlProperties.order_by + mqlProperties.alias;
+                        debug('mqlProperties.order_by:');
+                        debug(mqlProperties.order_by);
+                        //REPLACES $order_by .= ($order_by===''? 'ORDER BY ' : "\n, ");
+                        //         $order_by .= $alias;
+                        break;
+                }//eof switch
+                debug('End of Round i:'+i);    
+            }//eof for
+        }//eof if
+        // THE TABLE NAME SHOULD FOLLOW FROM THE mqlProperties.schema_type
+        mqlProperties.table_name = mqlProperties.schema_type.table_name;
+
+        if (typeof(mqlProperties.schema_name) !== 'undefined') {
+            mqlProperties.from_line['table'] = mqlProperties.schema_name + '.' + mqlProperties.table_name;
+        }
+        else {
+            mqlProperties.from_line['table'] = '' + mqlProperties.table_name;
+        }
+        debug('mqlProperties.from_line:');
+        debug(mqlProperties.from_line);
+
+        // REPLACES $from_line['table'] = ($schema_name? $schema_name.'.' : '').$table_name;
+
+        mqlProperties.from_line['alias'] = mqlProperties.tAlias;
+        debug("mqlProperties.from_line['alias']:");
+        debug(mqlProperties.from_line['alias']);
+        // REPLACES  $from_line['alias'] = $tAlias;
+
+        // INCLUDE THE type WHICH IS OF USE WHEN SETTING THE FROM LINE
+        // NOTE: NOT IN ORIGINAL CODE
+        mqlProperties.from_line['type'] = mqlProperties.type_name;
+        debug("mqlProperties.from_line['type']:");
+        debug(mqlProperties.from_line['type']);  
+                
+        // ADD TO type AND alias COLLECTION FOR USE LATER ON
+        if(typeof(mqlProperties.types_tables_aliases) === 'undefined'){
+            mqlProperties.types_tables_aliases = {};
+        }
+        mqlProperties.types_tables_aliases[mqlProperties.from_line['type']] = {};
+        
+        debug("mqlProperties.types_tables_aliases[mqlProperties.from_line['type']]:");
+        debug(mqlProperties.types_tables_aliases[mqlProperties.from_line['type']]);
+        
+        mqlProperties.types_tables_aliases[mqlProperties.from_line['type']]['table'] = mqlProperties.from_line['table'];
+        mqlProperties.types_tables_aliases[mqlProperties.from_line['type']]['alias'] = mqlProperties.from_line['alias'];
+        
+        if (mqlProperties.join_condition) {
+            mqlProperties.from_line['join_condition'] = mqlProperties.join_condition;
+        }
+        debug("mqlProperties.from_line['join_condition']:");
+        debug(mqlProperties.from_line['join_condition']);
+        //REPLACES  
+        // if ($join_condition) {
+        //   $from_line['join_condition'] = $join_condition;
+        // }
+
+        mqlProperties.from[mqlProperties.tAlias] = mqlProperties.from_line;
+        debug("mqlProperties.from[mqlProperties.tAlias]:");
+        debug(mqlProperties.from[mqlProperties.tAlias]);
+        //REPLACES $from[$tAlias] = $from_line; 
+        debug('End of Round u:'+u);    
+    }//eof for
+    //////////////////////////// END OF PER PROPERTY FROM CLAUSE GETTING //////////////////////
+    
+    // WE NEED TO REPLACE IN join_condition TEMPORARY child_tAlias.FIELDs WHERE A type WAS USED AS A child_tAlias 
+    // AS WELL AS ADDING THE join_table AND join_alias PROPERTIES FOR LATER USE
+    for (key in mqlProperties.types_tables_aliases){ // WORKS !!
+        var type = key;
+        var table = [mqlProperties.types_tables_aliases[key]['table']][0]; // [0] REMOVES []
+        var alias = [mqlProperties.types_tables_aliases[key]['alias']][0]; // [0] REMOVES []
+        var search_for = type+'.'; 
+        var search_for_reg_exp = new RegExp(search_for, 'g');// THE g MAKES IT A GLOBAL SEARCH
+        var replace_with = alias+'.';        
+        for (key in mqlProperties.from){
+            if(typeof(mqlProperties.from[key]['join_condition']) !== 'undefined'){
+                var oldJoinConditionString = mqlProperties.from[key]['join_condition'];
+                var newJoinConditionString = oldJoinConditionString.replace(search_for_reg_exp, replace_with);
+                mqlProperties.from[key]['join_condition'] = newJoinConditionString;
+                debug("mqlProperties.from[key]['join_condition']:");
+                debug(mqlProperties.from[key]['join_condition']); 
+                mqlProperties.from[key]['join_table'] = table;
+                debug("mqlProperties.from[key]['join_table']:");
+                debug(mqlProperties.from[key]['join_table']);                
+                mqlProperties.from[key]['join_alias'] = alias;
+                debug("mqlProperties.from[key]['join_alias']:");
+                debug(mqlProperties.from[key]['join_alias']);                
+            }//eof if
         }//eof for
-    }//eof if
-    
-    
-    
-    
-    
-    
-    // THE TABLE NAME SHOULD FOLLOW FROM THE mqlProperties.schema_type
-    mqlProperties.table_name = mqlProperties.schema_type.table_name;
-
-    if (typeof(mqlProperties.schema_name) !== 'undefined') {
-        mqlProperties.from_line['table'] = mqlProperties.schema_name + '.' + mqlProperties.table_name;
-    }
-    else {
-        mqlProperties.from_line['table'] = '' + mqlProperties.table_name;
-    }
-    debug('mqlProperties.from_line:');
-    debug(mqlProperties.from_line);
-    
-    // REPLACES $from_line['table'] = ($schema_name? $schema_name.'.' : '').$table_name;
-
-    mqlProperties.from_line['alias'] = mqlProperties.tAlias;
-    debug("mqlProperties.from_line['alias']:");
-    debug(mqlProperties.from_line['alias']);
-    // REPLACES  $from_line['alias'] = $tAlias;
-    
-    // INCLUDE THE type WHICH IS OF USE WHEN SETTING THE FROM LINE
-    // NOTE: NOT IN ORIGINAL CODE
-    mqlProperties.from_line['type'] = mqlProperties.type_name;
-    debug("mqlProperties.from_line['type']:");
-    debug(mqlProperties.from_line['type']);    
-    
-    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
-    
-    if (mqlProperties.join_condition) {
-        mqlProperties.from_line['join_condition'] = mqlProperties.join_condition;
-    }
-    debug("mqlProperties.from_line['join_condition']:");
-    debug(mqlProperties.from_line['join_condition']);
-    //REPLACES  
-    // if ($join_condition) {
-    //   $from_line['join_condition'] = $join_condition;
-    // }
-
-    mqlProperties.from[mqlProperties.tAlias] = mqlProperties.from_line;
-    debug("mqlProperties.from[mqlProperties.tAlias]:");
-    debug(mqlProperties.from[mqlProperties.tAlias]);
-    //REPLACES $from[$tAlias] = $from_line; 
-    
+    }//eof for  
+    //
+    //  RESET mqlProperties.schema['direction'] TO undefined
+    delete mqlProperties.schema['direction'];    
     debug('>>> leaving getFromClause'); // for testing only        
     return mqlProperties;
 }// eof getFromClause
-
 
 //helper for addParameterForProperty
 function mapMQLTypeToJavaScriptType(mqlProperties){
@@ -2247,15 +2370,22 @@ function handleFilterProperty(mqlProperties){
         debug(mqlProperties.from_line);
         debug('-------------------------------------------------------------------------------------------');
 
-
         //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
 
-        // THE BELOW STATEMENT RENDERS mqlProperties.from_line['join_condition'] AS undefined
-        mqlProperties.from_or_where = mqlProperties.from_line['join_condition'];  // WORK OUT WHY THIS IS !!        
-        // 
-        mqlProperties.from_or_where += "\n"+'AND'+' '+Object.keys(mqlProperties.query.from)[Object.keys(mqlProperties.query.from).length -1]+'.'+mqlProperties.column_name;// USES " TO ASSURE THE ESCAPE
+        // LOOP THROUGH THE PROPERTIES TO GET TO THE join_condition
+        if(typeof(mqlProperties.from_line['join_condition']) !== 'undefined'){            
+            mqlProperties.from_or_where = mqlProperties.from_line['join_condition'];  // WORK OUT WHY THIS IS !!  
+        }
+        else{
+            mqlProperties.from_or_where = ''; 
+        }
+        // REMOVED A LEADING \n
+        mqlProperties.from_or_where += 'AND'+' '+Object.keys(mqlProperties.query.from)[Object.keys(mqlProperties.query.from).length -1]+'.'+mqlProperties.column_name;
         debug('mqlProperties.from_or_where:');
         debug(mqlProperties.from_or_where);
+        
+        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE        
+        
     }//eof if
     else{
         // WE ARE DEALING WITH ONE TABLE ONLY
@@ -2268,6 +2398,9 @@ function handleFilterProperty(mqlProperties){
         mqlProperties.from_or_where = mqlProperties.query.where;
         debug('mqlProperties.from_or_where:');
         debug(mqlProperties.from_or_where);
+        
+        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+                
         if(mqlProperties.from_or_where.length >0){
             mqlProperties.from_or_where += "\n"+'AND'+' '+Object.keys(mqlProperties.query.from)[0]+'.'+mqlProperties.column_name;// USES " TO ASSURE THE ESCAPE
         }//eof if
@@ -3169,6 +3302,10 @@ function getQuerySQL(mqlProperties) {
     debug('mqlProperties.optionality_groups:');
     debug(mqlProperties.optionality_groups);
     
+    
+    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+    
+    
     for (i = 0; i < Object.keys(mqlProperties.sql_query['from']).length; i++) {
         debug("mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]:");
         debug(mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]);
@@ -3199,26 +3336,43 @@ function getQuerySQL(mqlProperties) {
         
         debug("arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]])");
         debug(arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]));
+
         
+        // MOVED 'FROM' TO THE TOP AS IT SHOULD PRECEED 'JOIN' STATEMENT(S)
+        if(mqlProperties.from_or_join){
+            if (arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]])) {
+                mqlProperties.sql = mqlProperties.sql
+                        + "\n"+'FROM '  // USES " TO ASSURE THE ESCAPE
+                        + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['table']
+                        + ' '
+                        + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['alias'];
+            }//eof else if        
+        }
+        
+        // 'JOIN' STATEMENT(S)
         if (mqlProperties.from_or_join) {
-            mqlProperties.sql = mqlProperties.sql
+            // ONLY CONTINUE IF table IS NOT EQUAL TO join_table
+            if(mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['table'] !== mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_table']){
+                mqlProperties.sql = mqlProperties.sql
                     + "\n"  // USES " TO ASSURE THE ESCAPE
                     + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_type']
                     + ' JOIN '
-                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['table']
+                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_table'] // CHANGED FROM table TO join_table
                     + ' '
-                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['alias']
+                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_alias'] // CHANGED FROM alias TO join_alias
                     + "\n"  // USES " TO ASSURE THE ESCAPE
                     + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_condition'];
-        }//eof if
+            }//eof if
+        }//eof if 
+
+//        else if (arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]])) {
+//            mqlProperties.sql = mqlProperties.sql
+//                    + "\n"+'FROM '  // USES " TO ASSURE THE ESCAPE
+//                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['table']
+//                    + ' '
+//                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['alias'];
+//        }//eof else if
         
-        else if (arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]])) {
-            mqlProperties.sql = mqlProperties.sql
-                    + "\n"+'FROM '  // USES " TO ASSURE THE ESCAPE
-                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['table']
-                    + ' '
-                    + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['alias'];
-        }//eof else if
         else if (mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_condition']) {
             //these are filter condition but we write them in the join
             //this is required to handle outer joins. 

@@ -2,7 +2,7 @@
  * GET service(s).
  */
 exports.findAll = function(req, res) {
-    res.send([{name:'mqlread'}, {name:'mqlwrite'}]);
+    res.send([{name:'mqlread'}, {name:'mqlwrite'}, {name:'testread'}, {name:'testwrite'}]);
 };
  
 exports.findById = function(req, res) {

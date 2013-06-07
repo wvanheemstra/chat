@@ -26,7 +26,7 @@ Ext.onReady(function() {
 		idProperty: 'kp_PersonID'
     });
 
-	var appName = "services-mql-single-person-grid";
+	var appName = "services-mql-single-person-grid-complex";
 	var ajaxCallTimeout = 30000; // 30000 is the default of ExtJS
 	var ajaxCallHeaders = {
 	       	//'Accept-Encoding': true,

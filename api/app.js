@@ -35,6 +35,7 @@ var express = require('express')
 
 var service = require('./routes/services'); // it seems that we have to start each required file as its own var
 var mql = require('./services/mql');
+var test = require('./services/test');
 
 var app = express();
 
@@ -73,6 +74,10 @@ app.delete('/services/:id', service.deleteOne);
 app.all('/services/mql/read', mql.read);
 //app.get('/services/mql/write', mql.write);
 app.all('/services/mql/write', mql.write); // use app.all instead of app.get so as to set the Access-Control-Allow-Origin
+//
+app.all('/services/test/read', test.read);
+//
+app.all('/services/test/write', test.write);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log("Express server listening on port " + app.get('port'));
