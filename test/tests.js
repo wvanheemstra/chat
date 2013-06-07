@@ -1,93 +1,153 @@
-module('AJAX test read');
-asyncTest('OPTIONS[\'test\']',function(){
+/*
+ * MODULE
+ */
+module('AJAX MQL read simple: Person');
+asyncTest('Server Running at Start',function(){
 	$.ajax({
 		type: "OPTIONS",
 		url: "http://localhost:3000/services/test/read",
 		data: "test=1",
 		success: function(){
 			start();
-			ok(true,"AJAX call for test read successful");
+			ok(true,"Server Running at Start: successful");
 		},
 		error: function(){
 			start();
-			ok(false,'AJAX call for test read failed');
+			ok(false,'Server Running at Start: failed');
 		}
 	});
 });
-
-module('AJAX test write');
-asyncTest('OPTIONS[\'test\']',function(){
-	$.ajax({
-		type: "OPTIONS",
-		url: "http://localhost:3000/services/test/write",
-		data: "test=1",
-		success: function(){
-			start();
-			ok(true,"AJAX call for test write successful");
-		},
-		error: function(){
-			start();
-			ok(false,'AJAX call for test write failed');
-		}
-	});
-});
-
-module('AJAX MQL read simple');
-asyncTest('OPTIONS[\'test\']',function(){
+asyncTest('Retrieve PERSONS',function(){
 	$.ajax({
 		contentType: "application/json; charset=utf-8",
 		type: "OPTIONS",
 		url: "http://localhost:3000/services/mql/read",
 		dataType: "json",
 		data: '{"pagination":{"page":0,"limit":50,"sort":"PersonLastName","dir":"ASC"},"basicInfo":{"ccoId":"QUnit","prefLang":"eng_GB","requestStartDate":null,"requesterApp":"QUnit"},"mql":{"query":[{"type":"/core/person","kp_PersonID":null,"kf_SalutationID":null,"kf_GenderID":2,"PersonFirstName":null,"PersonLastName":null}]},"debug_info":{}}',
-		success: function(data){
+		success: function(response){
 			start();
-			ok(true,"AJAX call for MQL read simple successful");
+			ok(true,"Retrieve PERSONS: successful: "+JSON.stringify(response));
 		},
-		error: function(data){
+		error: function(response){
 			start();
-			ok(false,'AJAX call for MQL read simple failed');
+			ok(false,'Retrieve PERSONS: failed: '+JSON.stringify(response));
 		}
 	});
 });
-
-module('AJAX MQL read complex');
-asyncTest('OPTIONS[\'test\']',function(){
+asyncTest('Server Running at End',function(){
+	$.ajax({
+		type: "OPTIONS",
+		url: "http://localhost:3000/services/test/read",
+		data: "test=1",
+		success: function(){
+			start();
+			ok(true,"Server Running at End: successful");
+		},
+		error: function(){
+			start();
+			ok(false,'Server Running at End: failed');
+		}
+	});
+});
+/*
+ * MODULE
+ */ 
+module('AJAX MQL read complex: Person & Gender');
+asyncTest('Server Running at Start',function(){
+	$.ajax({
+		type: "OPTIONS",
+		url: "http://localhost:3000/services/test/read",
+		data: "test=1",
+		success: function(){
+			start();
+			ok(true,"Server Running at Start: successful");
+		},
+		error: function(){
+			start();
+			ok(false,'Server Running at Start: failed');
+		}
+	});
+});
+asyncTest('Retrieve PERSONS & GENDERS',function(){
 	$.ajax({
 		contentType: "application/json; charset=utf-8",
 		type: "OPTIONS",
 		url: "http://localhost:3000/services/mql/read",
 		dataType: "json",
 		data: '{"pagination":{"page":0,"limit":50,"sort":"PersonLastName","dir":"ASC"},"basicInfo":{"ccoId":"QUnit","prefLang":"eng_GB","requestStartDate":null,"requesterApp":"QUnit"},"mql":{"query":[{"type":"/core/person","kp_PersonID":null,"kf_SalutationID":null,"kf_GenderID":null,"PersonFirstName":null,"PersonLastName":null,"PersonGender":{"kp_GenderID":2,"GenderName":null}}]},"debug_info":{}}',
-		success: function(data){
+		success: function(response){
 			start();
-			ok(true,"AJAX call for MQL read complex successful");
+			ok(true,"Retrieve PERSONS & GENDERS: successful: "+JSON.stringify(response));
 		},
-		error: function(data){
+		error: function(response){
 			start();
-			ok(false,'AJAX call for MQL read complex failed');
+			ok(false,'Retrieve PERSONS & GENDERS: failed: '+JSON.stringify(response));
 		}
 	});
 });
-
+asyncTest('Server Running at End',function(){
+	$.ajax({
+		type: "OPTIONS",
+		url: "http://localhost:3000/services/test/read",
+		data: "test=1",
+		success: function(){
+			start();
+			ok(true,"Server Running at End: successful");
+		},
+		error: function(){
+			start();
+			ok(false,'Server Running at End: failed');
+		}
+	});
+});
+/*
+ * MODULE
+ */
 module('AJAX MQL write');
-asyncTest('OPTIONS[\'test\']',function(){
+asyncTest('Server Running at Start',function(){
+	$.ajax({
+		type: "OPTIONS",
+		url: "http://localhost:3000/services/test/read",
+		data: "test=1",
+		success: function(){
+			start();
+			ok(true,"Server Running at Start: successful");
+		},
+		error: function(){
+			start();
+			ok(false,'Server Running at Start: failed');
+		}
+	});
+});
+asyncTest('Provide PERSONS',function(){
 	$.ajax({
 		contentType: "application/json; charset=utf-8",
 		type: "OPTIONS",
 		url: "http://localhost:3000/services/mql/write",
 		dataType: "json",		
 		data: '{}',
-		success: function(data){
+		success: function(response){
 			start();
-			ok(true,"AJAX call for MQL write successful");
+			ok(true,"Provide PERSONS: successful: "+JSON.stringify(response));
 		},
-		error: function(data){
+		error: function(response){
 			start();
-			ok(false,'AJAX call for MQL write failed');
+			ok(false,'Provide PERSONS: failed: '+JSON.stringify(response));
 		}
 	});
 });
-
-
-
+asyncTest('Server Running at End',function(){
+	$.ajax({
+		type: "OPTIONS",
+		url: "http://localhost:3000/services/test/read",
+		data: "test=1",
+		success: function(){
+			start();
+			ok(true,"Server Running at End: successful");
+		},
+		error: function(){
+			start();
+			ok(false,'Server Running at End: failed');
+		}
+	});
+});
