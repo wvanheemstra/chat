@@ -181,15 +181,22 @@ exports.read = function(req, res) {
         mqlProperties.debug_info = false;
     }  
 
+    console.log('mqlProperties.req.method:');
+    console.log(mqlProperties.req.method);
+    console.log('mqlProperties.args:');
+    console.log(mqlProperties.args);    
+
     handleRequest(mqlProperties, function(err, mqlProperties) {
-        debug('>>> back inside exports.read function from handleRequest');
+        console.log('>>> back inside exports.read function from handleRequest');
         mqlProperties.err = err;
         debug("mqlProperties.err: "); // for testing only
         debug(mqlProperties.err); // for testing only		
         debug("mqlProperties.args: "); // for testing only
         debug(mqlProperties.args); // for testing only
-        debug("mqlProperties.result: "); // for testing only
-        debug(mqlProperties.result); // for testing only
+        
+        console.log("mqlProperties.result: "); // for testing only
+        console.log(mqlProperties.result); // for testing only
+                
         debug("mqlProperties.results: "); // for testing only
         debug(mqlProperties.results); // for testing only
         		
@@ -224,8 +231,8 @@ exports.read = function(req, res) {
         output["code"] = code; // Change depending on success or failure
 
         output["result"] = mqlProperties.result; // are we in need of both result and results, or could we do with just results???
-        debug("mqlProperties.result: "); // for testing only
-        debug(mqlProperties.result); // for testing only
+        debug("output.result: "); // for testing only
+        debug(output.result); // for testing only
         
 //        output["fake_result"] = { code: '/api/status/ok',
 //                                  result:
@@ -255,8 +262,8 @@ exports.read = function(req, res) {
 //                                       PersonLastName: 'Montenegro' } ] };
         
         output["results"] = mqlProperties.results;
-        debug("mqlProperties.results: "); // for testing only
-        debug(mqlProperties.results); // for testing only
+        debug("output.results: "); // for testing only
+        debug(output.results); // for testing only
 
         var status = "200 OK"; // Change depending on success or failure
         output["status"] = status;
@@ -269,25 +276,36 @@ exports.read = function(req, res) {
             output["debug_info"] = debug_info;
         }
 
-        mqlProperties.res.header("Access-Control-Allow-Origin", "*"); // to allow cross-domain, replace * with a list of domains is desired.
-        mqlProperties.res.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type");
-        mqlProperties.res.header('Access-Control-Allow-Credentials', true);
-        mqlProperties.res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS'); // ExtJS will sent out OPTIONS
+//        mqlProperties.res.header("Access-Control-Allow-Origin", "*"); // to allow cross-domain, replace * with a list of domains is desired.
+//        mqlProperties.res.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type");
+//        mqlProperties.res.header('Access-Control-Allow-Credentials', true);
+//        mqlProperties.res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS'); // ExtJS will sent out OPTIONS
 
+        // TO BE ABLE TO SET THE header ONLY ONCE, TO PREVENT ERRORS, WE CREATE AN ARRAY OF header ENTRIES HERE
+        var headerArray = {};
+        headerArray["Access-Control-Allow-Origin"] = "*"; // to allow cross-domain, replace * with a list of domains is desired.
+        headerArray["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type";
+        headerArray['Access-Control-Allow-Credentials'] = true;
+        headerArray['Access-Control-Allow-Methods'] = 'POST, GET, PUT, DELETE, OPTIONS';// ExtJS will sent out OPTIONS
+        
         if (isObject(mqlProperties.args)) {
             var args = mqlProperties.args; // have to recreate args for next test
             if (typeof(args.sql) !== 'undefined') {
                 output["sql"] = args['sql'];
             }
             if (typeof(args.callback) !== 'undefined') {
-                mqlProperties.res.header('Content-Type', 'text/javascript');
+                // ORIGINAL mqlProperties.res.header('Content-Type', 'text/javascript');
+                headerArray['Content-Type'] = 'text/javascript';
+                mqlProperties.res.header(headerArray);
                 console.log("output:"); // for testing only
                 console.log(output); // for testing only
                 debug('>>> leaving exports.read function');
                 mqlProperties.res.send(args.callback + '(' + output + ')');
             }
             else {
-                mqlProperties.res.header('Content-Type', 'application/json');
+                // ORIGINAL mqlProperties.res.header('Content-Type', 'application/json');
+                headerArray['Content-Type'] = 'application/json';
+                mqlProperties.res.header(headerArray);
                 console.log("output:"); // for testing only
                 console.log(output); // for testing only
                 debug('>>> leaving exports.read function');
@@ -295,7 +313,9 @@ exports.read = function(req, res) {
             }
         }
         else {
-            mqlProperties.res.header('Content-Type', 'application/json');
+            // ORIGINAL mqlProperties.res.header('Content-Type', 'application/json');
+            headerArray['Content-Type'] = 'application/json';
+            mqlProperties.res.header(headerArray);
             console.log("output:"); // for testing only
             console.log(output); // for testing only
             debug('>>> leaving exports.read function');
@@ -349,6 +369,13 @@ function handleRequest(mqlProperties, cb) {
                 {
                     mqlProperties.err = err;
                     debug('>>> leaving handleRequest');// for testing only
+                    
+                    
+                    console.log('mqlProperties.result:');  // WORKS !!!
+                    console.log(mqlProperties.result);
+                    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+                    
+                    
                     mqlProperties.callBackHandleRequest(null, mqlProperties);
                 }
             });//eof handleQueries
@@ -382,6 +409,7 @@ function handleRequest(mqlProperties, cb) {
         debug('No property mql in mqlProperties.args.');// for testing only 
         debug('>>> leaving handleRequest with error');// for testing only 
         var err = new Error('No property mql in mqlProperties.args.');
+        mqlProperties.err = err;
         mqlProperties.callBackHandleRequest(err, mqlProperties);
     }//eof else on mql
 }// eof handleRequest
