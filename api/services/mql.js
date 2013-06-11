@@ -192,11 +192,7 @@ exports.read = function(req, res) {
         debug("mqlProperties.err: "); // for testing only
         debug(mqlProperties.err); // for testing only		
         debug("mqlProperties.args: "); // for testing only
-        debug(mqlProperties.args); // for testing only
-        
-        console.log("mqlProperties.result: "); // for testing only
-        console.log(mqlProperties.result); // for testing only
-                
+        debug(mqlProperties.args); // for testing only                       
         debug("mqlProperties.results: "); // for testing only
         debug(mqlProperties.results); // for testing only
         		
@@ -297,8 +293,8 @@ exports.read = function(req, res) {
                 // ORIGINAL mqlProperties.res.header('Content-Type', 'text/javascript');
                 headerArray['Content-Type'] = 'text/javascript';
                 mqlProperties.res.header(headerArray);
-                console.log("output:"); // for testing only
-                console.log(output); // for testing only
+                debug("output:"); // for testing only
+                debug(output); // for testing only
                 debug('>>> leaving exports.read function');
                 mqlProperties.res.send(args.callback + '(' + output + ')');
             }
@@ -306,8 +302,8 @@ exports.read = function(req, res) {
                 // ORIGINAL mqlProperties.res.header('Content-Type', 'application/json');
                 headerArray['Content-Type'] = 'application/json';
                 mqlProperties.res.header(headerArray);
-                console.log("output:"); // for testing only
-                console.log(output); // for testing only
+                debug("output:"); // for testing only
+                debug(output); // for testing only
                 debug('>>> leaving exports.read function');
                 mqlProperties.res.send(output);
             }
@@ -316,8 +312,8 @@ exports.read = function(req, res) {
             // ORIGINAL mqlProperties.res.header('Content-Type', 'application/json');
             headerArray['Content-Type'] = 'application/json';
             mqlProperties.res.header(headerArray);
-            console.log("output:"); // for testing only
-            console.log(output); // for testing only
+            debug("output:"); // for testing only
+            debug(output); // for testing only
             debug('>>> leaving exports.read function');
             mqlProperties.res.send(output);
         }
@@ -369,13 +365,12 @@ function handleRequest(mqlProperties, cb) {
                 {
                     mqlProperties.err = err;
                     debug('>>> leaving handleRequest');// for testing only
-                    
-                    
+                                        
                     console.log('mqlProperties.result:');  // WORKS !!!
                     console.log(mqlProperties.result);
+                    console.log('HELLO..from line near 376');
                     //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
-                    
-                    
+                                        
                     mqlProperties.callBackHandleRequest(null, mqlProperties);
                 }
             });//eof handleQueries
@@ -399,6 +394,11 @@ function handleRequest(mqlProperties, cb) {
                 {
                     mqlProperties.err = err;
                     debug('>>> leaving handleRequest');// for testing only
+
+                    debug('mqlProperties.result:');  // WORKS !!!
+                    debug(mqlProperties.result);
+                    console.log('HELLO..from line near 403');
+                    
                     mqlProperties.callBackHandleRequest(null, mqlProperties);
                 }
             });//eof handleQueries
@@ -2910,9 +2910,7 @@ function generateSQL(mqlProperties, cb) {
             debug("mqlProperties.schema['column_name']:");
             debug(mqlProperties.schema['column_name']);
             debug('==================================== END OF: BIG CHECK AREA ====================================');
-            // END OF BIG CHECK AREA !!!!
-            
-            //var unknown = Unknown();  // DELIBERATE ERROR TO STOP CODE HERE
+            // END OF BIG CHECK AREA !!!!            
             
             if (typeof(mqlProperties.schema['direction']) !== 'undefined') {
                 mqlProperties.direction = mqlProperties.schema['direction'];
@@ -2925,11 +2923,7 @@ function generateSQL(mqlProperties, cb) {
                         debug('n:');
                         debug(n);
                         mqlProperties.column_ref = mqlProperties.tAlias + '.' + mqlProperties.schema['join_condition'][Object.keys(mqlProperties.schema['join_condition'])[n]]['referenced_column'];
-                        
-                        
-                        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
-                        
-                        
+                                                
                         if (typeof(mqlProperties.select[mqlProperties.column_ref]) !== 'undefined') {
                             mqlProperties.cAlias = mqlProperties.select[mqlProperties.column_ref];
                         }//eof if
@@ -2951,7 +2945,7 @@ function generateSQL(mqlProperties, cb) {
                         'index': mqlProperties.index_columns_string,
                         'columns': []
                     });
-                    mqlProperties.new_query_index = Object.keys(mqlProperties.queries).length;
+                    mqlProperties.new_query_index = Object.keys(mqlProperties.queries).length; // DOES THIS WORK?? IT SEEMS TO GIVE 0
                 }//eof if                    
                 else if (mqlProperties.direction === 'referencing->referenced') {
                     mqlProperties.merge_into = null;
@@ -2960,7 +2954,7 @@ function generateSQL(mqlProperties, cb) {
                 mqlProperties.properties[Object.keys(mqlProperties.properties)[i]]['query_index'] = mqlProperties.new_query_index;
                 
                 debug("mqlProperties.properties[Object.keys(mqlProperties.properties)[i]]['query_index']:");
-                debug(mqlProperties.properties[Object.keys(mqlProperties.properties)[i]]['query_index']);
+                debug(mqlProperties.properties[Object.keys(mqlProperties.properties)[i]]['query_index']);               
                 
                 // ADD THE CURRENTLY PROCESSED PROPERTY type TO THE COLLECTION OF PROCESSED TYPES
                 mqlProperties.processed_types[property_type] = property_type;
@@ -2969,7 +2963,6 @@ function generateSQL(mqlProperties, cb) {
                 
                 debug('WE ARE GOING INTO generateSQL AGAIN !!!!!!!!!!!!!!!!!!!!!!!!!!!');
                 
-                //var unknown = Unkown(); // DELIBERATE ERROR TO STOP CODE HERE
                 // SO FAR SO GOOD
                 generateSQL(mqlProperties, mqlProperties.callBackHandleQuery);
 // OLD                
@@ -3104,7 +3097,8 @@ function pushToParametersArray(parameters, key, value) {
 // helper for executeSQLQuery: a callback function
 function executeSQL(mqlProperties, cb) {
     debug('>>> inside executeSQL'); // for testing only
-    mqlProperties.callBackExecuteSQLQuery = cb;
+    mqlProperties.callBackExecuteSQLQuery = cb;    
+    
     debug('mqlProperties.sql:');
     debug(mqlProperties.sql);
 
@@ -3122,8 +3116,26 @@ function executeSQL(mqlProperties, cb) {
         return mqlProperties;
     }//eof if
 
+
+//    console.log("mqlProperties.properties === mqlProperties.mql_node['properties']"); // for testing only
+//    console.log(mqlProperties.properties === mqlProperties.mql_node['properties']); // for testing only  // THEY SHOULD MATCH, NOW THEY DO !!
+//
+//    var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE 
+
+
     try {
         mqlProperties = prepareSQLStatement(mqlProperties);
+        
+        
+        
+//        console.log("mqlProperties.properties === mqlProperties.mql_node['properties']"); // for testing only
+//        console.log(mqlProperties.properties === mqlProperties.mql_node['properties']); // for testing only  // THEY SHOULD MATCH, NOW THEY DO !!
+//
+//        var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE         
+        
+        
+        
+        
         var parameters = {};
         debug("mqlProperties.sql_query['params'].length:");
         debug(mqlProperties.sql_query['params'].length);
@@ -3166,8 +3178,10 @@ function executeSQL(mqlProperties, cb) {
             db_connection_created.query(mqlProperties.statement_handle.sql, function(err, rows) {
                 if (err) {
                     mqlProperties.err = err;
-                    debug('>>> leaving executeSQL without limit with error:');
-                    debug(err.message);
+                    mqlProperties.err.message = err.message
+                        + ' Offending statement: '
+                        + mqlProperties.sql;
+                    debug('>>> leaving executeSQL without limit with error: '+ mqlProperties.err.message);
                     mqlProperties.callBackExecuteSQLQuery(err, mqlProperties);
                 }
 
@@ -3189,18 +3203,38 @@ function executeSQL(mqlProperties, cb) {
                 debug(this.sql);
 
                 debug('>>> leaving executeSQL without limit');
+                
+                
+                
+                console.log("mqlProperties.properties === mqlProperties.mql_node['properties']"); // for testing only
+                console.log(mqlProperties.properties === mqlProperties.mql_node['properties']); // for testing only  // THEY SHOULD MATCH, NOW THEY ... !!
+
+                //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE                
+                
+                
+                
+                
                 mqlProperties.callBackExecuteSQLQuery(null, mqlProperties);
             });
         }//eof if
         else {
            //mqlProperties.result = [];
            // NOTE: WE SET THE LIMIT DIRECTLY IN THE SQL STATEMENT
+           
+           
+            console.log("mqlProperties.properties === mqlProperties.mql_node['properties']"); // for testing only
+            console.log(mqlProperties.properties === mqlProperties.mql_node['properties']); // for testing only  // THEY SHOULD MATCH, NOW THEY DO ??           
+           
+           
            db_connection_created.query(mqlProperties.statement_handle.sql, function(err, rows) {
                 if (err) {
                     mqlProperties.err = err;
-                    debug('>>> leaving executeSQL with limit with error:');
-                    debug(err.message);
-                    mqlProperties.callBackExecuteSQLQuery(err, mqlProperties);
+                    mqlProperties.err.message = err.message
+                        + ' Offending statement: '
+                        + mqlProperties.sql;
+                    debug('>>> leaving executeSQL with limit with error: '+ mqlProperties.err.message);
+                    // unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+                    mqlProperties.callBackExecuteSQLQuery(err, mqlProperties); // SHOULD WE REALLY BE CALLING BACK FROM HERE??
                 }
 
 //         // REPLACES
@@ -3208,25 +3242,34 @@ function executeSQL(mqlProperties, cb) {
 //         while ($limit-- && $row = $statement_handle->fetch(PDO::FETCH_ASSOC)) {
 //              $result[] = $row;
 //         }
+
+                console.log("mqlProperties.properties === mqlProperties.mql_node['properties']"); // for testing only
+                console.log(mqlProperties.properties === mqlProperties.mql_node['properties']); // for testing only  // THEY SHOULD MATCH, NOW THEY DON'T !!
+                //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+
                 mqlProperties.rows = rows;
                 debug('mqlProperties.rows with limit inside query:');
                 debug(mqlProperties.rows);
                 mqlProperties.result = mqlProperties.rows;
                 debug('>>> leaving executeSQL with limit');
+                
+                //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
                 mqlProperties.callBackExecuteSQLQuery(null, mqlProperties);
-            });
-        }//eof else 
+           });//eof db_connection_created.query
+            
+            
+            
+        }//eof else
     }//eof try
     catch (err) {
-        debug(err.message
-                + ' Offending statement: '
-                + mqlProperties.sql);
         mqlProperties.err = err;
-        debug('>>> leaving executeSQL with exception: '+ err.message);
-        mqlProperties.callBackExecuteSQLQuery(err, mqlProperties);
-    }//eof catch
+        mqlProperties.err.message = err.message
+                + ' Offending statement: '
+                + mqlProperties.sql;
+        debug('>>> leaving executeSQL with exception: '+ mqlProperties.err.message);
+        //mqlProperties.callBackExecuteSQLQuery(err, mqlProperties); // TEMPORARILY BLOCKED TO AVOID REPORTING BACK OUR OWN DELIBERATE ERRORS
+    }//eof catch    
 }//eof executeSQL
-
 
 // helper for executeSQLQuery: NOT a callback function
 function getQuerySQL(mqlProperties) {
@@ -3456,7 +3499,7 @@ function executeSQLQuery(mqlProperties, cb) {
     mqlProperties.callBackExecuteSQLQueries = cb;
     debug('mqlProperties.sqlDialect:');
     debug(mqlProperties.sqlDialect);
-
+    
     if (mqlProperties.sql_query['limit'] && mqlProperties.sqlDialect['supports_limit']) {
         //TO DO: this implementation of limit is buggy!
         //It works fine if applied to a top-level mql node,
@@ -3473,14 +3516,23 @@ function executeSQLQuery(mqlProperties, cb) {
     debug(mqlProperties.limit);
 
     mqlProperties = getQuerySQL(mqlProperties); // TO DO implement function getQuerySQL()
-    mqlProperties.sql_query['sql'] = mqlProperties.sql;
-
+    mqlProperties.sql_query['sql'] = mqlProperties.sql;    
+    
     executeSQL(mqlProperties, function(err, mqlProperties) {
         debug('>>> back inside executeSQLQuery from executeSQL');
         // TO DO
+        
+        
+        console.log("mqlProperties.properties === mqlProperties.mql_node['properties']"); // for testing only
+        console.log(mqlProperties.properties === mqlProperties.mql_node['properties']); // for testing only  // THEY SHOULD MATCH, NOW THEY DON'T !!
+
+        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE        
+        
+               
         debug('>>> leaving executeSQLQuery');
         mqlProperties.callBackExecuteSQLQueries(null, mqlProperties);
     });
+    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE 
 }//eof executeSQLQuery
 
 // helper for executeSQLQueries: NOT a callback function
@@ -3728,6 +3780,7 @@ function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_
     if(mql_node['query_index'] !== sql_query_index){
         debug("NOTE: mql_node['query_index'] is NOT equal to sql_query_index");
         debug('>>> leaving fillResultObject'); // for testing only
+        var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
         return mqlProperties;
     }//eof if
 
@@ -3749,16 +3802,36 @@ function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_
     debug('mqlProperties.result_object:');
     debug(mqlProperties.result_object);
     
+    
+    console.log('is_recall:');    
+    console.log(is_recall);   // FOR BOTH SIMPLE AND COMPLEX AT THE START THIS IS false, AS DESIGNED
+    console.log("mqlProperties.properties:");
+    console.log(mqlProperties.properties);    
+    console.log("mql_node['properties']:");
+    console.log(mql_node['properties']);    
+    
+    console.log("mqlProperties.properties === mql_node['properties']:");
+    console.log(mqlProperties.properties === mql_node['properties']);    // FOR SIMPLE THIS IS true, FOR COMPLEX THIS IS false BECAUSE PersonGender IN mqlProperties.properties HAS A query_index PROPERTY
+    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+    
+    
     if(typeof(mqlProperties.entrees) !== 'undefined' && mqlProperties.entrees === mql_node['entrees']){
         debug('>>> leaving fillResultObject'); // for testing only
+        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
         mqlProperties = fillResultObject(mqlProperties, mqlProperties.entrees, sql_query_index, row, mqlProperties.result_object[0], true); // Calls itself
 // REPLACES
 //        fill_result_object($entries, $query_index, $data, $result_object[0]);        
     }//eof if
     else if(mqlProperties.properties === mql_node['properties'] || is_recall){ // ALLOW WHEN WE ARE DEALING WITH A recall TO THIS FUNCTION
         debug("NOTE: mqlProperties.properties is equal to mql_node['properties'] or we have a recall to this function.");
-        debug('mqlProperties.result_object:');
-        debug(mqlProperties.result_object);
+
+
+        console.log('mqlProperties.result_object:');
+        console.log(mqlProperties.result_object);
+
+        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE   === FOR SIMPLE QUERY WE SEEM TO JUMP STRAIGHT TO HERE, AS DESIGNED
+        
+        
         
         for(m=0;m<Object.keys(result_object).length;m++){  // USE m AS THE ITERATOR, BECAUSE i IS ALREADY USED IN THE PARENT FOR LOOP
             debug('Start of Round m: '+m);  
@@ -3797,8 +3870,9 @@ function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_
                 if(mqlProperties.count_of_result_object_filled_properties === Object.keys(mqlProperties.properties).length){
                     // WE HAVE FILLED ALL RESULT OBJECT PROPERTIES
                     // SO EXIT THIS FUNCTION
-                    debug('mqlProperties.result_object:');
-                    debug(mqlProperties.result_object);      
+                    console.log('mqlProperties.result_object:');
+                    console.log(mqlProperties.result_object);
+                    is_recall = false;
                     debug('>>> leaving fillResultObject'); // for testing only
                     //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
                     return mqlProperties;       
@@ -3882,7 +3956,8 @@ function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_
 //}
     debug('mqlProperties.result_object:');
     debug(mqlProperties.result_object);      
-    debug('>>> leaving fillResultObject'); // for testing only     
+    debug('>>> leaving fillResultObject'); // for testing only 
+    //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE  === FOR COMPLEX QUERY WE SEEM TO JUMP STRAIGHT TO HERE, NOT AS DESIGNED
     return mqlProperties;
 }//eof fillResultObject
 
@@ -4316,20 +4391,15 @@ function executeSQLQueries(mqlProperties, cb) {
         debug('++++++++++++++++++++++++++++SQL Query+++++++++++++++++++++++++++++++++++++++++');
         debug("mqlProperties.sql_queries[i]:");
         debug(mqlProperties.sql_queries[i]);
-        debug('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
+        debug('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');      
         
-        mqlProperties.mql_node = mqlProperties.sql_queries[i]['mql_node'];
-        debug('mqlProperties.mql_node:'); // for testing only
-        debug(mqlProperties.mql_node); // for testing only 
+        mqlProperties.mql_node = mqlProperties.sql_queries[i]['mql_node']; // WORKS AS DESIGNED !!
 
         mqlProperties = getResultObject(mqlProperties, i);
-
-        //mqlProperties.result_object = mqlProperties.mql_node['result_object']; // THIS IS SUPERFLUOUS
-        debug('mqlProperties.result_object:'); // for testing only
-        debug(mqlProperties.result_object); // for testing only 
-        
-        // SO FAR SO GOOD
-        //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+                
+        //mqlProperties.result_object = mqlProperties.mql_node['result_object']; // THIS IS undefined 
+//        debug('mqlProperties.result_object:'); // for testing only
+//        debug(mqlProperties.result_object); // for testing only 
         
         // THIS IS TO MAKE SURE select_columns GETS SET: WORKS AS DESIGNED !!!
         // NOTE: THIS IS NOT PART OF THE ORIGINAL CODE
@@ -4439,6 +4509,15 @@ function executeSQLQueries(mqlProperties, cb) {
 //    // REPLACES
 //    array_unshift($from, $extra_from_line);
         }//eof if
+        
+
+//        console.log("mqlProperties.properties === mqlProperties.mql_node['properties']"); // for testing only
+//        console.log(mqlProperties.properties === mqlProperties.mql_node['properties']); // for testing only  // THEY SHOULD MATCH, THEY DO !!
+//               
+//        var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+        
+                
+        console.log('MODIFYING mqlProperties.result AT LINE NEAR 4447');
         mqlProperties.result = mqlProperties.sql_queries[i]['results'];
         debug('mqlProperties.result:');
         debug(mqlProperties.result);
@@ -4463,6 +4542,13 @@ function executeSQLQueries(mqlProperties, cb) {
             debug('mqlProperties.sql_queries:');
             debug(mqlProperties.sql_queries);
             
+                       
+            console.log("mqlProperties.properties === mqlProperties.mql_node['properties']"); // for testing only
+            console.log(mqlProperties.properties === mqlProperties.mql_node['properties']); // for testing only  // THEY SHOULD MATCH, NOW THEY DON'T !!
+
+            //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE            
+            
+                        
             for (e = 0; e < mqlProperties.rows.length; e++) {  // USE INTERATOR e BECAUSE SOME OTHER LETTERS HAVE ALREADY BEEN USED
                 debug('Start of Round e:'+e);
                 if (mqlProperties.merge_into) {
@@ -4477,8 +4563,12 @@ function executeSQLQueries(mqlProperties, cb) {
                 }//eof if
                 mqlProperties.row = mqlProperties.rows[e];   
 
-                debug('mqlProperties.mql_node:');
-                debug(mqlProperties.mql_node);
+
+                console.log("mqlProperties.mql_node['properties']:");
+                console.log(mqlProperties.mql_node['properties']); // DOES IT CONTAIN THE query_index AT PersonGender ???                
+                //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+                
+                
                 debug('mqlProperties.sql_query_index:');
                 debug(mqlProperties.sql_query_index);
                 debug('mqlProperties.row:');
@@ -4489,8 +4579,9 @@ function executeSQLQueries(mqlProperties, cb) {
                 mqlProperties.count_of_result_object_filled_properties = 0;
                 mqlProperties = fillResultObject(mqlProperties, mqlProperties.mql_node, mqlProperties.sql_query_index, mqlProperties.row, mqlProperties.result_object, false);
 
-                debug('mqlProperties.result_object:');
-                debug(mqlProperties.result_object); 
+                console.log('CHECK mqlProperties.result_object AT LINE NEAR 4493 OF ROUND e: '+e);
+                console.log('mqlProperties.result_object:');
+                console.log(mqlProperties.result_object); 
 
                 debug('Object.keys(mqlProperties.rows)[e]:');
                 debug(Object.keys(mqlProperties.rows)[e]);
@@ -4499,13 +4590,19 @@ function executeSQLQueries(mqlProperties, cb) {
                 // HOWEVER, NOT AS A REFERENCE, BECAUSE A CHANGE IN mqlProperties.result_object
                 // WOULD CHANGE ALL PREVIOUSLY SET mqlProperties.result FILLS TO THAT CHANGE !!!
 
+                console.log('MODIFYING mqlProperties.result AT LINE NEAR 4507');
                 mqlProperties.result[Object.keys(mqlProperties.rows)[e]] = clone(mqlProperties.result_object); // WORKS !!!
                 debug("mqlProperties.result[Object.keys(mqlProperties.rows)[e]]:");
                 debug(mqlProperties.result[Object.keys(mqlProperties.rows)[e]]);
+                
+                console.log('CHECK mqlProperties.result AT LINE NEAR 4509 OF ROUND e: '+e);
+                console.log('mqlProperties.result:');
+                console.log(mqlProperties.result);                 
 
                 mqlProperties = addEntryToIndexes(mqlProperties, mqlProperties.rows[e].key, mqlProperties.rows[e]);
                 debug('End of Round e:'+e);               
-            }//eof for               
+            }//eof for
+        
 //         
 //          REPLACES  
 //                    
@@ -4536,7 +4633,6 @@ function executeSQLQueries(mqlProperties, cb) {
 //                    merge_results($sql_queries, $sql_query_index, $merge_into_values_old, $offset, $row_index);
 //          }    
             //
-            debug('+++++++++++++++++++++++++++++++ BEFORE LEAVING executeSQLQueries +++++++++++++++++++++++++++++++');
             //
             // NOTE: THIS IS NOT PART OF THE ORIGINAL CODE  
             //   
@@ -4561,13 +4657,16 @@ function executeSQLQueries(mqlProperties, cb) {
             // AND SET THEIR CONTENT TO mqlProperties.sql_query.results
             // 
             if(typeof(mqlProperties.merge_results) !== 'undefined'){
+                console.log('MODIFYING mqlProperties.result AT LINE NEAR 4569');
                 mqlProperties.result = mqlProperties.merge_results;    
             } 
             else if (typeof(mqlProperties.entrees) !== 'undefined') {
+                console.log('MODIFYING mqlProperties.result AT LINE NEAR 4572');
                 mqlProperties.result = mqlProperties.entrees;
             }
             // 
             if(mqlProperties.sql_query.results.length === 0){
+                console.log('MODIFYING mqlProperties.result AT LINE NEAR 4576');
                 mqlProperties.sql_query.results = clone(mqlProperties.result); // THIS WORKS !!!
             }
             // 
@@ -4579,6 +4678,15 @@ function executeSQLQueries(mqlProperties, cb) {
             debug('mqlProperties.sql_queries:');
             debug(mqlProperties.sql_queries);
             debug('>>> leaving executeSQLQueries');
+            
+            
+            
+            console.log('+++++++++++++++ CONTENT OF OUR mqlProperties.result NEAR LINE 4593 ++++++++++++++++++++++');
+            console.log('mqlProperties.result:');
+            console.log(mqlProperties.result);
+            //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+            
+            
             mqlProperties.callBackHandleQuery(null, mqlProperties);
         });//eof executeSQLQuery               
 //      REPLACES        
@@ -4601,12 +4709,10 @@ function clone(obj) {
 /*****************************************************************************
  *   Queries
  ******************************************************************************/
+// helper for handleQueries
 function handleQuery(mqlProperties, cb) {
     debug('>>> inside handleQuery'); // for testing only     
-    mqlProperties.callBackForHandleQuery = cb;
-    debug('mqlProperties.callBackForHandleQuery:'); // for testing only	
-    debug(mqlProperties.callBackForHandleQuery); // for testing only    
-
+    mqlProperties.callBackHandleQueries = cb;  
     if (typeof(mqlProperties.args.debug_info) !== 'undefined') {
         mqlProperties.debug_info = mqlProperties.args['debug_info'];
     }
@@ -4653,8 +4759,7 @@ function handleQuery(mqlProperties, cb) {
         debug('>>> leaving handleQuery with error.');
         var err = new Error('mqlProperties.queryOrQueries[0] is not an object.');
         mqlProperties.err = err;
-        //OLD mqlProperties.callBackHandleQueries(err, mqlProperties);
-        mqlProperties.callBackForHandleQuery(err, mqlProperties);
+        mqlProperties.callBackHandleQueries(err, mqlProperties);
     }// eof if !isObject
     else {
         //var mql_query = mqlProperties.queryOrQueries[0];// [0] removes the possible brackets, which would make it a non-object
@@ -4713,8 +4818,7 @@ function handleQuery(mqlProperties, cb) {
                 mqlProperties.err = err;
                 debug('>>> leaving handleQuery with error:');
                 debug(err.message);
-                //OLD mqlProperties.callBackHandleQueries(err, mqlQueries);
-                mqlProperties.callBackForHandleQuery(err, mqlQueries);
+                mqlProperties.callBackHandleQueries(err, mqlProperties);
             }
             mqlProperties.sqlQueries = null;
             debug('mqlProperties.sqlQueries:'); // for testing only	
@@ -4737,16 +4841,15 @@ function handleQuery(mqlProperties, cb) {
                 if (err) {
                     debug('>>> leaving handleQuery with error');
                     mqlProperties.err = err;
-                    //OLD mqlProperties.callBackHandleQueries(err, mqlProperties);
-                    mqlProperties.callBackForHandleQuery(err, mqlProperties);
+                    mqlProperties.callBackHandleQueries(err, mqlProperties);
                 }
                 executeSQLQueries(mqlProperties, function(err, mqlProperties) {
                     debug('>>> back inside handleQuery from executeSQLQueries'); // for testing only 
                     if (err) {
                         debug('>>> leaving handleQuery with error');
                         mqlProperties.err = err;
-                        //OLD mqlProperties.callBackHandleQueries(err, mqlProperties);
-                        mqlProperties.callBackForHandleQuery(err, mqlProperties);
+                        console.log('HELLO FROM LINE NEAR 4753: ERROR OCCURED');
+                        mqlProperties.callBackHandleQueries(err, mqlProperties);
                     }//eof if
 
                     debug('mqlProperties.merge_target:');
@@ -4756,81 +4859,85 @@ function handleQuery(mqlProperties, cb) {
                     debug(mqlProperties.result); 
                     
                     debug('mqlProperties.sql_queries:'); // for testing only	
-                    debug(mqlProperties.sql_queries); // for testing only                    
-                    mqlProperties.result = mqlProperties.sql_queries[0]['results']; // temp
-                    debug('mqlProperties.result:'); // for testing only	
-                    debug(mqlProperties.result); // for testing only		
-                    mqlProperties.return_value = new Array({'code': '/api/status/ok', 'result': mqlProperties.result});
-                    if (mqlProperties.debug_info) {
-                        var sql_statements = [];
-                        for (var i = 0; i < mqlProperties.sql_queries.length; i++) {
-                            sql_statements.push({'statement': mqlProperties.sql_queries[i]['sql'],
-                                'params': mqlProperties.sql_queries[i]['params']});
-                        }//eof for
+                    debug(mqlProperties.sql_queries); // for testing only 
+                    
+                    if(0 < mqlProperties.sql_queries[0]['results'].length){
+                        // WE HAVE RESULTS
+                        if(mqlProperties.req.method === 'POST' && mqlProperties.args !== {}) {// ONLY CALL BACK FOR POST METHOD 
+                            console.log('mqlProperties.count_of_result_object_filled_properties');
+                            console.log(mqlProperties.count_of_result_object_filled_properties);
+                            if(0 < mqlProperties.count_of_result_object_filled_properties){
+                                // ONLY CONTINUE FOR A RESULT WITH FILLED PROPERTIES
+                                console.log('MODIFYING mqlProperties.result AT LINE NEAR 4774');
+                                mqlProperties.result = mqlProperties.sql_queries[0]['results']; // temp
+                                debug('mqlProperties.result:'); // for testing only	
+                                debug(mqlProperties.result); // for testing only
+                                mqlProperties.return_value = new Array({'code': '/api/status/ok', 'result': mqlProperties.result});
+                                if (mqlProperties.debug_info) {
+                                    var sql_statements = [];
+                                    for (var i = 0; i < mqlProperties.sql_queries.length; i++) {
+                                        sql_statements.push({'statement': mqlProperties.sql_queries[i]['sql'],
+                                            'params': mqlProperties.sql_queries[i]['params']});
+                                    }//eof for
+                                }//eof if
+                                mqlProperties.args['sql'] = sql_statements;
+                                var unixtime_ms = new Date().getTime();
+                                var sec = parseInt(unixtime_ms / 1000);
+                                var name = 'end query #' + mqlProperties.query_index;
+                                var microtime = (unixtime_ms - (sec * 1000)) / 1000 + ' ' + sec;
+                                mqlProperties.callStack.push({"name": name, "microtime": microtime});
+                                debug('mqlProperties.callStack:'); // for testing only
+                                debug(mqlProperties.callStack); // for testing only
+                                mqlProperties.args['timing'] = mqlProperties.callStack;
+                                debug("mqlProperties.args['timing']:"); // for testing only
+                                debug(mqlProperties.args['timing']); // for testing only
+                                debug('mqlProperties.return_value:'); // for testing only	
+                                debug(mqlProperties.return_value); // for testing only
+                                console.log('HELLO FROM LINE NEAR 4790');
+                                //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
+                                debug('>>> leaving handleQuery'); // for testing only
+                                mqlProperties.callBackHandleQueries(null, mqlProperties);
+                            }//eof if
+                            else {
+                                mqlProperties.return_value = new Array({'code': '/api/status/ok', 'result': mqlProperties.result});
+                                console.log('HELLO FROM LINE NEAR 4808');
+                                debug('>>> leaving handleQuery'); // for testing only
+                                mqlProperties.callBackHandleQueries(null, mqlProperties);
+                            }
+                        }//eof if
                     }//eof if
-                    mqlProperties.args['sql'] = sql_statements;
-                    var unixtime_ms = new Date().getTime();
-                    var sec = parseInt(unixtime_ms / 1000);
-                    var name = 'end query #' + mqlProperties.query_index;
-                    var microtime = (unixtime_ms - (sec * 1000)) / 1000 + ' ' + sec;
-                    mqlProperties.callStack.push({"name": name, "microtime": microtime});
-                    debug('mqlProperties.callStack:'); // for testing only
-                    debug(mqlProperties.callStack); // for testing only
-                    mqlProperties.args['timing'] = mqlProperties.callStack;
-                    debug("mqlProperties.args['timing']:"); // for testing only
-                    debug(mqlProperties.args['timing']); // for testing only
-                    debug('mqlProperties.return_value:'); // for testing only	
-                    debug(mqlProperties.return_value); // for testing only                                  
-                    debug('>>> leaving handleQuery'); // for testing only
-                    mqlProperties.callBackForHandleQuery(null, mqlProperties);
                 });//eof executeSQLQueries
             });//eof generateSQL
         });//eof processMQL
     } //eof else isObject
 }// eof handleQuery
 
-//for-enabled function to callback to handleQueries
-function forHandleQuery(for_query_index) {
-  return function(err, mqlProperties) { 
-      debug('>>> inside forHandleQuery');
-      debug('for_query_index: '+for_query_index);
-      debug('mqlProperties.queryOrQueries.length:');
-      debug(mqlProperties.queryOrQueries.length);
-      if(mqlProperties.err){
-            debug('>>> leaving forHandleQuery with error: '+ mqlProperties.err.message);
-            mqlProperties.callBackHandleQueries(mqlProperties.err, mqlProperties);
-      }
-      if(for_query_index < mqlProperties.queryOrQueries.length){
-          // continue;
-          mqlProperties.result = mqlProperties.return_value[0];
-          mqlProperties.results[for_query_index] = mqlProperties.result;
-          debug('mqlProperties.results[mqlProperties.query_index]:');// for testing only
-          debug(mqlProperties.results[mqlProperties.query_index]);// for testing only          
-          //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE          
-          mqlProperties.callBackHandleQueries(null, mqlProperties);// YES, THIS IS THE RIGHT CALLBACK: IT WORKS!!
-      }
-      else{
-          // we have finished handling all queries, exit
-          mqlProperties.result = mqlProperties.return_value[0]; 
-          mqlProperties.results[for_query_index] = mqlProperties.result;
-          debug('mqlProperties.results:');// for testing only
-          debug(mqlProperties.results);// for testing only
-          debug('>>> leaving forHandleQuery');
-          //var unknown = Unknown(); // DELIBERATE ERROR TO STOP THE CODE HERE          
-          mqlProperties.callBackHandleQueries(null, mqlProperties);
-      }
-  };
-}
-
 // helper for handleRequest
 function handleQueries(mqlProperties, cb) {
-    debug('>>> inside handleQueries'); // for testing only
-    mqlProperties.callBackHandleQueries = cb;
+    debug('>>> inside handleQueries');
+    mqlProperties.callBackHandleRequest = cb;
     mqlProperties.results = [];
-    mqlProperties.results.push({'code': '/api/status/ok'});    
-    for(var for_query_index = 0; for_query_index < mqlProperties.queryOrQueries.length; for_query_index++) {
-        debug('Start of Round '+for_query_index);  
-        handleQuery(mqlProperties, forHandleQuery(for_query_index));               
-        debug('End of Round '+for_query_index);        
+    mqlProperties.results.push({'code': '/api/status/ok'});
+    mqlProperties.count_of_queries = 0;
+    for (var for_query_index = 0; for_query_index < mqlProperties.queryOrQueries.length; for_query_index++) {
+        console.log('Start of Round for Query with Index: '+for_query_index);        
+        //doQuery(mqlProperties, mqlProperties.queryOrQueries[for_query_index], for_query_index);
+        mqlProperties.query_index = for_query_index;
+        handleQuery(mqlProperties, function(err, mqlProperties){
+            debug('>>> back inside handleQueries from handleQuery');  
+            if(err){
+                mqlProperties.err = err;
+                debug('>>> leaving handleQueries with error: '+ mqlProperties.err.message);
+                mqlProperties.callBackHandleRequest(mqlProperties.err, mqlProperties);
+            }
+            mqlProperties.result = mqlProperties.return_value[0]; 
+            mqlProperties.results[mqlProperties.query_index] = mqlProperties.result;
+            mqlProperties.count_of_queries++;
+            if(mqlProperties.count_of_queries === mqlProperties.queryOrQueries.length) {
+                debug('>>> leaving handleQueries');         
+                mqlProperties.callBackHandleRequest(null, mqlProperties);
+            }
+        });
+        console.log('End of Round for Query with Index: '+for_query_index);    
     }//eof for
 }// eof handleQueries
