@@ -333,11 +333,11 @@ exports.write = function(req, res) {
 /*****************************************************************************
  *   Handle Request
  ******************************************************************************/
+// helper for export
 function handleRequest(mqlProperties, cb) {
     debug('>>> inside handleRequest'); // for testing only
-    mqlProperties.callBackHandleRequest = cb;
-    debug("mqlProperties.callBackHandleRequest:"); // for testing only	
-    debug(mqlProperties.callBackHandleRequest); // for testing only	
+// ORIGINAL    mqlProperties.callBackHandleRequest = cb;
+    mqlProperties.callBackExport = cb; // NAMED callBackExport SO IT CAN BE USED FOR EITHER export.read OR export.write
 
     if (typeof(mqlProperties.args.mql) !== 'undefined') {
         debug("mqlProperties.args.mql:"); // for testing only	
@@ -359,7 +359,7 @@ function handleRequest(mqlProperties, cb) {
                 {
                     mqlProperties.err = err;
                     debug('>>> leaving handleRequest with error');// for testing only
-                    mqlProperties.callBackHandleRequest(err, mqlProperties);
+                    mqlProperties.callBackExport(err, mqlProperties);
                 }
                 else
                 {
@@ -370,8 +370,7 @@ function handleRequest(mqlProperties, cb) {
                     console.log(mqlProperties.result);
                     console.log('HELLO..from line near 376');
                     //var unknown = Unknown(); // DELIBERATE ERROR TO STOP CODE HERE
-                                        
-                    mqlProperties.callBackHandleRequest(null, mqlProperties);
+                    mqlProperties.callBackExport(null, mqlProperties);                    
                 }
             });//eof handleQueries
         }//eof if on query
@@ -388,7 +387,7 @@ function handleRequest(mqlProperties, cb) {
                 {
                     mqlProperties.err = err;
                     debug('>>> leaving handleRequest with error');// for testing only
-                    mqlProperties.callBackHandleRequest(err, mqlProperties);
+                    mqlProperties.callBackExport(err, mqlProperties);
                 }
                 else
                 {
@@ -398,8 +397,7 @@ function handleRequest(mqlProperties, cb) {
                     debug('mqlProperties.result:');  // WORKS !!!
                     debug(mqlProperties.result);
                     console.log('HELLO..from line near 403');
-                    
-                    mqlProperties.callBackHandleRequest(null, mqlProperties);
+                    mqlProperties.callBackExport(null, mqlProperties);
                 }
             });//eof handleQueries
         }//eof if on queries
@@ -410,7 +408,7 @@ function handleRequest(mqlProperties, cb) {
         debug('>>> leaving handleRequest with error');// for testing only 
         var err = new Error('No property mql in mqlProperties.args.');
         mqlProperties.err = err;
-        mqlProperties.callBackHandleRequest(err, mqlProperties);
+        mqlProperties.callBackExport(err, mqlProperties);       
     }//eof else on mql
 }// eof handleRequest
 /*****************************************************************************
@@ -3822,7 +3820,7 @@ function fillResultObject(mqlProperties, mql_node, sql_query_index, row, result_
 // REPLACES
 //        fill_result_object($entries, $query_index, $data, $result_object[0]);        
     }//eof if
-    else if(mqlProperties.properties === mql_node['properties'] || is_recall){ // ALLOW WHEN WE ARE DEALING WITH A recall TO THIS FUNCTION
+    else if(mqlProperties.properties === mql_node['properties'] || is_recall){ // ALLOW WHEN WE ARE DEALING WITH A recall TO THIS FUNCTION   
         debug("NOTE: mqlProperties.properties is equal to mql_node['properties'] or we have a recall to this function.");
 
 
