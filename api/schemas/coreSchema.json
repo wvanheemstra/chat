@@ -70,7 +70,96 @@
                             "columns": ["kp_GenderID"]
                         }
                     }     
-                }        
+                },
+                "deck": {
+                    "properties": {
+                        "kp_DeckID": {
+                            "column_name": "kp_DeckID", 
+                            "nullable": false, 
+                            "type": "/type/int"
+                        },
+                        "DeckName": {
+                            "column_name": "DeckName", 
+                            "nullable": false, 
+                            "type": "/type/text"
+                        },
+                        "DeckDescription": {
+                            "column_name": "DeckDescription", 
+                            "nullable": false, 
+                            "type": "/type/text"
+                        }
+                    }, 
+                    "table_name": "tbl_deck",
+                    "keys": {
+                        "PRIMARY": {
+                            "type": "PRIMARY KEY",
+                            "columns": ["kp_DeckID"]
+                        }
+                    }
+                },
+                "deck_card": {        
+                    "properties": {
+                        "kf_DeckID": {
+                            "column_name": "kf_DeckID", 
+                            "nullable": false, 
+                            "type": "/type/int"
+                        },
+                        "Deck": {
+                            "type": "/core/deck",
+                            "direction": "referencing->referenced",
+                            "join_condition": [
+                                {
+                                    "referencing_column": "kp_DeckID",
+                                    "referenced_column": "kf_DeckID"
+                                }
+                            ],
+                            "nullable": true
+                        },                                
+                        "kf_CardID": {
+                            "column_name": "kf_CardId", 
+                            "nullable": false, 
+                            "type": "/type/int"
+                        },
+                        "Card": {
+                            "type": "/core/card",
+                            "direction": "referencing->referenced",
+                            "join_condition": [
+                                {
+                                    "referencing_column": "kp_CardID",
+                                    "referenced_column": "kf_CardID"
+                                }
+                            ],
+                            "nullable": true
+                        }                                
+                    }, 
+                    "table_name": "tbl_deck_card"     
+                },     
+                "card": {
+                    "properties": {
+                        "kp_CardID": {
+                            "column_name": "kp_CardID", 
+                            "nullable": false, 
+                            "type": "/type/int"
+                        },
+                        "CardName": {
+                            "column_name": "CardName", 
+                            "nullable": false, 
+                            "type": "/type/text"
+                        },
+                        "CardDescription": {
+                            "column_name": "CardDescription", 
+                            "nullable": false, 
+                            "type": "/type/text"
+                        }
+                    }, 
+                    "table_name": "tbl_card",
+                    "keys": {
+                        "PRIMARY": {
+                            "type": "PRIMARY KEY",
+                            "columns": ["kp_CardID"]
+                        }
+                    }
+                }       
             }
         }
     }
