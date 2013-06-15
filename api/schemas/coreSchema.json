@@ -87,6 +87,11 @@
                             "column_name": "DeckDescription", 
                             "nullable": false, 
                             "type": "/type/text"
+                        },
+                        "kf_KindOfDeckID": {
+                            "column_name": "kf_KindOfDeckID", 
+                            "nullable": true,
+                            "type": "/type/int"
                         }
                     }, 
                     "table_name": "tbl_deck",

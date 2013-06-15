@@ -103,6 +103,57 @@ asyncTest('Server Running at End',function(){
 /*
  * MODULE
  */
+module('AJAX MQL read simple: Deck');
+asyncTest('Server Running at Start',function(){
+	$.ajax({
+		type: "OPTIONS",
+		url: "http://localhost:3000/services/test/read",
+		data: "test=1",
+		success: function(){
+			start();
+			ok(true,"Server Running at Start: successful");
+		},
+		error: function(){
+			start();
+			ok(false,'Server Running at Start: failed');
+		}
+	});
+});
+asyncTest('Retrieve DECKS',function(){
+	$.ajax({
+		contentType: "application/json; charset=utf-8",
+		type: "OPTIONS",
+		url: "http://localhost:3000/services/mql/read",
+		dataType: "json",
+		data: '{"pagination":{"page":0,"limit":50,"sort":"DeckName","dir":"ASC"},"basicInfo":{"ccoId":"QUnit","prefLang":"eng_GB","requestStartDate":null,"requesterApp":"QUnit"},"mql":{"query":[{"type":"/core/deck","kp_DeckID":1,"DeckName":null,"DeckDescription":null}]},"debug_info":{}}',
+		success: function(response){
+			start();
+			ok(true,"Retrieve DECKS: successful: "+JSON.stringify(response));
+		},
+		error: function(response){
+			start();
+			ok(false,'Retrieve DECKS: failed: '+JSON.stringify(response));
+		}
+	});
+});
+asyncTest('Server Running at End',function(){
+	$.ajax({
+		type: "OPTIONS",
+		url: "http://localhost:3000/services/test/read",
+		data: "test=1",
+		success: function(){
+			start();
+			ok(true,"Server Running at End: successful");
+		},
+		error: function(){
+			start();
+			ok(false,'Server Running at End: failed');
+		}
+	});
+});
+/*
+ * MODULE
+ */
 module('AJAX MQL write');
 asyncTest('Server Running at Start',function(){
 	$.ajax({

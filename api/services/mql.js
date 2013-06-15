@@ -401,7 +401,7 @@ function handleRequest(mqlProperties, cb) {
  *   Miscellaneous
  ******************************************************************************/
 function debug(message) {
-    var debug = false; // switch to log or not log messages     
+    var debug = true; // switch to log or not log messages     
     if (debug) {
         console.log(message);
     }
@@ -3349,6 +3349,21 @@ function getQuerySQL(mqlProperties) {
                     + "\n"  // USES " TO ASSURE THE ESCAPE
                     + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['join_condition'];
         }//eof else if
+        
+        // Ultimately for cases where where mqlProperties.from_or_join is FALSE, 
+        // but which still requires a FROM clause to be created
+        // Typically in the case of a select from a single table,
+        // hence testing on the number of keys in the from array,
+        // it should be 1.
+        if(!mqlProperties.from_or_join && Object.keys(mqlProperties.sql_query['from']).length === 1){
+            if (arrayKeyExists('table', mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]])) {
+                mqlProperties.sql = mqlProperties.sql
+                        + "\n"+'FROM '  // USES " TO ASSURE THE ESCAPE
+                        + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['table']
+                        + ' '
+                        + mqlProperties.sql_query['from'][Object.keys(mqlProperties.sql_query['from'])[i]]['alias'];
+            }//eof else if        
+        }        
         debug('mqlProperties.sql:');
         debug(mqlProperties.sql);
     }//eof for  
@@ -3454,7 +3469,7 @@ function executeSQLQuery(mqlProperties, cb) {
 
     mqlProperties = getQuerySQL(mqlProperties); // TO DO implement function getQuerySQL()
     mqlProperties.sql_query['sql'] = mqlProperties.sql;    
-    
+
     executeSQL(mqlProperties, function(err, mqlProperties) {
         debug('>>> back inside executeSQLQuery from executeSQL');
         // TO DO
