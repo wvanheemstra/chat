@@ -401,7 +401,7 @@ function handleRequest(mqlProperties, cb) {
  *   Miscellaneous
  ******************************************************************************/
 function debug(message) {
-    var debug = true; // switch to log or not log messages     
+    var debug = false; // switch to log or not log messages     
     if (debug) {
         console.log(message);
     }
