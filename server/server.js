@@ -464,7 +464,7 @@ api.all('/', function(req, res) { // use api.all instead of api.get so as to set
 		switch(action) {
 			case 'read': 	console.log(server_prefix + " - Calling mqlService.read()");
 						try {
-							mqlService.read();
+							mqlService.read(req, res);
 						}
 						catch(err){
 							console.log(server_prefix + " - Error: " + err);
@@ -472,7 +472,7 @@ api.all('/', function(req, res) { // use api.all instead of api.get so as to set
 						break;
 			case 'write': console.log(server_prefix + " - Calling mqlService.write()");
 						try {
-							mqlService.write();
+							mqlService.write(req, res);
 						}
 						catch(err){
 							console.log(server_prefix + " - Error: " + err);
