@@ -23,7 +23,7 @@ var testService = require('../services/test');
 var server = express();
 // Port
 if(typeof configs.server_port === 'undefined'){
-	var server_port = process.env.PORT || 11080;
+	var server_port = process.env.PORT || 12080;
 }
 else {
 	var server_port = configs.server_port;
