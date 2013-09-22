@@ -419,8 +419,8 @@ app.listen(app_port, function () {
 });
 
 // routing to services
-api.get('/', function(req, res) {
-	// Distinguish based on an optional key-value parameter in the request url (e.g. '/?api=person')
+api.all('/', function(req, res) { // use api.all instead of api.get so as to set the Access-Control-Allow-Origin
+	// Distinguish based on an optional key-value parameter in the request url (e.g. 'api=person')
 	var api = 'index'; // default
 	// update api variable here with value from 'api' key (e.g. api=person) sets api to 'person'
 	if(req.query.api){
@@ -439,11 +439,48 @@ api.get('/', function(req, res) {
 			api = 'not_found';
 		}
 	}
-	console.log(server_prefix + " - Api requested: " + api);	
-    //res.render(api, { title: title, host: host, web_root: web_root, layout: false });
+	console.log(server_prefix + " - Api requested: " + api);
+
+	// Distinguish based on an optional key-value parameter in the request url (e.g. 'action=read')
+	var action = 'read'; // default
+	// update action variable here with value from 'action' key (e.g. action=write) sets action to 'write'
+	if(req.query.action){	
+		action = req.query.action;	
+		var action_not_recognised = true; // default to true	
+		// check recognised actions, if not found set to not_recognised	
+		if(action == 'read' || action == 'write') {
+			action_not_recognised = false;
+		}// eof for
+		if(action_not_recognised) {
+			console.log(server_prefix + " - Action requested, but not recognised: " + action);
+			action = '';
+			res.statusCode = 500;
+			res.end();
+		}
+	}
+	console.log(server_prefix + " - Action requested: " + action);
 	// ROUTE TO MQL SERVICE FROM HERE...
-	// TO DO ...
-	
+	if(api !== 'not_found' || action !== '') {
+		switch(action) {
+			case 'read': 	console.log(server_prefix + " - Calling mqlService.read()");
+						try {
+							mqlService.read();
+						}
+						catch(err){
+							console.log(server_prefix + " - Error: " + err);
+						}
+						break;
+			case 'write': console.log(server_prefix + " - Calling mqlService.write()");
+						try {
+							mqlService.write();
+						}
+						catch(err){
+							console.log(server_prefix + " - Error: " + err);
+						}
+						break;
+			default: break;
+		}
+	}
 });
 
 api.listen(api_port, function() {

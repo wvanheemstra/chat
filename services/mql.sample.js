@@ -15,7 +15,7 @@ exports.read = function(req, res) {
             fs = require("fs"),
             mysql = require("mysql");
 
-    var nuodb = require('db-nuodb');
+//    var nuodb = require('db-nuodb');
     /* testing the new nuodb */
     /* info to be found here http://nuodb.github.io/node-db-nuodb/ */
     /*
@@ -33,6 +33,8 @@ exports.read = function(req, res) {
      }
      });
      */
+	 
+/* SAMPLE
 
     new nuodb.Database({
         hostname: 'localhost',
@@ -45,6 +47,7 @@ exports.read = function(req, res) {
     }).on('ready', function(server) {
         console.log('Connected to ' + server.hostname + ' (' + server.version + ')');
     }).connect();
+*/	
 
     /****************************************************************************
      * Properties
