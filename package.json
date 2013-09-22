@@ -1,6 +1,6 @@
 {
-  "name": "skin_app",
-  "description": "Skin Application",
+  "name": "chat",
+  "description": "Chat Application & Application Programming Interface",
   "keywords": ["browser", "mobile", "detection", "user-agent", "express", "layout", "view routing", "desktop", "phone", "tablet", "tv", "bot", "responsive design"],
   "author": "van Heemstra Systems (info@vanheemstrasystems.com)",
   "version": "1.0.0",
@@ -20,7 +20,8 @@
       "jqueryify": "~0.0.1",
       "spine": "~1.0.7",
       "stylus": "~0.0.1",
-      "mocha": "~1.11.0"
+      "mocha": "~1.11.0",
+	  "mysql": "2.x"
   },
   "devDependencies": {
       "ejs": "*",
@@ -30,5 +31,5 @@
   "scripts": {
       "test": "mocha"
   },
-  "repository": "git://github.com/wvanheemstra/skin"
+  "repository": "git://github.com/wvanheemstra/chat"
 }
