@@ -84,7 +84,7 @@ Ext.onReady(function() {
 			api: {
 				//read: 'core/components/core/apps/core/data/mql-single-person.json',
 				//read: 'http://api.vanheemstrapictures.com/services/mql/read', // use this in the future when Bluehost allows for this
-				read: 'http://localhost:3000/services/mql/read',
+				read: 'http://localhost:5001/?api=person&action=read',
 				write: 'core/components/core/apps/core/data/mql-single-person.json'
 			},
 			reader: {
