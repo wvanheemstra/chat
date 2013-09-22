@@ -462,7 +462,7 @@ api.all('/', function(req, res) { // use api.all instead of api.get so as to set
 	// ROUTE TO MQL SERVICE FROM HERE...
 	if(api !== 'not_found' || action !== '') {
 		switch(action) {
-			case 'read': 	console.log(server_prefix + " - Calling mqlService.read()");
+			case 'read': 	console.log(server_prefix + " - Calling mqlService.read(req, res)");
 						try {
 							mqlService.read(req, res);
 						}
@@ -470,7 +470,7 @@ api.all('/', function(req, res) { // use api.all instead of api.get so as to set
 							console.log(server_prefix + " - Error: " + err);
 						}
 						break;
-			case 'write': console.log(server_prefix + " - Calling mqlService.write()");
+			case 'write': console.log(server_prefix + " - Calling mqlService.write(req, res)");
 						try {
 							mqlService.write(req, res);
 						}
