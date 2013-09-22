@@ -2,9 +2,19 @@ var express = require('express'),
     device  = require('../lib/device.js'),
     redirect = require('express-redirect');
 
+/*
+ * CONFIGS - The Configurations
+ */ 	
 config = require('../config/server.js');
 var configs = config.configs,
 	server_prefix = configs.server_prefix || 'CHAT';
+	
+/*
+ * SERVICES - The Services
+ */ 
+var services = require('../routes/services'); // it seems that we have to start each required file as its own var
+var mqlService = require('../services/mql');
+var testService = require('../services/test');
 
 /*
  * SERVER - The Server used for shutdown etc
@@ -382,6 +392,34 @@ app.listen(app_port, function () {
 	catch(ex) {
 		console.log(server_prefix + " - App UID not set. Not supported on Windows.");
 	}
+});
+
+// routing to services
+api.get('/', function(req, res) {
+	// Distinguish based on an optional key-value parameter in the request url (e.g. '/?api=person')
+	var api = 'index'; // default
+	// update api variable here with value from 'api' key (e.g. api=person) sets api to 'person'
+	if(req.query.api){
+		api = req.query.api;
+		var api_not_found = true; // default to true
+		// lookup api in api list, if not found set to not_found
+		for (key in api_list) {		
+			if(key == api){
+				api = key;
+				api_not_found = false;
+				break;
+			}
+		}// eof for
+		if(api_not_found) {
+			console.log(server_prefix + " - Api requested, but not found: " + api);
+			api = 'not_found';
+		}
+	}
+	console.log(server_prefix + " - Api requested: " + api);	
+    //res.render(api, { title: title, host: host, web_root: web_root, layout: false });
+	// ROUTE TO MQL SERVICE FROM HERE...
+	// TO DO ...
+	
 });
 
 api.listen(api_port, function() {
