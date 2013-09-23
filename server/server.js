@@ -1,14 +1,30 @@
+/*
+The full REST API for this application consists of the following methods:
+
+Method	URL	Action
+GET	/services	Retrieve all services
+GET	/services/5069b47aa892630aae000001	Retrieve the service with the specified _id
+POST	/services	Add a new service
+PUT	/services/5069b47aa892630aae000001	Update service with the specified _id
+DELETE	/services/5069b47aa892630aae000001	Delete the service with the specified _id
+*/
+
+/**
+ * Module dependencies.
+ */
 var express = require('express'),
-    device  = require('../lib/device.js'),
-    redirect = require('express-redirect');
+  http = require('http'),
+  path = require('path'),
+  device  = require('../lib/device.js'),
+  redirect = require('express-redirect');
 
 /*
  * CONFIGS - The Configurations
  */ 	
 config = require('../config/server.js');
 var configs = config.configs,
-	server_prefix = configs.server_prefix || 'CHAT';
-	
+	server_prefix = configs.server_prefix || 'CHAT';  
+
 /*
  * SERVICES - The Services
  */ 
@@ -75,11 +91,11 @@ var managePreparationForShutdown = function(callback) {
 
 /*
  * APP - The Application
- */   
+ */
 var app = express();
 // Port
 if(typeof configs.app_port === 'undefined'){
-	var app_port = process.env.PORT || 4000;
+	var app_port = process.env.PORT || 5000;
 }
 else {
 	var app_port = configs.app_port;
@@ -111,7 +127,7 @@ else {
 var api = express();
 // Port
 if(typeof configs.api_port === 'undefined'){
-	var api_port = app_port+1 || 4001;
+	var api_port = app_port+1 || 5001;
 }
 else {
 	var api_port = configs.api_port;
@@ -136,8 +152,8 @@ if(typeof configs.api_list === 'undefined'){
 }
 else {
 	var api_list = configs.api_list;
-}
-
+} 
+ 
 /*
  * API DEVELOPMENT
  *
@@ -153,9 +169,19 @@ else {
  * echo %NODE_ENV% 
  */
 api.configure('development', function(){
+	api.set('view engine', 'ejs');
+    api.set('view options', { layout: true });
+	api.set('views', __dirname + '/../public');
+	api.use(express.favicon());
+	api.use(express.logger('dev'));
+	api.use(express.bodyParser());
+	api.use(express.methodOverride());
+    api.use(express.cookieParser());
+    api.use(device.capture());		
+	//  api.use(allowCrossDomain);
 	api.use(api.router);
 	api.use(express.errorHandler({ dumpExceptions: true, showStack: true })); // specific for development
-});
+}); 
 
 /*
  * API PRODUCTION
@@ -172,6 +198,16 @@ api.configure('development', function(){
  * echo %NODE_ENV% 
  */
 api.configure('production', function(){
+	api.set('view engine', 'ejs');
+    api.set('view options', { layout: true });
+	api.set('views', __dirname + '/../public');
+	api.use(express.favicon());
+	api.use(express.logger('dev'));
+	api.use(express.bodyParser());
+	api.use(express.methodOverride());
+    api.use(express.cookieParser());
+    api.use(device.capture());		
+	//  api.use(allowCrossDomain);
 	api.use(api.router);
 	api.use(express.errorHandler({ dumpExceptions: true, showStack: true })); // specific for production
 });
@@ -207,193 +243,55 @@ api.post('/login', function(req, res){
  * echo %NODE_ENV% 
  */
 app.configure('development', function(){
-    app.set('view engine', 'ejs');
+	//app.set('port', process.env.PORT || 5000);
+	app.set('view engine', 'ejs');
     app.set('view options', { layout: true });
-    app.set('views', __dirname + '/../public');
-    
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
+	app.set('views', __dirname + '/../public');
+	
+	app.use(express.favicon());
+	app.use(express.logger('dev'));
+	
+	app.use(express.bodyParser());
+	app.use(express.methodOverride());
     app.use(express.cookieParser());
-    app.use(device.capture());
-    
-    app.enableDeviceHelpers();
-    app.enableViewRouting();
-
-    app.use(app.router);
+    app.use(device.capture());	
+	//  app.use(allowCrossDomain);
+	app.use(app.router);
     app.use('/resources', express.static(__dirname + '/../public/resources'));
     app.use('/app', express.static(__dirname + '/../public/app'));
     app.use(express.static(__dirname + '/../public')); // Fall back to this as a last resort
-    
-    app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); // specific for development
+	app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); // specific for development
 });
 
-/*
- * APP PRODUCTION
- *
- * .bash_profile contains
- * NODE_ENV=production
- *
- * or start server as follows
- * NODE_ENV=production node server.js
- *
- * on Windows use
- * set NODE_ENV=production
- * check with
- * echo %NODE_ENV% 
- */
-app.configure('production', function(){
-    app.set('view engine', 'ejs');
-    app.set('view options', { layout: true });
-    app.set('views', __dirname + '/../public');
-    
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
-    app.use(express.cookieParser());
-    app.use(device.capture());
-    
-    app.enableDeviceHelpers();
-    app.enableViewRouting();
 
-    app.use(app.router);
-    app.use('/resources', express.static(__dirname + '/../public/resources'));
-    app.use('/app', express.static(__dirname + '/../public/app'));
-    app.use(express.static(__dirname + '/../public')); // Fall back to this as a last resort
-    
-    app.use(express.errorHandler()); // specific for production
-});
 
-app.all('*', function(req, res, next){
-  if (!req.get('Origin')) return next();
-  // use "*" here to accept any origin
-  res.set('Access-Control-Allow-Origin', '*'); // Accepts requests coming from anyone, replace '*' by configs.allowedHosts to restrict it
-  res.set('Access-Control-Allow-Methods', 'GET, PUT, POST');
-  res.set('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type');
-  // res.set('Access-Control-Allow-Max-Age', 3600);
-  if ('OPTIONS' == req.method) return res.send(200);
-  next();
-});
+//  MORE... SEE PARKED-server.js
 
-if(typeof configs.title === 'undefined'){
-	var title = 'Untitled';
-}
-else {
-	var title = configs.title;
-}
 
-if(typeof configs.web_root === 'undefined'){
-	var web_root = '';
-}
-else {
-	var web_root = configs.web_root;
-}
 
-if(typeof configs.host === 'undefined'){
-	var host = req.host;
-}
-else {
-	var host = configs.host;
-}
+//api.get('/', routes.index);
+//api.get('/workouts', workouts.index);
+//api.get('/users', user.list);
 
-// routing to pages
-app.get('/', function(req, res) {
-	// Distinguish based on an optional key-value parameter in the request url (e.g. '/?app=person')
-	var app = 'index'; // default
-	// update app variable here with value from 'app' key (e.g. app=person) sets app to 'person'
-	if(req.query.app){
-		app = req.query.app;
-		var app_not_found = true; // default to true
-		// lookup app in app list, if not found set to not_found
-		for (key in app_list) {		
-			if(key == app){
-				app = key;
-				app_not_found = false;
-				break;
-			}
-		}// eof for
-		if(app_not_found) {
-			console.log(server_prefix + " - App requested, but not found: " + app);
-			app = 'not_found';
-		}
-	}
-	console.log(server_prefix + " - App requested: " + app);	
-    res.render(app, { title: title, host: host, web_root: web_root, layout: false });
-});
+// services directory
+api.get('/services', services.findAll);
+api.get('/services/:id', services.findById);
+api.post('/services', services.addOne);
+api.put('/services/:id', services.updateOne);
+api.delete('/services/:id', services.deleteOne);
 
-app.get('/2', function(req, res) {
-    res.render('index2', { title: 'Your Company with layout' });
-});
+// the services themselves
+// read about access-control-allow-origin here
+// http://john.sh/blog/2011/6/30/cross-domain-ajax-expressjs-and-access-control-allow-origin.html
+// api.get('/services/mql/read', mqlService.read); // use api.all instead of app.get so as to set the Access-Control-Allow-Origin
+api.all('/services/mql/read', mqlService.read);
+//api.get('/services/mql/write', mqlService.write);
+api.all('/services/mql/write', mqlService.write); // use api.all instead of app.get so as to set the Access-Control-Allow-Origin
+//
+api.all('/services/test/read', testService.read);
+//
+api.all('/services/test/write', testService.write);
 
-app.get('/3', function(req, res) {
-    res.render('index2', { title: 'Your Company with layout', layout: 'xpto' });
-});
-
-app.get('/4', function(req, res) {
-    res.render('index2', { title: 'Your Company with layout', layout: 'etc/layout' });
-});
-
-app.get('/5', function(req, res) {
-    res.render('index3', { title: 'Your Company with layout' });
-});
-
-app.get('/debug', function(req, res) {
-	// Distinguish based on an optional key-value parameter in the request url (e.g. '/debug?app=person')
-	var app = 'index'; // default
-	var appDebug = app + '-debug';
-	// update appDebug variable here with value from 'app' key (e.g. app=person) sets appDebug to 'person-debug'
-	if(req.query.app){
-		app = req.query.app;
-		appDebug = app + '-debug';	
-		var appDebug_not_found = true; // default to true
-		// lookup app in app list, if not found set to not_found
-		for (key in app_list) {
-			if(key == app){
-				app = key;
-				appDebug = app + '-debug';
-				appDebug_not_found = false;
-				break;
-			}
-		}// eof for
-		if(appDebug_not_found) {
-			console.log(server_prefix + " - App requested, but not found: " + appDebug);
-			app = 'not_found';
-			appDebug = app + '-debug';
-		}
-	}
-	console.log(server_prefix + " - App requested: " + appDebug);		
-    res.render(appDebug, { title: title, host: host, web_root: web_root, layout: false });
-});
-
-app.get('/page-analyzer', function(req, res) {
-    res.render('page-analyzer', { title: 'Page Analyzer' });
-});
-
-app.get('/touch', function(req, res) {
-	// Distinguish based on an optional key-value parameter in the request url (e.g. '/touch?app=person')
-	var app = 'index'; // default
-	var appTouch = app + '-touch';
-	// update appTouch variable here with value from 'app' key (e.g. app=person) sets appTouch to 'person-touch'
-	if(req.query.app){
-		app = req.query.app;
-		appTouch = app + '-touch';
-		var appTouch_not_found = true; // default to true
-		// lookup app in app list, if not found set to not_found
-		for (key in app_list) {
-			if(key == app){
-				app = key;
-				appTouch = app + '-touch';
-				appTouch_not_found = false;
-				break;
-			}
-		}// eof for
-		if(appTouch_not_found) {
-			console.log(server_prefix + " - App requested, but not found: " + appTouch);
-			app = 'not_found';
-			appTouch = app + '-touch';
-		}
-	}
-	console.log(server_prefix + " - App requested: " + appTouch);
-    res.render(appTouch, { title: title, host: host, web_root: web_root, layout: false });
-});
 
 app.listen(app_port, function () {
 	console.log(server_prefix + " - Express app server listening on port %d in %s mode", app_port, app.settings.env);
@@ -418,72 +316,7 @@ app.listen(app_port, function () {
 	}
 });
 
-// routing to services
-api.all('/', function(req, res) { // use api.all instead of api.get so as to set the Access-Control-Allow-Origin
-	// Distinguish based on an optional key-value parameter in the request url (e.g. 'api=person')
-	var api = 'index'; // default
-	// update api variable here with value from 'api' key (e.g. api=person) sets api to 'person'
-	if(req.query.api){
-		api = req.query.api;
-		var api_not_found = true; // default to true
-		// lookup api in api list, if not found set to not_found
-		for (key in api_list) {		
-			if(key == api){
-				api = key;
-				api_not_found = false;
-				break;
-			}
-		}// eof for
-		if(api_not_found) {
-			console.log(server_prefix + " - Api requested, but not found: " + api);
-			api = 'not_found';
-		}
-	}
-	console.log(server_prefix + " - Api requested: " + api);
-
-	// Distinguish based on an optional key-value parameter in the request url (e.g. 'action=read')
-	var action = 'read'; // default
-	// update action variable here with value from 'action' key (e.g. action=write) sets action to 'write'
-	if(req.query.action){	
-		action = req.query.action;	
-		var action_not_recognised = true; // default to true	
-		// check recognised actions, if not found set to not_recognised	
-		if(action == 'read' || action == 'write') {
-			action_not_recognised = false;
-		}// eof for
-		if(action_not_recognised) {
-			console.log(server_prefix + " - Action requested, but not recognised: " + action);
-			action = '';
-			res.statusCode = 500;
-			res.end();
-		}
-	}
-	console.log(server_prefix + " - Action requested: " + action);
-	// ROUTE TO MQL SERVICE FROM HERE...
-	if(api !== 'not_found' || action !== '') {
-		switch(action) {
-			case 'read': 	console.log(server_prefix + " - Calling mqlService.read(req, res)");
-						try {
-							mqlService.read(req, res);
-						}
-						catch(err){
-							console.log(server_prefix + " - Error: " + err);
-						}
-						break;
-			case 'write': console.log(server_prefix + " - Calling mqlService.write(req, res)");
-						try {
-							mqlService.write(req, res);
-						}
-						catch(err){
-							console.log(server_prefix + " - Error: " + err);
-						}
-						break;
-			default: break;
-		}
-	}
-});
-
-api.listen(api_port, function() {
+api.listen(api_port, function () {
 	console.log(server_prefix + " - Express api server listening on port %d in %s mode", api_port, api.settings.env);
 	// launching as the root user 
 	// and then downgrading the process permissions 
