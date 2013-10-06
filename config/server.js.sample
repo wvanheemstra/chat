@@ -13,7 +13,8 @@ module.exports.configs = {
 		'person':true,
 		'organisation':true,
 		'product':true,
-		'booking':true	
+		'booking':true,
+		'group': true
 	}, // put your apis here
 	allow_cross_domain : true, // allow is true, otherwise false
 	allowedHosts : {
