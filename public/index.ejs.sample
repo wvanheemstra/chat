@@ -20,7 +20,11 @@
 
 </head>
 <body>
+    <h2>Person</h2>
     <div><a href="services-mql-single-person-grid-simple.html">Services MQL Single Person Grid - Simple</a></div>
     <div><a href="services-mql-single-person-grid-complex.html">Services MQL Single Person Grid - Complex</a></div>
+	<hr width="100%"/>
+    <h2>Group</h2>
+	<div><a href="services-mql-single-group-grid-simple.html">Services MQL Single Group Grid - Simple</a></div>
 </body>
 </html>
