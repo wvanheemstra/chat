@@ -71,6 +71,27 @@
                         }
                     }     
                 },
+                "group": {        
+                    "properties": {
+                        "kp_GroupID": {
+                            "column_name": "kp_GroupID", 
+                            "nullable": false, 
+                            "type": "/type/int"
+                        },                                
+                        "GroupName": {
+                            "column_name": "GroupName", 
+                            "nullable": false, 
+                            "type": "/type/text"
+                        }
+                    }, 
+                    "table_name": "tbl_group",
+                    "keys": {
+                        "PRIMARY": {
+                            "type": "PRIMARY KEY",
+                            "columns": ["kp_GroupID"]
+                        }
+                    }     
+                },				
                 "deck": {
                     "properties": {
                         "kp_DeckID": {
