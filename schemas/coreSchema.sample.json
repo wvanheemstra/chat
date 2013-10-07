@@ -3,6 +3,27 @@
         "core": {
             "schema_name": "core", 
             "types": {
+                "salutation": {        
+                    "properties": {
+                        "kp_SalutationID": {
+                            "column_name": "kp_SalutationID", 
+                            "nullable": false, 
+                            "type": "/type/int"
+                        },                                
+                        "SalutationAbbreviation": {
+                            "column_name": "SalutationAbbreviation", 
+                            "nullable": false, 
+                            "type": "/type/text"
+                        }
+                    }, 
+                    "table_name": "tbl_salutation",
+                    "keys": {
+                        "PRIMARY": {
+                            "type": "PRIMARY KEY",
+                            "columns": ["kp_SalutationID"]
+                        }
+                    }     
+                },			
                 "person": {
                     "properties": {
                         "kp_PersonID": {
@@ -71,6 +92,27 @@
                         }
                     }     
                 },
+                "nationality": {        
+                    "properties": {
+                        "kp_NationalityID": {
+                            "column_name": "kp_NationalityID", 
+                            "nullable": false, 
+                            "type": "/type/int"
+                        },                                
+                        "NationalityName": {
+                            "column_name": "NationalityName", 
+                            "nullable": false, 
+                            "type": "/type/text"
+                        }
+                    }, 
+                    "table_name": "tbl_nationality",
+                    "keys": {
+                        "PRIMARY": {
+                            "type": "PRIMARY KEY",
+                            "columns": ["kp_NationalityID"]
+                        }
+                    }     
+                },				
                 "group": {        
                     "properties": {
                         "kp_GroupID": {
