@@ -174,7 +174,12 @@ api.configure('development', function(){
 	api.set('views', __dirname + '/../public');
 	api.use(express.favicon());
 	api.use(express.logger('dev'));
-	api.use(express.bodyParser());
+	
+	// https://github.com/senchalabs/connect/wiki/Connect-3.0
+	//api.use(express.bodyParser()); // DEPRECATED
+	api.use(express.urlencoded()); // NEW IN CONNECT 3.0
+	api.use(express.json()); // NEW IN CONNECT 3.0	
+	
 	api.use(express.methodOverride());
     api.use(express.cookieParser());
     api.use(device.capture());		
@@ -203,7 +208,12 @@ api.configure('production', function(){
 	api.set('views', __dirname + '/../public');
 	api.use(express.favicon());
 	api.use(express.logger('dev'));
-	api.use(express.bodyParser());
+	
+	// https://github.com/senchalabs/connect/wiki/Connect-3.0
+	//api.use(express.bodyParser()); // DEPRECATED
+	api.use(express.urlencoded()); // NEW IN CONNECT 3.0
+	api.use(express.json()); // NEW IN CONNECT 3.0	
+	
 	api.use(express.methodOverride());
     api.use(express.cookieParser());
     api.use(device.capture());		
@@ -251,7 +261,11 @@ app.configure('development', function(){
 	app.use(express.favicon());
 	app.use(express.logger('dev'));
 	
-	app.use(express.bodyParser());
+	// https://github.com/senchalabs/connect/wiki/Connect-3.0
+	//app.use(express.bodyParser()); // DEPRECATED
+	app.use(express.urlencoded()); // NEW IN CONNECT 3.0
+	app.use(express.json()); // NEW IN CONNECT 3.0
+	
 	app.use(express.methodOverride());
     app.use(express.cookieParser());
     app.use(device.capture());	
