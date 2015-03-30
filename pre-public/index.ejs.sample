@@ -1,0 +1,30 @@
+<!DOCTYPE HTML>
+<html manifest="" lang="en-GB">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title><%= title %></title>
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="humans.txt">
+	<meta http-equiv="Access-Control-Allow-Origin" content="*"><!-- TO DO: change the * for a restricted set of domains -->
+	<meta http-equiv="Access-Control-Allow-Methods" content="GET, POST, PUT">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
+	<link rel="icon" type="image/png" href="favicon.png" />
+	<!--[if IE]>
+		<link rel="shortcut icon" href="favicon.ico"/>
+	<![endif]-->
+
+    <!-- CSS -->
+
+    <!-- Libraries, Loader, Application -->
+
+</head>
+<body>
+    <h2>Person</h2>
+    <div><a href="services-mql-single-person-grid-simple.html">Services MQL Single Person Grid - Simple</a></div>
+    <div><a href="services-mql-single-person-grid-complex.html">Services MQL Single Person Grid - Complex</a></div>
+	<hr width="100%"/>
+    <h2>Group</h2>
+	<div><a href="services-mql-single-group-grid-simple.html">Services MQL Single Group Grid - Simple</a></div>
+</body>
+</html>
